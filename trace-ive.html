@@ -191,12 +191,19 @@
   .map-filter {
     position: absolute;
     top: 12px;
-    right: 12px;
+    right: 0;
+    left: 0;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 6px;
     z-index: 10;
+    padding: 0 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
+
+  .map-filter::-webkit-scrollbar { display: none; }
 
   .filter-btn {
     background: white;
@@ -1385,8 +1392,84 @@
     color: #c9a8e8;
   }
 
-  /* アニメ */
-  @keyframes fadeUp {
+  .help-btn {
+    background: var(--purple-deep) !important;
+    color: white !important;
+    border-color: var(--purple-deep) !important;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .cat-desc-box {
+    background: var(--purple-pale);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 11px;
+    color: var(--text-mid);
+    line-height: 1.6;
+    margin-top: 2px;
+    min-height: 36px;
+  }
+
+  .cat-help-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .cat-help-modal.open { display: flex; }
+
+  .cat-help-sheet {
+    background: var(--cream);
+    border-radius: 24px 24px 0 0;
+    padding: 20px 16px 40px;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .cat-help-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--purple-deep);
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .cat-help-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cat-help-item:last-child { border-bottom: none; }
+
+  .cat-help-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    width: 32px;
+    text-align: center;
+  }
+
+  .cat-help-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--purple-deep);
+    margin-bottom: 2px;
+  }
+
+  .cat-help-desc {
+    font-size: 11px;
+    color: var(--text-mid);
+    line-height: 1.5;
+  }
+
     from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
   }
@@ -1501,9 +1584,14 @@
       <!-- フィルター -->
       <div class="map-filter">
         <button class="filter-btn active" onclick="filterPins(this,'all')">すべて</button>
-        <button class="filter-btn" onclick="filterPins(this,'MV')">MV</button>
-        <button class="filter-btn" onclick="filterPins(this,'来日')">来日</button>
-        <button class="filter-btn" onclick="filterPins(this,'韓国')">韓国</button>
+        <button class="filter-btn" onclick="filterPins(this,'MV')">🎵 MV</button>
+        <button class="filter-btn" onclick="filterPins(this,'撮影')">📷 撮影</button>
+        <button class="filter-btn" onclick="filterPins(this,'メディア')">📺 メディア</button>
+        <button class="filter-btn" onclick="filterPins(this,'イベント')">🎤 イベント</button>
+        <button class="filter-btn" onclick="filterPins(this,'目撃')">✈️ 目撃</button>
+        <button class="filter-btn" onclick="filterPins(this,'グルメ')">🍽️ グルメ</button>
+        <button class="filter-btn" onclick="filterPins(this,'ショップ')">🛍️ ショップ</button>
+        <button class="filter-btn help-btn" onclick="openCategoryHelp()">？</button>
       </div>
 
       <!-- スポット数 -->
@@ -1961,12 +2049,16 @@
       <div class="form-group">
         <div class="form-label">カテゴリー</div>
         <div class="scene-chips">
-          <div class="chip selected" onclick="toggleChip(this)">MV</div>
-          <div class="chip" onclick="toggleChip(this)">コンセプトフォト</div>
-          <div class="chip" onclick="toggleChip(this)">来日</div>
-          <div class="chip" onclick="toggleChip(this)">バラエティ</div>
-          <div class="chip" onclick="toggleChip(this)">目撃情報</div>
-          <div class="chip" onclick="toggleChip(this)">韓国</div>
+          <div class="chip" onclick="toggleChip(this)" data-cat="MV">🎵 MV</div>
+          <div class="chip" onclick="toggleChip(this)" data-cat="撮影">📷 撮影</div>
+          <div class="chip" onclick="toggleChip(this)" data-cat="メディア">📺 メディア</div>
+          <div class="chip" onclick="toggleChip(this)" data-cat="イベント">🎤 イベント</div>
+          <div class="chip" onclick="toggleChip(this)" data-cat="目撃">✈️ 目撃</div>
+          <div class="chip" onclick="toggleChip(this)" data-cat="グルメ">🍽️ グルメ</div>
+          <div class="chip" onclick="toggleChip(this)" data-cat="ショップ">🛍️ ショップ</div>
+        </div>
+        <div class="cat-desc-box" id="cat-desc-box">
+          カテゴリーを選択すると説明が表示されます
         </div>
       </div>
       <div class="form-group">
@@ -2063,7 +2155,64 @@
   </div>
 </div>
 
-<!-- 印刷エリア -->
+<!-- カテゴリーヘルプモーダル -->
+<div class="cat-help-modal" id="cat-help-modal" onclick="closeCatHelp(event)">
+  <div class="cat-help-sheet">
+    <div class="modal-handle"></div>
+    <div class="cat-help-title">📍 カテゴリーガイド</div>
+    <div class="cat-help-item">
+      <div class="cat-help-icon">🎵</div>
+      <div>
+        <div class="cat-help-name">MV（ミュージックビデオ）</div>
+        <div class="cat-help-desc">MVのロケ地・撮影場所。シーンのタイムコードがあると◎</div>
+      </div>
+    </div>
+    <div class="cat-help-item">
+      <div class="cat-help-icon">📷</div>
+      <div>
+        <div class="cat-help-name">撮影</div>
+        <div class="cat-help-desc">コンセプトフォト・雑誌・アルバムジャケットの撮影場所</div>
+      </div>
+    </div>
+    <div class="cat-help-item">
+      <div class="cat-help-icon">📺</div>
+      <div>
+        <div class="cat-help-name">メディア</div>
+        <div class="cat-help-desc">TV出演・バラエティ・YouTube・VLIVEなどで登場した場所</div>
+      </div>
+    </div>
+    <div class="cat-help-item">
+      <div class="cat-help-icon">🎤</div>
+      <div>
+        <div class="cat-help-name">イベント</div>
+        <div class="cat-help-desc">ファンサイン・握手会・コンサート・ショーケース会場</div>
+      </div>
+    </div>
+    <div class="cat-help-item">
+      <div class="cat-help-icon">✈️</div>
+      <div>
+        <div class="cat-help-name">目撃</div>
+        <div class="cat-help-desc">空港・プライベートでの目撃情報・訪問が確認されたスポット</div>
+      </div>
+    </div>
+    <div class="cat-help-item">
+      <div class="cat-help-icon">🍽️</div>
+      <div>
+        <div class="cat-help-name">グルメ</div>
+        <div class="cat-help-desc">メンバーが訪れたレストラン・カフェ・食事スポット</div>
+      </div>
+    </div>
+    <div class="cat-help-item">
+      <div class="cat-help-icon">🛍️</div>
+      <div>
+        <div class="cat-help-name">ショップ</div>
+        <div class="cat-help-desc">訪れたブランドショップ・書店・セレクトショップなど</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <div id="print-area">
   <div class="print-header">
     <div class="print-title" id="print-route-title">Trace IVE — 巡礼ルート</div>
@@ -2351,7 +2500,7 @@ function filterMember(el, member) {
 }
 
 // ── チップ切り替え ──
-function toggleChip(el) { el.classList.toggle('selected'); }
+
 
 // ── ルートスポット ──
 function toggleRouteSpot(checkEl) {
@@ -2445,6 +2594,46 @@ function showLangComingSoon() {
   alert('🚧 この言語は現在準備中です。\nComing soon / 준비 중');
 }
 
+  // ── カテゴリー説明 ──
+  const CAT_DESC = {
+    'MV': '🎵 MVのロケ地・撮影場所。シーンのタイムコードがあると◎',
+    '撮影': '📷 コンセプトフォト・雑誌・アルバムジャケットの撮影場所',
+    'メディア': '📺 TV・バラエティ・YouTube・VLIVEなどで登場した場所',
+    'イベント': '🎤 ファンサイン・握手会・コンサート・ショーケース会場',
+    '目撃': '✈️ 空港・プライベートでの目撃情報・訪問確認スポット',
+    'グルメ': '🍽️ メンバーが訪れたレストラン・カフェ・食事スポット',
+    'ショップ': '🛍️ 訪れたブランドショップ・書店・セレクトショップなど',
+  };
+
+  function toggleChip(el) {
+    el.classList.toggle('selected');
+    const box = document.getElementById('cat-desc-box');
+    if (box) {
+      const cat = el.getAttribute('data-cat');
+      const isNowSelected = el.classList.contains('selected');
+      if (cat && isNowSelected) {
+        box.textContent = CAT_DESC[cat] || 'カテゴリーを選択すると説明が表示されます';
+      } else {
+        const chips = el.closest('.scene-chips');
+        if (chips) {
+          const anySelected = chips.querySelector('.chip.selected[data-cat]');
+          box.textContent = anySelected ? (CAT_DESC[anySelected.getAttribute('data-cat')] || '') : 'カテゴリーを選択すると説明が表示されます';
+        }
+      }
+    }
+  }
+
+  // ── カテゴリーヘルプモーダル ──
+  function openCategoryHelp() {
+    document.getElementById('cat-help-modal').classList.add('open');
+  }
+
+  function closeCatHelp(e) {
+    if (e.target === document.getElementById('cat-help-modal')) {
+      document.getElementById('cat-help-modal').classList.remove('open');
+    }
+  }
+
 // ── ランキングタブ ──
 document.querySelectorAll('.rtab').forEach(t => {
   t.addEventListener('click', function() {
@@ -2458,11 +2647,6 @@ document.querySelectorAll('.rtab').forEach(t => {
 <script async defer
   src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCEKakeNjAzKN6msNTsrUb2J6TMiXaInm0&callback=initMap&language=ja">
 </script>
-<!-- フッター -->
-<div style="text-align:center;padding:16px;font-size:10px;color:#9b8aab;border-top:1px solid rgba(123,79,166,0.15);margin-top:8px;">
-  © 2026 missing link. All Rights Reserved.<br>
-  複製・改変・商用利用禁止 / No reproduction or commercial use permitted.
-</div>
 
 </body>
 </html>
