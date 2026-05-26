@@ -2245,11 +2245,11 @@ const SPOTS = [
     lat: 35.6485, lng: 139.7025,
     sub: '来日時 立ち寄りスポット',
     icon: '📚',
-    category: '来日',
+    category: 'ショップ',
     address: '東京都渋谷区猿楽町17-5',
     discoverer: '@rei_books',
     likes: 94,
-    badges: ['来日','東京'],
+    badges: ['ショップ','東京'],
     member: 'レイ',
     color: '#3d1a5e'
   },
@@ -2258,11 +2258,11 @@ const SPOTS = [
     lat: 35.6704, lng: 139.7025,
     sub: 'コンセプトフォト撮影地',
     icon: '📷',
-    category: 'MV',
+    category: '撮影',
     address: '東京都渋谷区神宮前1丁目',
     discoverer: '@wonyoung_fan',
     likes: 76,
-    badges: ['コンセプトフォト','東京'],
+    badges: ['撮影','東京'],
     member: 'ウォニョン',
     color: '#c9a84c'
   },
@@ -2284,11 +2284,11 @@ const SPOTS = [
     lat: 35.7024, lng: 139.7003,
     sub: 'メンバー目撃スポット',
     icon: '🌸',
-    category: '来日',
+    category: '目撃',
     address: '東京都新宿区大久保1丁目',
     discoverer: '@ive_tracker',
     likes: 41,
-    badges: ['来日','東京'],
+    badges: ['目撃','東京'],
     member: 'ユジン',
     color: '#3d1a5e'
   },
@@ -2297,11 +2297,11 @@ const SPOTS = [
     lat: 35.6440, lng: 139.6984,
     sub: '来日 散歩スポット',
     icon: '🌸',
-    category: '来日',
+    category: '目撃',
     address: '東京都目黒区上目黒',
     discoverer: '@meguro_dive',
     likes: 38,
-    badges: ['来日','東京'],
+    badges: ['目撃','東京'],
     member: 'イソ',
     color: '#c9a84c'
   }
@@ -2311,6 +2311,20 @@ let map;
 let markers = [];
 let currentSpot = null;
 let cardOpen = false;
+let activeMember = 'all';
+let activeCategory = 'all';
+
+function applyFilters() {
+  let count = 0;
+  markers.forEach(marker => {
+    const memberMatch = activeMember === 'all' || marker.spotData.member === activeMember;
+    const categoryMatch = activeCategory === 'all' || marker.spotData.category === activeCategory;
+    const show = memberMatch && categoryMatch;
+    marker.setVisible(show);
+    if (show) count++;
+  });
+  document.getElementById('spot-count-num').textContent = count;
+}
 
 // ── Google Maps 初期化 ──
 function initMap() {
@@ -2371,12 +2385,20 @@ function initMap() {
 
 // Google Maps API エラー時のフォールバック
 function gm_authFailure() {
-  document.getElementById('map-loading').innerHTML = `
-    <div style="text-align:center;padding:20px;color:#c0392b;">
-      <div style="font-size:32px;margin-bottom:8px;">⚠️</div>
-      <div style="font-size:14px;font-weight:700;">地図の読み込みに失敗しました</div>
-      <div style="font-size:12px;color:#9b8aab;margin-top:4px;">APIキーまたは設定を確認してください</div>
-    </div>`;
+  const loading = document.getElementById('map-loading');
+  loading.style.cssText = 'position:absolute;inset:0;background:#e8e0f0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:5;text-align:center;padding:20px;';
+  const icon = document.createElement('div');
+  icon.style.fontSize = '32px';
+  icon.textContent = '⚠️';
+  const title = document.createElement('div');
+  title.style.cssText = 'font-size:14px;font-weight:700;color:#c0392b;';
+  title.textContent = '地図の読み込みに失敗しました';
+  const sub = document.createElement('div');
+  sub.style.cssText = 'font-size:12px;color:#9b8aab;margin-top:4px;';
+  sub.textContent = 'APIキーまたは設定を確認してください';
+  loading.appendChild(icon);
+  loading.appendChild(title);
+  loading.appendChild(sub);
 }
 
 // ── カード操作 ──
@@ -2413,14 +2435,8 @@ function toggleCard() {
 function filterPins(btn, cat) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-
-  let count = 0;
-  markers.forEach(marker => {
-    const show = cat === 'all' || marker.spotData.category === cat;
-    marker.setVisible(show);
-    if (show) count++;
-  });
-  document.getElementById('spot-count-num').textContent = count;
+  activeCategory = cat;
+  applyFilters();
 }
 
 // ── ランキングからジャンプ ──
@@ -2476,6 +2492,7 @@ function showView(name) {
 function filterMember(el, member) {
   document.querySelectorAll('.member-tab-item').forEach(x => x.classList.remove('active'));
   el.classList.add('active');
+  activeMember = member;
 
   // フィードフィルター
   document.querySelectorAll('.feed-item').forEach(item => {
@@ -2487,16 +2504,8 @@ function filterMember(el, member) {
     }
   });
 
-  // マップフィルター（メンバー別）
-  if (map) {
-    let count = 0;
-    markers.forEach(marker => {
-      const show = member === 'all' || marker.spotData.member === member;
-      marker.setVisible(show);
-      if (show) count++;
-    });
-    document.getElementById('spot-count-num').textContent = count;
-  }
+  // マップフィルター（ANDフィルター）
+  if (map) applyFilters();
 }
 
 // ── チップ切り替え ──
@@ -2511,36 +2520,67 @@ function toggleRouteSpot(checkEl) {
 }
 
 // ── ルート保存 ──
+function escapeText(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 function saveRoute() {
-  const name = document.getElementById('route-name-input').value || '名称未設定ルート';
+  const name = document.getElementById('route-name-input').value.trim() || '名称未設定ルート';
   const selected = [...document.querySelectorAll('.route-spot-check.selected')];
   if (selected.length === 0) {
     alert('スポットを1つ以上選択してください。');
     return;
   }
   const today = new Date().toLocaleDateString('ja-JP', { year:'numeric', month:'long' });
+
   const newItem = document.createElement('div');
   newItem.className = 'saved-route-item';
-  newItem.innerHTML = `
-    <div class="sri-left">
-      <div class="sri-icon">🗺️</div>
-      <div>
-        <div class="sri-name">${name}</div>
-        <div class="sri-meta">${selected.length}スポット · ${today}</div>
-      </div>
-    </div>
-    <div style="display:flex;gap:6px;">
-      <button class="btn-secondary" style="padding:6px 10px;font-size:11px;" onclick="printRoute()">🖨️</button>
-      <button class="btn-secondary" style="padding:6px 10px;font-size:11px;">𝕏</button>
-    </div>`;
+
+  const left = document.createElement('div');
+  left.className = 'sri-left';
+
+  const icon = document.createElement('div');
+  icon.className = 'sri-icon';
+  icon.textContent = '🗺️';
+
+  const info = document.createElement('div');
+  const nameEl = document.createElement('div');
+  nameEl.className = 'sri-name';
+  nameEl.textContent = name;
+  const metaEl = document.createElement('div');
+  metaEl.className = 'sri-meta';
+  metaEl.textContent = `${selected.length}スポット · ${today}`;
+  info.appendChild(nameEl);
+  info.appendChild(metaEl);
+  left.appendChild(icon);
+  left.appendChild(info);
+
+  const btns = document.createElement('div');
+  btns.style.cssText = 'display:flex;gap:6px;';
+  const printBtn = document.createElement('button');
+  printBtn.className = 'btn-secondary';
+  printBtn.style.cssText = 'padding:6px 10px;font-size:11px;';
+  printBtn.textContent = '🖨️';
+  printBtn.onclick = printRoute;
+  const xBtn = document.createElement('button');
+  xBtn.className = 'btn-secondary';
+  xBtn.style.cssText = 'padding:6px 10px;font-size:11px;';
+  xBtn.textContent = '𝕏';
+  btns.appendChild(printBtn);
+  btns.appendChild(xBtn);
+
+  newItem.appendChild(left);
+  newItem.appendChild(btns);
   document.getElementById('saved-routes-list').prepend(newItem);
   alert(`「${name}」を保存しました！`);
 }
 
 // ── 印刷 ──
 function printRoute() {
-  const name = document.getElementById('route-name-input').value || 'Trace IVE 巡礼ルート';
-  const memo = document.getElementById('route-memo-input').value;
+  const name = document.getElementById('route-name-input').value.trim() || 'Trace IVE 巡礼ルート';
+  const memo = document.getElementById('route-memo-input').value.trim();
   const selected = [...document.querySelectorAll('.route-spot-check.selected')];
   if (selected.length === 0) {
     alert('スポットを1つ以上選択してください。');
@@ -2557,19 +2597,45 @@ function printRoute() {
   selected.forEach((item, i) => {
     const spotName = item.querySelector('.rsc-name').textContent;
     const spotMeta = item.querySelector('.rsc-meta').textContent;
-    const spotMemo = item.querySelector('.rsc-memo').value;
+    const spotMemo = item.querySelector('.rsc-memo').value.trim();
+
     const div = document.createElement('div');
     div.className = 'print-spot';
-    div.innerHTML = `
-      <div class="print-spot-header">
-        <div class="print-spot-num">${i+1}</div>
-        <div class="print-spot-name">${spotName}</div>
-      </div>
-      <div class="print-spot-meta">${spotMeta}</div>
-      ${spotMemo
-        ? `<div class="print-spot-memo-label">メモ：</div><div class="print-spot-memo-val">${spotMemo}</div>`
-        : `<div class="print-spot-memo-label">メモ：</div><div class="print-memo-line"></div>`}
-    `;
+
+    const header = document.createElement('div');
+    header.className = 'print-spot-header';
+    const numEl = document.createElement('div');
+    numEl.className = 'print-spot-num';
+    numEl.textContent = i + 1;
+    const nameEl = document.createElement('div');
+    nameEl.className = 'print-spot-name';
+    nameEl.textContent = spotName;
+    header.appendChild(numEl);
+    header.appendChild(nameEl);
+
+    const metaEl = document.createElement('div');
+    metaEl.className = 'print-spot-meta';
+    metaEl.textContent = spotMeta;
+
+    const memoLabel = document.createElement('div');
+    memoLabel.className = 'print-spot-memo-label';
+    memoLabel.textContent = 'メモ：';
+
+    div.appendChild(header);
+    div.appendChild(metaEl);
+    div.appendChild(memoLabel);
+
+    if (spotMemo) {
+      const memoVal = document.createElement('div');
+      memoVal.className = 'print-spot-memo-val';
+      memoVal.textContent = spotMemo;
+      div.appendChild(memoVal);
+    } else {
+      const memoLine = document.createElement('div');
+      memoLine.className = 'print-memo-line';
+      div.appendChild(memoLine);
+    }
+
     list.appendChild(div);
   });
   window.print();
