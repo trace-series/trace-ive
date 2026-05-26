@@ -181,46 +181,23 @@
     overflow: hidden;
   }
 
+  /* Google Maps本体 */
   #google-map {
     width: 100%;
     height: 100%;
   }
 
-  /* ── MAP上部：スポット数バッジ ── */
-  .map-top-left {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    z-index: 10;
-  }
-
-  .spot-count {
-    background: white;
-    border-radius: 20px;
-    padding: 6px 12px;
-    font-size: 11px;
-    color: var(--text-mid);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    border: 1px solid var(--border);
-    white-space: nowrap;
-  }
-
-  .spot-count strong {
-    color: var(--purple-deep);
-    font-weight: 700;
-  }
-
-  /* ── MAP上部：カテゴリフィルター（スポット数バッジの右から開始） ── */
+  /* MAP右上フィルター */
   .map-filter {
     position: absolute;
     top: 12px;
-    left: 110px;   /* 「6スポット」バッジの幅分オフセット */
     right: 0;
+    left: 0;
     display: flex;
     flex-direction: row;
     gap: 6px;
     z-index: 10;
-    padding: 0 12px 0 0;
+    padding: 0 12px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
@@ -239,7 +216,6 @@
     color: var(--text-mid);
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     white-space: nowrap;
-    flex-shrink: 0;
   }
 
   .filter-btn.active {
@@ -248,7 +224,30 @@
     border-color: var(--purple-deep);
   }
 
-  /* ── MAP下部カード ── */
+  /* MAP左上 */
+  .map-top-left {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 10;
+  }
+
+  .spot-count {
+    background: white;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 11px;
+    color: var(--text-mid);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+  }
+
+  .spot-count strong {
+    color: var(--purple-deep);
+    font-weight: 700;
+  }
+
+  /* MAP下部カード */
   .map-bottom-card {
     position: absolute;
     bottom: 0; left: 0; right: 0;
@@ -1471,7 +1470,6 @@
     line-height: 1.5;
   }
 
-  @keyframes fadeUp {
     from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
   }
@@ -1486,6 +1484,13 @@
   .ranking-item:nth-child(4) { animation-delay: 0.18s; }
   .ranking-item:nth-child(5) { animation-delay: 0.24s; }
 
+  /* カスタムマーカー */
+  .gm-custom-pin {
+    position: relative;
+    cursor: pointer;
+  }
+
+  /* マップローディング */
   #map-loading {
     position: absolute;
     inset: 0;
@@ -1567,19 +1572,16 @@
   <div id="view-map">
     <div class="map-container">
 
+      <!-- ローディング -->
       <div id="map-loading">
         <div class="map-spinner"></div>
         <div class="map-loading-text">地図を読み込み中…</div>
       </div>
 
+      <!-- Google Maps本体 -->
       <div id="google-map"></div>
 
-      <!-- スポット数バッジ（左上固定） -->
-      <div class="map-top-left">
-        <div class="spot-count"><strong id="spot-count-num">6</strong> スポット</div>
-      </div>
-
-      <!-- カテゴリフィルター（スポット数バッジの右から開始） -->
+      <!-- フィルター -->
       <div class="map-filter">
         <button class="filter-btn active" onclick="filterPins(this,'all')">すべて</button>
         <button class="filter-btn" onclick="filterPins(this,'MV')">🎵 MV</button>
@@ -1590,6 +1592,11 @@
         <button class="filter-btn" onclick="filterPins(this,'グルメ')">🍽️ グルメ</button>
         <button class="filter-btn" onclick="filterPins(this,'ショップ')">🛍️ ショップ</button>
         <button class="filter-btn help-btn" onclick="openCategoryHelp()">？</button>
+      </div>
+
+      <!-- スポット数 -->
+      <div class="map-top-left">
+        <div class="spot-count"><strong id="spot-count-num">6</strong> スポット</div>
       </div>
 
       <!-- 下部カード -->
@@ -1883,7 +1890,7 @@
       <div class="x-connect-arrow">›</div>
     </div>
 
-    <div class="profile-section-title">⚙ 設定</div>
+    <div class="profile-section-title">⚙️ 設定</div>
     <div class="settings-list">
       <div class="settings-item" onclick="showView('route')">
         <div class="settings-item-icon">📂</div>
@@ -2127,7 +2134,7 @@
     </div>
     <div class="lang-option" onclick="showLangComingSoon()">
       <div class="lang-option-left">
-        <div class="lang-flag">🇰</div>
+        <div class="lang-flag">🇰🇷</div>
         <div>
           <div class="lang-name">한국어</div>
           <div class="lang-native" style="color:var(--red);">🚧 準備中</div>
@@ -2205,6 +2212,7 @@
   </div>
 </div>
 
+
 <div id="print-area">
   <div class="print-header">
     <div class="print-title" id="print-route-title">Trace IVE — 巡礼ルート</div>
@@ -2215,6 +2223,7 @@
   <div class="print-footer">Trace IVE — 聖地巡礼MAP | traceive.app</div>
 </div>
 
+<!-- Google Maps API -->
 <script>
 // ── スポットデータ ──
 const SPOTS = [
@@ -2326,8 +2335,10 @@ function initMap() {
     ]
   });
 
+  // ローディング非表示
   document.getElementById('map-loading').style.display = 'none';
 
+  // ピンを追加
   SPOTS.forEach(spot => {
     const marker = new google.maps.Marker({
       position: { lat: spot.lat, lng: spot.lng },
@@ -2358,6 +2369,7 @@ function initMap() {
   });
 }
 
+// Google Maps API エラー時のフォールバック
 function gm_authFailure() {
   document.getElementById('map-loading').innerHTML = `
     <div style="text-align:center;padding:20px;color:#c0392b;">
@@ -2367,6 +2379,7 @@ function gm_authFailure() {
     </div>`;
 }
 
+// ── カード操作 ──
 function openCard(spot) {
   currentSpot = spot;
   document.getElementById('card-title').textContent = spot.name;
@@ -2396,6 +2409,7 @@ function toggleCard() {
   }
 }
 
+// ── フィルター ──
 function filterPins(btn, cat) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -2409,6 +2423,7 @@ function filterPins(btn, cat) {
   document.getElementById('spot-count-num').textContent = count;
 }
 
+// ── ランキングからジャンプ ──
 function jumpToSpot(name) {
   const spot = SPOTS.find(s => s.name === name);
   if (!spot) return;
@@ -2422,23 +2437,27 @@ function jumpToSpot(name) {
   }, 100);
 }
 
+// ── 巡礼報告 ──
 function reportVisit() {
   if (!currentSpot) return;
   alert(`「${currentSpot.name}」の巡礼を報告しました！\n\n🌸 ありがとうございます！`);
 }
 
+// ── ナビ ──
 function openNavi() {
   if (!currentSpot) return;
   const url = `https://www.google.com/maps/dir/?api=1&destination=${currentSpot.lat},${currentSpot.lng}`;
   window.open(url, '_blank');
 }
 
+// ── Xシェア ──
 function shareX() {
   if (!currentSpot) return;
   const text = encodeURIComponent(`【聖地巡礼】${currentSpot.name}\n${currentSpot.sub}\n\n#TraceIVE #IVE #アイブ`);
   window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
 }
 
+// ── ビュー切り替え ──
 function showView(name) {
   ['map','ranking','feed','post','profile','route'].forEach(v => {
     const el = document.getElementById('view-'+v);
@@ -2453,10 +2472,12 @@ function showView(name) {
   window.scrollTo(0, 0);
 }
 
+// ── メンバーフィルター ──
 function filterMember(el, member) {
   document.querySelectorAll('.member-tab-item').forEach(x => x.classList.remove('active'));
   el.classList.add('active');
 
+  // フィードフィルター
   document.querySelectorAll('.feed-item').forEach(item => {
     if (member === 'all') {
       item.style.display = 'block';
@@ -2466,6 +2487,7 @@ function filterMember(el, member) {
     }
   });
 
+  // マップフィルター（メンバー別）
   if (map) {
     let count = 0;
     markers.forEach(marker => {
@@ -2477,6 +2499,10 @@ function filterMember(el, member) {
   }
 }
 
+// ── チップ切り替え ──
+
+
+// ── ルートスポット ──
 function toggleRouteSpot(checkEl) {
   const item = checkEl.closest('.route-spot-check');
   const checked = item.classList.toggle('selected');
@@ -2484,6 +2510,7 @@ function toggleRouteSpot(checkEl) {
   checkEl.classList.toggle('checked', checked);
 }
 
+// ── ルート保存 ──
 function saveRoute() {
   const name = document.getElementById('route-name-input').value || '名称未設定ルート';
   const selected = [...document.querySelectorAll('.route-spot-check.selected')];
@@ -2510,6 +2537,7 @@ function saveRoute() {
   alert(`「${name}」を保存しました！`);
 }
 
+// ── 印刷 ──
 function printRoute() {
   const name = document.getElementById('route-name-input').value || 'Trace IVE 巡礼ルート';
   const memo = document.getElementById('route-memo-input').value;
@@ -2547,6 +2575,7 @@ function printRoute() {
   window.print();
 }
 
+// ── 言語モーダル ──
 function openLangModal() {
   document.getElementById('lang-modal').classList.add('open');
 }
@@ -2565,44 +2594,47 @@ function showLangComingSoon() {
   alert('🚧 この言語は現在準備中です。\nComing soon / 준비 중');
 }
 
-const CAT_DESC = {
-  'MV': '🎵 MVのロケ地・撮影場所。シーンのタイムコードがあると◎',
-  '撮影': '📷 コンセプトフォト・雑誌・アルバムジャケットの撮影場所',
-  'メディア': '📺 TV・バラエティ・YouTube・VLIVEなどで登場した場所',
-  'イベント': '🎤 ファンサイン・握手会・コンサート・ショーケース会場',
-  '目撃': '✈️ 空港・プライベートでの目撃情報・訪問確認スポット',
-  'グルメ': '🍽️ メンバーが訪れたレストラン・カフェ・食事スポット',
-  'ショップ': '🛍️ 訪れたブランドショップ・書店・セレクトショップなど',
-};
+  // ── カテゴリー説明 ──
+  const CAT_DESC = {
+    'MV': '🎵 MVのロケ地・撮影場所。シーンのタイムコードがあると◎',
+    '撮影': '📷 コンセプトフォト・雑誌・アルバムジャケットの撮影場所',
+    'メディア': '📺 TV・バラエティ・YouTube・VLIVEなどで登場した場所',
+    'イベント': '🎤 ファンサイン・握手会・コンサート・ショーケース会場',
+    '目撃': '✈️ 空港・プライベートでの目撃情報・訪問確認スポット',
+    'グルメ': '🍽️ メンバーが訪れたレストラン・カフェ・食事スポット',
+    'ショップ': '🛍️ 訪れたブランドショップ・書店・セレクトショップなど',
+  };
 
-function toggleChip(el) {
-  el.classList.toggle('selected');
-  const box = document.getElementById('cat-desc-box');
-  if (box) {
-    const cat = el.getAttribute('data-cat');
-    const isNowSelected = el.classList.contains('selected');
-    if (cat && isNowSelected) {
-      box.textContent = CAT_DESC[cat] || 'カテゴリーを選択すると説明が表示されます';
-    } else {
-      const chips = el.closest('.scene-chips');
-      if (chips) {
-        const anySelected = chips.querySelector('.chip.selected[data-cat]');
-        box.textContent = anySelected ? (CAT_DESC[anySelected.getAttribute('data-cat')] || '') : 'カテゴリーを選択すると説明が表示されます';
+  function toggleChip(el) {
+    el.classList.toggle('selected');
+    const box = document.getElementById('cat-desc-box');
+    if (box) {
+      const cat = el.getAttribute('data-cat');
+      const isNowSelected = el.classList.contains('selected');
+      if (cat && isNowSelected) {
+        box.textContent = CAT_DESC[cat] || 'カテゴリーを選択すると説明が表示されます';
+      } else {
+        const chips = el.closest('.scene-chips');
+        if (chips) {
+          const anySelected = chips.querySelector('.chip.selected[data-cat]');
+          box.textContent = anySelected ? (CAT_DESC[anySelected.getAttribute('data-cat')] || '') : 'カテゴリーを選択すると説明が表示されます';
+        }
       }
     }
   }
-}
 
-function openCategoryHelp() {
-  document.getElementById('cat-help-modal').classList.add('open');
-}
-
-function closeCatHelp(e) {
-  if (e.target === document.getElementById('cat-help-modal')) {
-    document.getElementById('cat-help-modal').classList.remove('open');
+  // ── カテゴリーヘルプモーダル ──
+  function openCategoryHelp() {
+    document.getElementById('cat-help-modal').classList.add('open');
   }
-}
 
+  function closeCatHelp(e) {
+    if (e.target === document.getElementById('cat-help-modal')) {
+      document.getElementById('cat-help-modal').classList.remove('open');
+    }
+  }
+
+// ── ランキングタブ ──
 document.querySelectorAll('.rtab').forEach(t => {
   t.addEventListener('click', function() {
     document.querySelectorAll('.rtab').forEach(x => x.classList.remove('active'));
@@ -2611,6 +2643,7 @@ document.querySelectorAll('.rtab').forEach(t => {
 });
 </script>
 
+<!-- Google Maps API 読み込み -->
 <script async defer
   src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCEKakeNjAzKN6msNTsrUb2J6TMiXaInm0&callback=initMap&language=ja">
 </script>
