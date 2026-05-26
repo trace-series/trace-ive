@@ -1484,6 +1484,399 @@
   .ranking-item:nth-child(4) { animation-delay: 0.18s; }
   .ranking-item:nth-child(5) { animation-delay: 0.24s; }
 
+  /* ── 貢献ポイントカード ── */
+  .contrib-card {
+    background: linear-gradient(135deg, var(--purple-deep) 0%, #5a1a7a 60%, var(--red) 100%);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 12px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .contrib-card::before {
+    content: 'pt';
+    position: absolute;
+    right: 12px;
+    top: -10px;
+    font-size: 80px;
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    opacity: 0.08;
+    pointer-events: none;
+  }
+
+  .contrib-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .contrib-label {
+    font-size: 11px;
+    opacity: 0.7;
+    margin-bottom: 4px;
+    letter-spacing: 0.08em;
+  }
+
+  .contrib-total {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .contrib-rank-badge {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .contrib-bar-bg {
+    height: 5px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+
+  .contrib-bar-fill {
+    height: 100%;
+    background: white;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+
+  .contrib-next {
+    font-size: 11px;
+    opacity: 0.65;
+    margin-bottom: 14px;
+  }
+
+  .contrib-breakdown {
+    display: flex;
+    gap: 8px;
+  }
+
+  .contrib-item {
+    flex: 1;
+    background: rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 8px 6px;
+    text-align: center;
+  }
+
+  .contrib-item-icon { font-size: 16px; display: block; margin-bottom: 2px; }
+  .contrib-item-label { font-size: 9px; opacity: 0.7; display: block; margin-bottom: 2px; }
+  .contrib-item-val { font-size: 12px; font-weight: 700; display: block; }
+
+  /* ── 確定待ちポイント ── */
+  .pending-card {
+    background: white;
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    border: 1.5px solid #fde68a;
+    box-shadow: 0 2px 8px rgba(161,98,7,0.08);
+  }
+
+  .pending-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #a16207;
+    margin-bottom: 2px;
+  }
+
+  .pending-desc {
+    font-size: 11px;
+    color: var(--text-light);
+    margin-bottom: 12px;
+  }
+
+  .pending-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #fef3c7;
+  }
+
+  .pending-item:last-child { border-bottom: none; }
+
+  .pending-item-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--purple-deep);
+    margin-bottom: 2px;
+  }
+
+  .pending-item-type {
+    font-size: 11px;
+    color: var(--text-light);
+  }
+
+  .pending-item-pt {
+    font-size: 13px;
+    font-weight: 700;
+    color: #a16207;
+    white-space: nowrap;
+    margin-left: 8px;
+  }
+
+  /* ── ポイントルールページ ── */
+  .pr-notice { background:#fef9c3;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:11px;color:#a16207;margin-bottom:20px; }
+  .pr-section-title { font-size:13px;font-weight:700;color:var(--purple-deep);margin:20px 0 8px;display:flex;align-items:center;gap:6px; }
+  .pr-pending-note { font-size:10px;background:#fef3c7;color:#a16207;padding:2px 8px;border-radius:10px;font-weight:500; }
+  .pr-desc { font-size:11px;color:var(--text-light);margin-bottom:8px;line-height:1.6; }
+  .pr-card { background:white;border-radius:14px;border:1px solid var(--border);overflow:hidden;box-shadow:0 2px 8px rgba(61,26,94,0.05); }
+  .pr-row { display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--border);gap:8px; }
+  .pr-row:last-child { border-bottom:none; }
+  .pr-label { font-size:12px;color:var(--text-mid);flex:1;line-height:1.4; }
+  .pr-pt { font-size:13px;font-weight:700;white-space:nowrap;flex-shrink:0; }
+  .pr-pt-good { color:#15803d; }
+  .pr-pt-bad { color:#dc2626; }
+  .pr-pt-bonus { color:var(--purple-mid); }
+  .pr-limit { font-size:12px;font-weight:700;color:var(--purple-deep);white-space:nowrap;flex-shrink:0;background:var(--purple-pale);padding:3px 10px;border-radius:10px; }
+  .pr-rank-item { display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border); }
+  .pr-rank-item:last-child { border-bottom:none; }
+  .pr-rank-item.pr-rank-current { background:var(--purple-pale); }
+  .pr-rank-icon { font-size:24px;flex-shrink:0; }
+  .pr-rank-info { flex:1; }
+  .pr-rank-name { font-size:13px;font-weight:700;color:var(--purple-deep);margin-bottom:2px;display:flex;align-items:center;gap:6px; }
+  .pr-current-badge { font-size:10px;background:var(--purple-deep);color:white;padding:1px 7px;border-radius:10px;font-weight:500; }
+  .pr-rank-range { font-size:11px;color:var(--text-light); }
+  .pr-rank-desc { font-size:11px;color:var(--text-light);text-align:right;flex-shrink:0; }
+  .pr-badge-row { display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border); }
+  .pr-badge-row:last-child { border-bottom:none; }
+  .pr-badge-icon { font-size:22px;flex-shrink:0;width:28px;text-align:center; }
+  .pr-badge-name { font-size:12px;font-weight:700;color:var(--purple-deep);margin-bottom:2px; }
+  .pr-badge-cond { font-size:11px;color:var(--text-light);line-height:1.4; }
+
+  /* ルート最適化テーブル */
+  .pr-route-header {
+    display: grid;
+    grid-template-columns: 2fr 1.2fr 1fr;
+    padding: 8px 14px;
+    background: var(--purple-pale);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--purple-mid);
+    letter-spacing: 0.05em;
+  }
+
+  .pr-route-row {
+    display: grid;
+    grid-template-columns: 2fr 1.2fr 1fr;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+
+  .pr-route-row:last-child { border-bottom: none; }
+
+  .pr-route-row.pr-route-current {
+    background: #fef9c3;
+  }
+
+  .pr-route-cell {
+    font-size: 12px;
+    color: var(--text-mid);
+    line-height: 1.4;
+  }
+
+  .pr-route-pt {
+    font-size: 10px;
+    color: var(--text-light);
+  }
+
+  .pr-route-lock {
+    color: #94a3b8;
+    font-weight: 500;
+  }
+
+  .pr-route-ok {
+    color: #15803d;
+    font-weight: 700;
+  }
+
+  /* ── ルート最適化 ── */
+  .route-rank-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, var(--purple-deep), #5a1a7a);
+    border-radius: 14px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    color: white;
+  }
+
+  .route-rank-label { font-size: 10px; opacity: 0.7; margin-bottom: 2px; }
+  .route-rank-name { font-size: 15px; font-weight: 700; }
+  .route-rank-right { text-align: right; }
+  .route-opt-label { font-size: 10px; opacity: 0.7; margin-bottom: 2px; }
+  .route-opt-count { font-size: 18px; font-weight: 700; font-family: 'Cormorant Garamond', serif; }
+  .route-opt-reset { font-size: 10px; opacity: 0.6; }
+
+  .route-optimize-wrap { margin-bottom: 16px; }
+
+  .btn-optimize {
+    width: 100%;
+    background: linear-gradient(135deg, #15803d, #166534);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    transition: opacity 0.2s;
+  }
+
+  .btn-optimize.locked {
+    background: #94a3b8;
+    cursor: not-allowed;
+  }
+
+  .btn-optimize.used {
+    background: #cbd5e1;
+    color: #64748b;
+    cursor: not-allowed;
+  }
+
+  .btn-optimize-sub { font-size: 11px; opacity: 0.8; font-weight: 400; }
+
+  .route-result-card {
+    background: white;
+    border-radius: 14px;
+    border: 1px solid #86efac;
+    padding: 14px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(21,128,61,0.08);
+  }
+
+  .route-result-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #15803d;
+    margin-bottom: 10px;
+  }
+
+  .route-result-stats {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .route-stat-item {
+    flex: 1;
+    background: #f0fdf4;
+    border-radius: 10px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+
+  .route-stat-num {
+    font-size: 16px;
+    font-weight: 700;
+    color: #15803d;
+    font-family: 'Cormorant Garamond', serif;
+  }
+
+  .route-stat-label { font-size: 10px; color: #64748b; }
+
+  .route-result-step {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0fdf4;
+  }
+
+  .route-result-step:last-child { border-bottom: none; }
+
+  .route-step-num {
+    width: 24px;
+    height: 24px;
+    background: #15803d;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .route-step-info { flex: 1; }
+  .route-step-name { font-size: 13px; font-weight: 700; color: var(--purple-deep); }
+  .route-step-transit { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+  .route-save-limit {
+    font-size: 11px;
+    background: var(--purple-pale);
+    color: var(--purple-mid);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+    margin-left: 8px;
+  }
+
+  .rankup-banner {
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-top: 16px;
+  }
+
+  .rankup-title { font-size: 13px; font-weight: 700; color: #a16207; margin-bottom: 4px; }
+  .rankup-desc { font-size: 11px; color: #a16207; opacity: 0.8; margin-bottom: 10px; line-height: 1.5; }
+  .rankup-btn {
+    background: #a16207;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .trust-bar-wrap { margin: 10px 0 6px; }
+  .trust-label-row { display:flex;align-items:center;justify-content:space-between;margin-bottom:6px; }
+  .trust-badge { font-size:12px;font-weight:700;padding:3px 10px;border-radius:10px;background:var(--purple-pale);color:var(--text-mid); }
+  .trust-badge.official { background:#dbeafe;color:#1d4ed8; }
+  .trust-badge.certified { background:#dcfce7;color:#15803d; }
+  .trust-badge.reliable { background:#fef9c3;color:#a16207; }
+  .trust-badge.unconfirmed { background:#f1f5f9;color:#64748b; }
+  .trust-badge.flagged { background:#fee2e2;color:#dc2626; }
+  .trust-score-text { font-size:11px;color:var(--text-light); }
+  .trust-bar-bg { height:6px;background:#e8e0f0;border-radius:3px;overflow:hidden; }
+  .trust-bar-fill { height:100%;border-radius:3px;background:linear-gradient(90deg,var(--purple-mid),var(--purple-deep));transition:width 0.4s ease; }
+  .eval-section { margin-top:12px; }
+  .eval-title { font-size:11px;font-weight:700;color:var(--text-light);margin-bottom:6px;letter-spacing:0.05em; }
+  .eval-btns { display:flex;flex-wrap:wrap;gap:6px; }
+  .eval-btn { padding:6px 10px;border-radius:20px;font-size:11px;font-family:'Noto Sans JP',sans-serif;font-weight:500;cursor:pointer;border:1.5px solid;transition:all 0.15s; }
+  .eval-btn:active { transform:scale(0.95); }
+  .eval-good { background:#f0fdf4;color:#15803d;border-color:#86efac; }
+  .eval-good.voted { background:#15803d;color:white;border-color:#15803d; }
+  .eval-bad { background:#fff7ed;color:#c2410c;border-color:#fdba74; }
+  .eval-bad.voted { background:#c2410c;color:white;border-color:#c2410c; }
+
   /* カスタムマーカー */
   .gm-custom-pin {
     position: relative;
@@ -1625,6 +2018,38 @@
             <span class="icon">❤️</span>
             <span id="card-likes">— 件の巡礼報告</span>
           </div>
+
+          <!-- 信頼度バー -->
+          <div class="trust-bar-wrap">
+            <div class="trust-label-row">
+              <span class="trust-badge" id="card-trust-badge">⚪ 未確認</span>
+              <span class="trust-score-text" id="card-trust-score">スコア: 0</span>
+            </div>
+            <div class="trust-bar-bg">
+              <div class="trust-bar-fill" id="card-trust-bar" style="width:0%"></div>
+            </div>
+          </div>
+
+          <!-- GOOD評価ボタン -->
+          <div class="eval-section">
+            <div class="eval-title">✅ GOOD評価</div>
+            <div class="eval-btns">
+              <button class="eval-btn eval-good" onclick="evalSpot('visited')">📸 行って確認</button>
+              <button class="eval-btn eval-good" onclick="evalSpot('matched')">🎯 構図一致</button>
+            </div>
+          </div>
+
+          <!-- BAD評価ボタン -->
+          <div class="eval-section">
+            <div class="eval-title">⚠️ BAD評価</div>
+            <div class="eval-btns">
+              <button class="eval-btn eval-bad" onclick="evalSpot('wrong')">❌ 場所が違う</button>
+              <button class="eval-btn eval-bad" onclick="evalSpot('unclear')">🤔 特定できない</button>
+              <button class="eval-btn eval-bad" onclick="evalSpot('closed')">🚫 立入不可</button>
+              <button class="eval-btn eval-bad" onclick="evalSpot('outdated')">⚠️ 情報が古い</button>
+            </div>
+          </div>
+
           <div class="card-actions">
             <button class="btn-primary" onclick="reportVisit()">📸 巡礼した！</button>
             <button class="btn-secondary" id="btn-navi" onclick="openNavi()">🗺️ ナビ</button>
@@ -1802,6 +2227,60 @@
       </div>
     </div>
 
+    <!-- 貢献ポイント表示 -->
+    <div class="contrib-card">
+      <div class="contrib-top">
+        <div class="contrib-left">
+          <div class="contrib-label">貢献ポイント</div>
+          <div class="contrib-total" id="profile-contrib-total">347 pt</div>
+        </div>
+        <div class="contrib-rank-badge">🏆 上位 12%</div>
+      </div>
+      <div class="contrib-bar-bg">
+        <div class="contrib-bar-fill" style="width:62%"></div>
+      </div>
+      <div class="contrib-next">次のランク「ゴールド」まで あと 153pt</div>
+      <div class="contrib-breakdown">
+        <div class="contrib-item">
+          <span class="contrib-item-icon">🎯</span>
+          <span class="contrib-item-label">正確報告</span>
+          <span class="contrib-item-val">+180pt</span>
+        </div>
+        <div class="contrib-item">
+          <span class="contrib-item-icon">🔍</span>
+          <span class="contrib-item-label">早期発見</span>
+          <span class="contrib-item-val">+120pt</span>
+        </div>
+        <div class="contrib-item">
+          <span class="contrib-item-icon">⚡</span>
+          <span class="contrib-item-label">スピード報告</span>
+          <span class="contrib-item-val">+47pt</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 確定待ちポイント -->
+    <div class="pending-card">
+      <div class="pending-title">⏳ 確定待ちポイント</div>
+      <div class="pending-desc">管理者が判定すると確定されます</div>
+      <div class="pending-list" id="pending-list">
+        <div class="pending-item">
+          <div class="pending-item-left">
+            <div class="pending-item-name">新大久保 コリアタウン</div>
+            <div class="pending-item-type">❌ 場所が違うと報告</div>
+          </div>
+          <div class="pending-item-pt">+40pt?</div>
+        </div>
+        <div class="pending-item">
+          <div class="pending-item-left">
+            <div class="pending-item-name">中目黒 川沿い</div>
+            <div class="pending-item-type">📸 行って確認と報告</div>
+          </div>
+          <div class="pending-item-pt">+30pt?</div>
+        </div>
+      </div>
+    </div>
+
     <div class="stats-row">
       <div class="stat-card">
         <div class="stat-num">7</div>
@@ -1843,6 +2322,11 @@
         <div class="badge-name">バズ投稿</div>
         <div class="badge-desc">いいね100超え</div>
       </div>
+      <div class="badge-card">
+        <div class="badge-icon">🎯</div>
+        <div class="badge-name">正確レポーター</div>
+        <div class="badge-desc">正確報告100pt超え</div>
+      </div>
       <div class="badge-card locked">
         <div class="badge-icon">👑</div>
         <div class="badge-name">トップ貢献者</div>
@@ -1852,6 +2336,16 @@
         <div class="badge-icon">🌏</div>
         <div class="badge-name">海外遠征</div>
         <div class="badge-desc">韓国スポット投稿</div>
+      </div>
+      <div class="badge-card locked">
+        <div class="badge-icon">⚡</div>
+        <div class="badge-name">スピードレポーター</div>
+        <div class="badge-desc">24h以内報告×10</div>
+      </div>
+      <div class="badge-card locked">
+        <div class="badge-icon">🛡️</div>
+        <div class="badge-name">ガーディアン</div>
+        <div class="badge-desc">誤情報報告×5件確定</div>
       </div>
     </div>
 
@@ -1897,6 +2391,11 @@
         <div class="settings-item-text">ルート保存・印刷</div>
         <div class="settings-item-arrow">›</div>
       </div>
+      <div class="settings-item" onclick="showView('pointrules')">
+        <div class="settings-item-icon">🏆</div>
+        <div class="settings-item-text">ポイントルール</div>
+        <div class="settings-item-arrow">›</div>
+      </div>
       <div class="settings-item" onclick="openLangModal()">
         <div class="settings-item-icon">🌐</div>
         <div class="settings-item-text">言語設定</div>
@@ -1921,10 +2420,307 @@
     </div>
   </div>
 
+  <!-- POINT RULES VIEW -->
+  <div id="view-pointrules" style="display:none; padding:20px 16px;">
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+      <button onclick="showView('profile')" style="background:var(--purple-pale);border:none;border-radius:10px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--purple-deep);">← 戻る</button>
+      <div class="section-title" style="margin-bottom:0;">ポイントルール</div>
+    </div>
+    <div class="section-sub">POINT RULES</div>
+
+    <!-- LIMITSオブジェクト表示 -->
+    <div class="pr-notice">
+      ⚙️ 数値は運営により随時調整されます
+    </div>
+
+    <!-- ランク一覧 -->
+    <div class="pr-section-title">🏆 ランク一覧</div>
+    <div class="pr-card">
+      <div class="pr-rank-item">
+        <div class="pr-rank-icon">🥉</div>
+        <div class="pr-rank-info">
+          <div class="pr-rank-name">ブロンズ</div>
+          <div class="pr-rank-range">0〜199 pt</div>
+        </div>
+        <div class="pr-rank-desc">新規参加者</div>
+      </div>
+      <div class="pr-rank-item">
+        <div class="pr-rank-icon">🥈</div>
+        <div class="pr-rank-info">
+          <div class="pr-rank-name">シルバー</div>
+          <div class="pr-rank-range">200〜499 pt</div>
+        </div>
+        <div class="pr-rank-desc">アクティブ巡礼者</div>
+      </div>
+      <div class="pr-rank-item pr-rank-current">
+        <div class="pr-rank-icon">🥇</div>
+        <div class="pr-rank-info">
+          <div class="pr-rank-name">ゴールド <span class="pr-current-badge">現在</span></div>
+          <div class="pr-rank-range">500〜999 pt</div>
+        </div>
+        <div class="pr-rank-desc">熟練レポーター</div>
+      </div>
+      <div class="pr-rank-item">
+        <div class="pr-rank-icon">💎</div>
+        <div class="pr-rank-info">
+          <div class="pr-rank-name">プラチナ</div>
+          <div class="pr-rank-range">1000〜2999 pt</div>
+        </div>
+        <div class="pr-rank-desc">信頼された貢献者</div>
+      </div>
+      <div class="pr-rank-item">
+        <div class="pr-rank-icon">👑</div>
+        <div class="pr-rank-info">
+          <div class="pr-rank-name">ダイヤモンド</div>
+          <div class="pr-rank-range">3000 pt〜</div>
+        </div>
+        <div class="pr-rank-desc">準管理者候補</div>
+      </div>
+    </div>
+
+    <!-- 投稿ポイント -->
+    <div class="pr-section-title">📍 投稿でもらえるポイント</div>
+    <div class="pr-card">
+      <div class="pr-row">
+        <span class="pr-label">新規スポット投稿（承認後）</span>
+        <span class="pr-pt pr-pt-good">+50 pt</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">投稿が公式認定された</span>
+        <span class="pr-pt pr-pt-good">+100 pt</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">投稿が認定済みになった</span>
+        <span class="pr-pt pr-pt-good">+30 pt</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">投稿が誤りと判定された</span>
+        <span class="pr-pt pr-pt-bad">−20 pt</span>
+      </div>
+    </div>
+
+    <!-- 評価ポイント（確定待ち） -->
+    <div class="pr-section-title">✅ 評価でもらえるポイント <span class="pr-pending-note">確定待ち</span></div>
+    <div class="pr-desc">管理者が判定を確定した時点で付与されます。正しい評価をした人だけが得をする仕組みです。</div>
+    <div class="pr-card">
+      <div class="pr-row">
+        <span class="pr-label">📸 行って確認（正しかった場合）</span>
+        <span class="pr-pt pr-pt-good">+30 pt</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">🎯 構図一致（正しかった場合）</span>
+        <span class="pr-pt pr-pt-good">+50 pt</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">❌ 場所が違う（正しかった場合）</span>
+        <span class="pr-pt pr-pt-good">+40 pt</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">🤔 特定できない（正しかった場合）</span>
+        <span class="pr-pt pr-pt-good">+20 pt</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">🚫 立入不可（正しかった場合）</span>
+        <span class="pr-pt pr-pt-good">+20 pt</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">⚠️ 情報が古い（正しかった場合）</span>
+        <span class="pr-pt pr-pt-good">+10 pt</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">評価が誤りと判定された場合</span>
+        <span class="pr-pt pr-pt-bad">0 pt（ペナルティなし）</span>
+      </div>
+    </div>
+
+    <!-- ボーナスポイント -->
+    <div class="pr-section-title">⚡ ボーナスポイント</div>
+    <div class="pr-card">
+      <div class="pr-row">
+        <span class="pr-label">投稿から24時間以内に評価</span>
+        <span class="pr-pt pr-pt-bonus">+5 pt</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">まだ評価0件のスポットに初評価</span>
+        <span class="pr-pt pr-pt-bonus">+10 pt</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">自分の評価がスポット昇格のきっかけ</span>
+        <span class="pr-pt pr-pt-bonus">+20 pt</span>
+      </div>
+    </div>
+
+    <!-- 制限ルール -->
+    <div class="pr-section-title">🛡️ 制限ルール（荒らし対策）</div>
+    <div class="pr-card">
+      <div class="pr-row">
+        <span class="pr-label">1日の投稿上限</span>
+        <span class="pr-limit">3件</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">連続投稿クールダウン</span>
+        <span class="pr-limit">30分</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">新規ユーザーの1日投稿上限（7日間）</span>
+        <span class="pr-limit">1件</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">1日の評価上限</span>
+        <span class="pr-limit">20件</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">同一スポットへの評価</span>
+        <span class="pr-limit">1回のみ</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">自分の投稿への自己評価</span>
+        <span class="pr-limit">不可</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">1日の獲得ポイント上限</span>
+        <span class="pr-limit">500 pt</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">1スポットから得られる上限</span>
+        <span class="pr-limit">100 pt</span>
+      </div>
+    </div>
+
+    <!-- バッジ取得条件 -->
+    <div class="pr-section-title">🏅 バッジ取得条件</div>
+    <div class="pr-card">
+      <div class="pr-badge-row">
+        <span class="pr-badge-icon">🥇</span>
+        <div class="pr-badge-info">
+          <div class="pr-badge-name">創設メンバー</div>
+          <div class="pr-badge-cond">最初の20名に付与（永続）</div>
+        </div>
+      </div>
+      <div class="pr-badge-row">
+        <span class="pr-badge-icon">🔍</span>
+        <div class="pr-badge-info">
+          <div class="pr-badge-name">最初の発見者</div>
+          <div class="pr-badge-cond">スポットの最初の投稿者（永続）</div>
+        </div>
+      </div>
+      <div class="pr-badge-row">
+        <span class="pr-badge-icon">🗺️</span>
+        <div class="pr-badge-info">
+          <div class="pr-badge-name">マッパー</div>
+          <div class="pr-badge-cond">スポット5件以上投稿・承認</div>
+        </div>
+      </div>
+      <div class="pr-badge-row">
+        <span class="pr-badge-icon">🔥</span>
+        <div class="pr-badge-info">
+          <div class="pr-badge-name">バズ投稿</div>
+          <div class="pr-badge-cond">1投稿でいいね100件以上</div>
+        </div>
+      </div>
+      <div class="pr-badge-row">
+        <span class="pr-badge-icon">🎯</span>
+        <div class="pr-badge-info">
+          <div class="pr-badge-name">正確レポーター</div>
+          <div class="pr-badge-cond">正確報告ポイント累計100pt以上</div>
+        </div>
+      </div>
+      <div class="pr-badge-row">
+        <span class="pr-badge-icon">⚡</span>
+        <div class="pr-badge-info">
+          <div class="pr-badge-name">スピードレポーター</div>
+          <div class="pr-badge-cond">24時間以内のスピード報告×10件確定</div>
+        </div>
+      </div>
+      <div class="pr-badge-row">
+        <span class="pr-badge-icon">🛡️</span>
+        <div class="pr-badge-info">
+          <div class="pr-badge-name">ガーディアン</div>
+          <div class="pr-badge-cond">誤情報BAD報告×5件が正しいと確定</div>
+        </div>
+      </div>
+      <div class="pr-badge-row">
+        <span class="pr-badge-icon">👑</span>
+        <div class="pr-badge-info">
+          <div class="pr-badge-name">トップ貢献者</div>
+          <div class="pr-badge-cond">月間ポイントランキング1位</div>
+        </div>
+      </div>
+      <div class="pr-badge-row">
+        <span class="pr-badge-icon">🌏</span>
+        <div class="pr-badge-info">
+          <div class="pr-badge-name">海外遠征</div>
+          <div class="pr-badge-cond">韓国スポットを1件以上投稿・承認</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ルート最適化ルール -->
+    <div class="pr-section-title">🗺️ ルート最適化・保存ルール</div>
+    <div class="pr-desc">ルートを効率よく巡れる最適化機能は、貢献度の高いユーザーへの特典です。</div>
+    <div class="pr-card">
+      <div class="pr-route-header">
+        <div class="pr-route-col">ランク</div>
+        <div class="pr-route-col">最適化</div>
+        <div class="pr-route-col">保存上限</div>
+      </div>
+      <div class="pr-route-row">
+        <div class="pr-route-cell">🥉 ブロンズ<br><span class="pr-route-pt">0〜199pt</span></div>
+        <div class="pr-route-cell pr-route-lock">🔒 不可</div>
+        <div class="pr-route-cell">3件</div>
+      </div>
+      <div class="pr-route-row">
+        <div class="pr-route-cell">🥈 シルバー<br><span class="pr-route-pt">200〜499pt</span></div>
+        <div class="pr-route-cell pr-route-lock">🔒 不可</div>
+        <div class="pr-route-cell">3件</div>
+      </div>
+      <div class="pr-route-row pr-route-current">
+        <div class="pr-route-cell">🥇 ゴールド<br><span class="pr-route-pt">500〜999pt</span></div>
+        <div class="pr-route-cell pr-route-ok">✅ 月1回</div>
+        <div class="pr-route-cell">5件</div>
+      </div>
+      <div class="pr-route-row">
+        <div class="pr-route-cell">💎 プラチナ<br><span class="pr-route-pt">1000〜2999pt</span></div>
+        <div class="pr-route-cell pr-route-ok">✅ 月1回</div>
+        <div class="pr-route-cell">10件</div>
+      </div>
+      <div class="pr-route-row">
+        <div class="pr-route-cell">👑 ダイヤモンド<br><span class="pr-route-pt">3000pt〜</span></div>
+        <div class="pr-route-cell pr-route-ok">✅ 月2回</div>
+        <div class="pr-route-cell">15件</div>
+      </div>
+      <div class="pr-route-row">
+        <div class="pr-route-cell">⭐ プレミアム<br><span class="pr-route-pt">課金プラン</span></div>
+        <div class="pr-route-cell pr-route-ok">✅ 無制限</div>
+        <div class="pr-route-cell">無制限</div>
+      </div>
+    </div>
+
+    <div class="pr-notice" style="margin-top:12px;">
+      💡 最適化は移動距離・所要時間を自動計算してスポットを並び替えます。使用回数は毎月1日にリセットされます。
+    </div>
+
+    <div style="padding-bottom:40px;"></div>
+  </div>
+
   <!-- ROUTE VIEW -->
   <div id="view-route">
     <div class="section-title">ルート保存</div>
     <div class="section-sub">MY ROUTE</div>
+
+    <!-- ランク・最適化残回数バナー -->
+    <div class="route-rank-banner">
+      <div class="route-rank-left">
+        <div class="route-rank-label">現在のランク</div>
+        <div class="route-rank-name">🥇 ゴールド</div>
+      </div>
+      <div class="route-rank-right">
+        <div class="route-opt-label">最適化 残り</div>
+        <div class="route-opt-count" id="route-opt-remaining">1 / 1回</div>
+        <div class="route-opt-reset">来月リセット</div>
+      </div>
+    </div>
 
     <div class="form-group" style="margin-bottom:16px;">
       <div class="form-label">ルート名</div>
@@ -1937,8 +2733,8 @@
     </div>
 
     <div class="profile-section-title">📍 スポットを選択</div>
-    <div id="route-spot-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
-      <div class="route-spot-check" data-spot="渋谷スクランブル交差点" data-meta="WAVE MV · 東京" data-icon="🎵">
+    <div id="route-spot-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+      <div class="route-spot-check" data-spot="渋谷スクランブル交差点" data-meta="WAVE MV · 東京" data-icon="🎵" data-lat="35.6595" data-lng="139.7004">
         <div class="rsc-left">
           <div class="rsc-check" onclick="toggleRouteSpot(this)">☐</div>
           <div class="rsc-icon">🎵</div>
@@ -1951,33 +2747,33 @@
           <input class="rsc-memo" type="text" placeholder="メモ（任意）">
         </div>
       </div>
-      <div class="route-spot-check" data-spot="代官山 蔦屋書店" data-meta="来日スポット · 東京" data-icon="📚">
+      <div class="route-spot-check" data-spot="代官山 蔦屋書店" data-meta="ショップ · 東京" data-icon="📚" data-lat="35.6485" data-lng="139.7025">
         <div class="rsc-left">
           <div class="rsc-check" onclick="toggleRouteSpot(this)">☐</div>
           <div class="rsc-icon">📚</div>
           <div class="rsc-info">
             <div class="rsc-name">代官山 蔦屋書店</div>
-            <div class="rsc-meta">来日スポット · 東京</div>
+            <div class="rsc-meta">ショップ · 東京</div>
           </div>
         </div>
         <div class="rsc-memo-wrap">
           <input class="rsc-memo" type="text" placeholder="メモ（任意）">
         </div>
       </div>
-      <div class="route-spot-check" data-spot="原宿 竹下通り" data-meta="コンセプトフォト · 東京" data-icon="📷">
+      <div class="route-spot-check" data-spot="原宿 竹下通り" data-meta="撮影 · 東京" data-icon="📷" data-lat="35.6704" data-lng="139.7025">
         <div class="rsc-left">
           <div class="rsc-check" onclick="toggleRouteSpot(this)">☐</div>
           <div class="rsc-icon">📷</div>
           <div class="rsc-info">
             <div class="rsc-name">原宿 竹下通り</div>
-            <div class="rsc-meta">コンセプトフォト · 東京</div>
+            <div class="rsc-meta">撮影 · 東京</div>
           </div>
         </div>
         <div class="rsc-memo-wrap">
           <input class="rsc-memo" type="text" placeholder="メモ（任意）">
         </div>
       </div>
-      <div class="route-spot-check" data-spot="六本木ヒルズ" data-meta="MV撮影地 · 東京" data-icon="🎬">
+      <div class="route-spot-check" data-spot="六本木ヒルズ" data-meta="MV撮影地 · 東京" data-icon="🎬" data-lat="35.6604" data-lng="139.7292">
         <div class="rsc-left">
           <div class="rsc-check" onclick="toggleRouteSpot(this)">☐</div>
           <div class="rsc-icon">🎬</div>
@@ -1990,13 +2786,13 @@
           <input class="rsc-memo" type="text" placeholder="メモ（任意）">
         </div>
       </div>
-      <div class="route-spot-check" data-spot="新大久保 コリアタウン" data-meta="目撃情報 · 東京" data-icon="🌸">
+      <div class="route-spot-check" data-spot="新大久保 コリアタウン" data-meta="目撃 · 東京" data-icon="🌸" data-lat="35.7024" data-lng="139.7003">
         <div class="rsc-left">
           <div class="rsc-check" onclick="toggleRouteSpot(this)">☐</div>
           <div class="rsc-icon">🌸</div>
           <div class="rsc-info">
             <div class="rsc-name">新大久保 コリアタウン</div>
-            <div class="rsc-meta">目撃情報 · 東京</div>
+            <div class="rsc-meta">目撃 · 東京</div>
           </div>
         </div>
         <div class="rsc-memo-wrap">
@@ -2005,12 +2801,29 @@
       </div>
     </div>
 
-    <div style="display:flex;gap:10px;margin-bottom:40px;">
+    <!-- ルート最適化ボタン -->
+    <div class="route-optimize-wrap" id="route-optimize-wrap">
+      <button class="btn-optimize" id="btn-optimize" onclick="optimizeRoute()">
+        ✨ ルートを最適化する
+        <span class="btn-optimize-sub">移動距離・時間を自動計算</span>
+      </button>
+    </div>
+
+    <!-- 最適化結果 -->
+    <div class="route-result-card" id="route-result-card" style="display:none;">
+      <div class="route-result-title">📊 最適化結果</div>
+      <div class="route-result-stats" id="route-result-stats"></div>
+      <div class="route-result-list" id="route-result-list"></div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin:16px 0 40px;">
       <button class="btn-primary" style="flex:2;padding:14px;" onclick="saveRoute()">💾 ルートを保存</button>
       <button class="btn-secondary" style="flex:1;padding:14px;" onclick="printRoute()">🖨️ 印刷</button>
     </div>
 
-    <div class="profile-section-title">📂 保存済みルート</div>
+    <div class="profile-section-title">📂 保存済みルート
+      <span class="route-save-limit" id="route-save-limit">5件まで保存可</span>
+    </div>
     <div id="saved-routes-list">
       <div class="saved-route-item">
         <div class="sri-left">
@@ -2026,6 +2839,15 @@
         </div>
       </div>
     </div>
+
+    <!-- ランクアップ促進バナー -->
+    <div class="rankup-banner" id="rankup-banner" style="display:none;">
+      <div class="rankup-title">🔒 最適化回数を増やすには</div>
+      <div class="rankup-desc">プラチナランク（1000pt）で月1回追加、ダイヤモンド（3000pt）で月2回に。</div>
+      <button class="rankup-btn" onclick="showView('pointrules')">ランクを確認する →</button>
+    </div>
+
+    <div style="padding-bottom:40px;"></div>
   </div>
 
   <!-- POST VIEW -->
@@ -2238,7 +3060,9 @@ const SPOTS = [
     likes: 128,
     badges: ['MV','東京'],
     member: 'ガウル',
-    color: '#c0392b'
+    color: '#c0392b',
+    trustScore: 24, goodCount: 26, badCount: 2,
+    adminLevel: 'official'
   },
   {
     name: '代官山 蔦屋書店',
@@ -2251,7 +3075,9 @@ const SPOTS = [
     likes: 94,
     badges: ['ショップ','東京'],
     member: 'レイ',
-    color: '#3d1a5e'
+    color: '#3d1a5e',
+    trustScore: 12, goodCount: 14, badCount: 2,
+    adminLevel: 'certified'
   },
   {
     name: '原宿 竹下通り',
@@ -2264,7 +3090,9 @@ const SPOTS = [
     likes: 76,
     badges: ['撮影','東京'],
     member: 'ウォニョン',
-    color: '#c9a84c'
+    color: '#c9a84c',
+    trustScore: 7, goodCount: 9, badCount: 2,
+    adminLevel: 'reliable'
   },
   {
     name: '六本木ヒルズ',
@@ -2277,7 +3105,9 @@ const SPOTS = [
     likes: 52,
     badges: ['MV','東京'],
     member: 'リズ',
-    color: '#c0392b'
+    color: '#c0392b',
+    trustScore: 5, goodCount: 6, badCount: 1,
+    adminLevel: 'reliable'
   },
   {
     name: '新大久保 コリアタウン',
@@ -2290,7 +3120,9 @@ const SPOTS = [
     likes: 41,
     badges: ['目撃','東京'],
     member: 'ユジン',
-    color: '#3d1a5e'
+    color: '#3d1a5e',
+    trustScore: 2, goodCount: 3, badCount: 1,
+    adminLevel: 'unconfirmed'
   },
   {
     name: '中目黒 川沿い',
@@ -2303,7 +3135,9 @@ const SPOTS = [
     likes: 38,
     badges: ['目撃','東京'],
     member: 'イソ',
-    color: '#c9a84c'
+    color: '#c9a84c',
+    trustScore: 1, goodCount: 2, badCount: 1,
+    adminLevel: 'unconfirmed'
   }
 ];
 
@@ -2411,10 +3245,25 @@ function openCard(spot) {
   document.getElementById('card-discoverer').textContent = spot.discoverer;
   document.getElementById('card-likes').textContent = spot.likes + ' 件の巡礼報告';
 
+  // バッジ（XSS対策：createElement使用）
   const badgeEl = document.getElementById('card-badges');
-  badgeEl.innerHTML = spot.badges.map((b, i) =>
-    `<span class="badge ${i === 0 ? 'badge-red' : 'badge-purple'}">${b}</span>`
-  ).join('') + `<span class="badge badge-gold">${spot.member}</span>`;
+  badgeEl.innerHTML = '';
+  spot.badges.forEach((b, i) => {
+    const span = document.createElement('span');
+    span.className = 'badge ' + (i === 0 ? 'badge-red' : 'badge-purple');
+    span.textContent = b;
+    badgeEl.appendChild(span);
+  });
+  const memberBadge = document.createElement('span');
+  memberBadge.className = 'badge badge-gold';
+  memberBadge.textContent = spot.member;
+  badgeEl.appendChild(memberBadge);
+
+  // 信頼度UI
+  updateTrustUI(spot);
+
+  // eval ボタンのvoted状態リセット
+  document.querySelectorAll('.eval-btn').forEach(b => b.classList.remove('voted'));
 
   document.getElementById('card-detail').style.display = 'block';
   document.getElementById('map-card').classList.add('open');
@@ -2475,7 +3324,7 @@ function shareX() {
 
 // ── ビュー切り替え ──
 function showView(name) {
-  ['map','ranking','feed','post','profile','route'].forEach(v => {
+  ['map','ranking','feed','post','profile','route','pointrules'].forEach(v => {
     const el = document.getElementById('view-'+v);
     if (el) el.style.display = 'none';
     const nav = document.getElementById('nav-'+v);
@@ -2660,7 +3509,297 @@ function showLangComingSoon() {
   alert('🚧 この言語は現在準備中です。\nComing soon / 준비 중');
 }
 
-  // ── カテゴリー説明 ──
+  // ── 信頼度システム ──
+  const TRUST_LEVELS = {
+    official:    { label: '🔵 公式確認',  cls: 'official',   minScore: 20 },
+    certified:   { label: '🟢 認定済み',  cls: 'certified',  minScore: 10 },
+    reliable:    { label: '🟡 有力情報',  cls: 'reliable',   minScore: 4  },
+    unconfirmed: { label: '⚪ 未確認',    cls: 'unconfirmed',minScore: 0  },
+    flagged:     { label: '🔴 要確認',    cls: 'flagged',    minScore: -999 },
+  };
+
+  function getTrustLevel(spot) {
+    if (spot.trustScore < 0) return TRUST_LEVELS.flagged;
+    if (spot.adminLevel === 'official') return TRUST_LEVELS.official;
+    if (spot.adminLevel === 'certified') return TRUST_LEVELS.certified;
+    if (spot.trustScore >= 4) return TRUST_LEVELS.reliable;
+    return TRUST_LEVELS.unconfirmed;
+  }
+
+  function updateTrustUI(spot) {
+    const level = getTrustLevel(spot);
+    const badge = document.getElementById('card-trust-badge');
+    badge.textContent = level.label;
+    badge.className = 'trust-badge ' + level.cls;
+    document.getElementById('card-trust-score').textContent =
+      `✅ ${spot.goodCount}  ❌ ${spot.badCount}  スコア: ${spot.trustScore}`;
+    const pct = Math.min(100, Math.max(0, (spot.trustScore / 30) * 100));
+    document.getElementById('card-trust-bar').style.width = pct + '%';
+
+    // ピンの色も更新
+    const colors = { official:'#1d4ed8', certified:'#15803d', reliable:'#a16207', unconfirmed:'#94a3b8', flagged:'#dc2626' };
+    const marker = markers.find(m => m.spotData.name === spot.name);
+    if (marker) {
+      marker.setIcon({
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 14,
+        fillColor: colors[level.cls] || spot.color,
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 2.5
+      });
+    }
+  }
+
+  const EVAL_WEIGHTS = {
+    visited: 3,   // 行って確認
+    matched: 5,   // 構図一致（最も強い証拠）
+    wrong:   -4,  // 場所が違う
+    unclear: -2,  // 特定できない
+    closed:  -2,  // 立入不可
+    outdated:-1,  // 情報が古い
+  };
+
+  function evalSpot(type) {
+    if (!currentSpot) return;
+    const weight = EVAL_WEIGHTS[type] || 0;
+    currentSpot.trustScore += weight;
+    if (weight > 0) {
+      currentSpot.goodCount++;
+    } else {
+      currentSpot.badCount++;
+    }
+
+    // フラグ判定
+    if (currentSpot.badCount >= 5 && currentSpot.trustScore < 0) {
+      currentSpot.adminLevel = 'flagged';
+      alert('⚠️ このスポットに「要確認」フラグが立ちました。管理者の確認をお待ちください。');
+    }
+
+    // ボタンをvoted状態に
+    document.querySelectorAll('.eval-btn').forEach(b => {
+      if (b.getAttribute('onclick') === `evalSpot('${type}')`) b.classList.add('voted');
+    });
+
+    updateTrustUI(currentSpot);
+
+    // 確定待ちポイントに追加
+    const ptMap = { visited:30, matched:50, wrong:40, unclear:20, closed:20, outdated:10 };
+    const labelMap = {
+      visited:'📸 行って確認と報告', matched:'🎯 構図一致を報告',
+      wrong:'❌ 場所が違うと報告', unclear:'🤔 特定できないと報告',
+      closed:'🚫 立入不可と報告', outdated:'⚠️ 情報が古いと報告'
+    };
+    addPendingPoint(currentSpot.name, labelMap[type], ptMap[type]);
+
+    // スコア表示を一瞬色変え
+    const scoreEl = document.getElementById('card-trust-score');
+    scoreEl.style.color = weight > 0 ? '#15803d' : '#dc2626';
+    setTimeout(() => { scoreEl.style.color = ''; }, 1500);
+  }
+
+  function addPendingPoint(spotName, typeLabel, pt) {
+    const list = document.getElementById('pending-list');
+    if (!list) return;
+    const item = document.createElement('div');
+    item.className = 'pending-item';
+    const left = document.createElement('div');
+    left.className = 'pending-item-left';
+    const name = document.createElement('div');
+    name.className = 'pending-item-name';
+    name.textContent = spotName;
+    const type = document.createElement('div');
+    type.className = 'pending-item-type';
+    type.textContent = typeLabel;
+    left.appendChild(name);
+    left.appendChild(type);
+    const ptEl = document.createElement('div');
+    ptEl.className = 'pending-item-pt';
+    ptEl.textContent = `+${pt}pt?`;
+    item.appendChild(left);
+    item.appendChild(ptEl);
+    list.prepend(item);
+  }
+
+  // ── 制限設定（後から調整可能） ──
+  const LIMITS = {
+    maxPostsPerDay: 3,
+    postCooldownMin: 30,
+    newUserDays: 7,
+    newUserMaxPosts: 1,
+    maxEvalsPerDay: 20,
+    evalsPerMinute: 3,
+    maxPtPerDay: 500,
+    maxPtPerSpot: 100,
+    ptVisited: 30,
+    ptMatched: 50,
+    ptWrong: 40,
+    ptUnclear: 20,
+    ptClosed: 20,
+    ptOutdated: 10,
+  };
+
+  const ROUTE_LIMITS = {
+    bronze:   { optimizePerMonth: 0,   saveMax: 3   },
+    silver:   { optimizePerMonth: 0,   saveMax: 3   },
+    gold:     { optimizePerMonth: 1,   saveMax: 5   },
+    platinum: { optimizePerMonth: 1,   saveMax: 10  },
+    diamond:  { optimizePerMonth: 2,   saveMax: 15  },
+    premium:  { optimizePerMonth: 999, saveMax: 999 },
+  };
+
+  let currentUserRank = 'gold';
+  let optimizeUsedThisMonth = 0;
+
+  function getRouteLimit() {
+    return ROUTE_LIMITS[currentUserRank] || ROUTE_LIMITS.bronze;
+  }
+
+  function updateOptimizeBtn() {
+    const limit = getRouteLimit();
+    const btn = document.getElementById('btn-optimize');
+    const remaining = limit.optimizePerMonth - optimizeUsedThisMonth;
+    const remEl = document.getElementById('route-opt-remaining');
+    if (remEl) remEl.textContent = `${Math.max(0, remaining)} / ${limit.optimizePerMonth}回`;
+    if (!btn) return;
+    if (limit.optimizePerMonth === 0) {
+      btn.className = 'btn-optimize locked';
+      btn.querySelector('.btn-optimize-sub').textContent = '🔒 ゴールドランク以上で使用可能';
+    } else if (remaining <= 0) {
+      btn.className = 'btn-optimize used';
+      btn.querySelector('.btn-optimize-sub').textContent = '今月の使用回数を消費しました';
+      const banner = document.getElementById('rankup-banner');
+      if (banner) banner.style.display = 'block';
+    } else {
+      btn.className = 'btn-optimize';
+      btn.querySelector('.btn-optimize-sub').textContent = `移動距離・時間を自動計算（残り${remaining}回）`;
+    }
+  }
+
+  function optimizeRoute() {
+    const limit = getRouteLimit();
+    const remaining = limit.optimizePerMonth - optimizeUsedThisMonth;
+    if (limit.optimizePerMonth === 0) {
+      alert('🔒 ルート最適化はゴールドランク（500pt）以上で使用できます。');
+      showView('pointrules');
+      return;
+    }
+    if (remaining <= 0) {
+      alert('今月の最適化回数を使い切りました。来月またご利用ください。');
+      const banner = document.getElementById('rankup-banner');
+      if (banner) banner.style.display = 'block';
+      return;
+    }
+    const selected = [...document.querySelectorAll('.route-spot-check.selected')];
+    if (selected.length < 2) {
+      alert('2箇所以上のスポットを選択してください。');
+      return;
+    }
+    optimizeUsedThisMonth++;
+    updateOptimizeBtn();
+
+    const spots = selected.map(el => ({
+      name: el.querySelector('.rsc-name').textContent,
+      meta: el.querySelector('.rsc-meta').textContent,
+      lat: parseFloat(el.getAttribute('data-lat') || '35.67'),
+      lng: parseFloat(el.getAttribute('data-lng') || '139.70'),
+    }));
+    const optimized = greedyRoute(spots);
+    const totalDist = estimateDistance(optimized);
+    const totalMin = Math.round(totalDist * 12 + optimized.length * 15);
+    showOptimizeResult(optimized, totalDist, totalMin);
+  }
+
+  function greedyRoute(spots) {
+    if (spots.length <= 1) return spots;
+    const result = [spots[0]];
+    const remaining = spots.slice(1);
+    while (remaining.length > 0) {
+      const last = result[result.length - 1];
+      let minDist = Infinity, minIdx = 0;
+      remaining.forEach((s, i) => {
+        const d = Math.hypot(s.lat - last.lat, s.lng - last.lng);
+        if (d < minDist) { minDist = d; minIdx = i; }
+      });
+      result.push(remaining.splice(minIdx, 1)[0]);
+    }
+    return result;
+  }
+
+  function estimateDistance(spots) {
+    let total = 0;
+    for (let i = 0; i < spots.length - 1; i++) {
+      const dx = (spots[i+1].lng - spots[i].lng) * 91;
+      const dy = (spots[i+1].lat - spots[i].lat) * 111;
+      total += Math.sqrt(dx*dx + dy*dy);
+    }
+    return Math.round(total * 10) / 10;
+  }
+
+  function showOptimizeResult(spots, distKm, minutes) {
+    const card = document.getElementById('route-result-card');
+    const stats = document.getElementById('route-result-stats');
+    const list = document.getElementById('route-result-list');
+    stats.innerHTML = '';
+    const statData = [
+      { num: spots.length + '箇所', label: '巡礼スポット' },
+      { num: distKm + 'km', label: '総移動距離' },
+      { num: Math.floor(minutes/60) + 'h' + (minutes%60) + 'm', label: '目安所要時間' },
+    ];
+    statData.forEach(s => {
+      const item = document.createElement('div');
+      item.className = 'route-stat-item';
+      const num = document.createElement('div');
+      num.className = 'route-stat-num';
+      num.textContent = s.num;
+      const label = document.createElement('div');
+      label.className = 'route-stat-label';
+      label.textContent = s.label;
+      item.appendChild(num);
+      item.appendChild(label);
+      stats.appendChild(item);
+    });
+    list.innerHTML = '';
+    spots.forEach((spot, i) => {
+      const step = document.createElement('div');
+      step.className = 'route-result-step';
+      const num = document.createElement('div');
+      num.className = 'route-step-num';
+      num.textContent = i + 1;
+      const info = document.createElement('div');
+      info.className = 'route-step-info';
+      const name = document.createElement('div');
+      name.className = 'route-step-name';
+      name.textContent = spot.name;
+      const transit = document.createElement('div');
+      transit.className = 'route-step-transit';
+      if (i < spots.length - 1) {
+        const dx = (spots[i+1].lng - spot.lng) * 91;
+        const dy = (spots[i+1].lat - spot.lat) * 111;
+        const d = Math.round(Math.sqrt(dx*dx + dy*dy) * 10) / 10;
+        const t = Math.round(d * 12);
+        transit.textContent = `↓ 次まで約${d}km・約${t}分`;
+      }
+      info.appendChild(name);
+      info.appendChild(transit);
+      step.appendChild(num);
+      step.appendChild(info);
+      list.appendChild(step);
+    });
+    card.style.display = 'block';
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // 初期化時にボタン状態を設定
+  document.addEventListener('DOMContentLoaded', () => {
+    updateOptimizeBtn();
+    const limitEl = document.getElementById('route-save-limit');
+    if (limitEl) {
+      const limit = getRouteLimit();
+      limitEl.textContent = limit.saveMax === 999 ? '無制限' : `${limit.saveMax}件まで保存可`;
+    }
+  });
+
   const CAT_DESC = {
     'MV': '🎵 MVのロケ地・撮影場所。シーンのタイムコードがあると◎',
     '撮影': '📷 コンセプトフォト・雑誌・アルバムジャケットの撮影場所',
