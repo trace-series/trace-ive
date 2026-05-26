@@ -1,0 +1,2463 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trace IVE — 聖地巡礼MAP</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #faf8f5;
+    --white: #ffffff;
+    --purple-deep: #3d1a5e;
+    --purple-mid: #7b4fa6;
+    --purple-light: #c9a8e8;
+    --purple-pale: #f0e8f8;
+    --red: #c0392b;
+    --red-light: #e74c3c;
+    --gold: #c9a84c;
+    --text: #1a1025;
+    --text-mid: #4a3060;
+    --text-light: #9b8aab;
+    --border: rgba(123, 79, 166, 0.2);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(250, 248, 245, 0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo-mark {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--purple-deep), var(--red));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-style: italic;
+    font-weight: 600;
+  }
+
+  .logo-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--purple-deep);
+  }
+
+  .logo-text span {
+    color: var(--red);
+    font-style: italic;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn-post {
+    background: linear-gradient(135deg, var(--purple-deep), var(--red));
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 7px 16px;
+    font-size: 12px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--purple-pale);
+    border: 2px solid var(--purple-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* ── MEMBER FILTER TABS ── */
+  .member-tabs {
+    position: fixed;
+    top: 56px;
+    left: 0; right: 0;
+    z-index: 99;
+    background: var(--cream);
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 6px 8px;
+    gap: 4px;
+  }
+
+  .member-tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 2px;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: all 0.15s;
+    background: transparent;
+  }
+
+  .member-tab-item.active {
+    background: var(--purple-pale);
+    border-color: var(--purple-mid);
+  }
+
+  .member-tab-icon { font-size: 18px; line-height: 1; }
+
+  .member-tab-name {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text-light);
+    white-space: nowrap;
+    letter-spacing: -0.02em;
+  }
+
+  .member-tab-item.active .member-tab-name {
+    color: var(--purple-deep);
+  }
+
+  /* ── MAIN ── */
+  main {
+    padding-top: 120px;
+    padding-bottom: 60px;
+  }
+
+  /* ── MAP VIEW ── */
+  #view-map {
+    display: block;
+  }
+
+  #view-ranking, #view-feed, #view-post, #view-profile, #view-route {
+    display: none;
+    padding: 20px 16px;
+  }
+
+  .map-container {
+    position: relative;
+    height: calc(100vh - 120px);
+    overflow: hidden;
+  }
+
+  /* Google Maps本体 */
+  #google-map {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* MAP右上フィルター */
+  .map-filter {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 10;
+  }
+
+  .filter-btn {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    color: var(--text-mid);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    white-space: nowrap;
+  }
+
+  .filter-btn.active {
+    background: var(--purple-deep);
+    color: white;
+    border-color: var(--purple-deep);
+  }
+
+  /* MAP左上 */
+  .map-top-left {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 10;
+  }
+
+  .spot-count {
+    background: white;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 11px;
+    color: var(--text-mid);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+  }
+
+  .spot-count strong {
+    color: var(--purple-deep);
+    font-weight: 700;
+  }
+
+  /* MAP下部カード */
+  .map-bottom-card {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    border-radius: 20px 20px 0 0;
+    padding: 16px;
+    box-shadow: 0 -4px 24px rgba(61,26,94,0.12);
+    transform: translateY(calc(100% - 60px));
+    transition: transform 0.3s ease;
+    z-index: 10;
+  }
+
+  .map-bottom-card.open {
+    transform: translateY(0);
+  }
+
+  .card-handle {
+    width: 40px;
+    height: 4px;
+    background: var(--purple-light);
+    border-radius: 2px;
+    margin: 0 auto 12px;
+    cursor: pointer;
+  }
+
+  .card-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+  }
+
+  .card-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--purple-pale), var(--purple-light));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--purple-deep);
+    margin-bottom: 2px;
+  }
+
+  .card-sub {
+    font-size: 11px;
+    color: var(--text-light);
+  }
+
+  .card-badges {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 500;
+  }
+
+  .badge-red { background: #fde8e6; color: var(--red); }
+  .badge-purple { background: var(--purple-pale); color: var(--purple-mid); }
+  .badge-gold { background: #fdf3d8; color: var(--gold); }
+
+  .card-detail {
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    margin-top: 16px;
+  }
+
+  .card-detail-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: var(--text-mid);
+    align-items: flex-start;
+  }
+
+  .card-detail-row .icon { flex-shrink: 0; }
+
+  .card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .btn-primary {
+    flex: 1;
+    background: linear-gradient(135deg, var(--purple-deep), var(--red));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 13px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .btn-secondary {
+    background: var(--purple-pale);
+    color: var(--purple-deep);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  /* ── RANKING VIEW ── */
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--purple-deep);
+    margin-bottom: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  .section-sub {
+    font-size: 11px;
+    color: var(--text-light);
+    margin-bottom: 20px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .ranking-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .rtab {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    color: var(--text-light);
+    background: white;
+  }
+
+  .rtab.active {
+    background: var(--purple-deep);
+    color: white;
+    border-color: var(--purple-deep);
+  }
+
+  .ranking-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .ranking-item {
+    background: white;
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(61,26,94,0.05);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+
+  .ranking-item:active { transform: scale(0.98); }
+
+  .rank-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .rank-1 { background: linear-gradient(135deg, #f0c040, #d4a012); color: white; }
+  .rank-2 { background: linear-gradient(135deg, #c8d0d8, #9aabb4); color: white; }
+  .rank-3 { background: linear-gradient(135deg, #d4956a, #b06838); color: white; }
+  .rank-other { background: var(--purple-pale); color: var(--purple-mid); }
+
+  .rank-thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: var(--purple-pale);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .rank-info { flex: 1; min-width: 0; }
+
+  .rank-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--purple-deep);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .rank-meta {
+    font-size: 11px;
+    color: var(--text-light);
+  }
+
+  .rank-score {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .rank-score-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--red);
+  }
+
+  .rank-score-label {
+    font-size: 10px;
+    color: var(--text-light);
+  }
+
+  /* ── FEED VIEW ── */
+  .feed-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .feed-item {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 10px rgba(61,26,94,0.06);
+  }
+
+  .feed-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px 8px;
+  }
+
+  .feed-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--purple-light), var(--red-light));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .feed-user { flex: 1; }
+
+  .feed-username {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--purple-deep);
+  }
+
+  .feed-time {
+    font-size: 10px;
+    color: var(--text-light);
+  }
+
+  .feed-founder {
+    font-size: 10px;
+    background: linear-gradient(135deg, var(--gold), #e8c060);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+
+  .feed-img {
+    width: 100%;
+    height: 180px;
+    background: linear-gradient(135deg, var(--purple-pale) 0%, #ddd0ee 50%, #f0e0e8 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .feed-img-overlay {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(61,26,94,0.75);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .feed-body {
+    padding: 10px 14px 14px;
+  }
+
+  .feed-spot-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--purple-deep);
+    margin-bottom: 4px;
+  }
+
+  .feed-comment {
+    font-size: 12px;
+    color: var(--text-mid);
+    line-height: 1.6;
+    margin-bottom: 10px;
+  }
+
+  .feed-footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .feed-action {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 4px 0;
+  }
+
+  .feed-action.liked { color: var(--red); }
+
+  .feed-share {
+    margin-left: auto;
+    background: #000;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* ── POST VIEW ── */
+  .post-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-mid);
+    letter-spacing: 0.05em;
+  }
+
+  .form-label span {
+    color: var(--red);
+    margin-left: 2px;
+  }
+
+  .form-input {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  .form-input:focus {
+    border-color: var(--purple-mid);
+  }
+
+  .form-input::placeholder {
+    color: var(--text-light);
+  }
+
+  .form-textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .photo-upload {
+    background: white;
+    border: 2px dashed var(--purple-light);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--text-light);
+    font-size: 12px;
+  }
+
+  .photo-upload .icon { font-size: 28px; margin-bottom: 6px; }
+
+  .scene-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .chip {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    background: white;
+    border: 1px solid var(--border);
+    color: var(--text-mid);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .chip.selected {
+    background: var(--purple-deep);
+    color: white;
+    border-color: var(--purple-deep);
+  }
+
+  .consent-box {
+    background: var(--purple-pale);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 11px;
+    color: var(--text-mid);
+    line-height: 1.6;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .submit-area {
+    padding-bottom: 40px;
+  }
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(250,248,245,0.96);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    height: 60px;
+    z-index: 100;
+  }
+
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    cursor: pointer;
+    color: var(--text-light);
+    font-size: 10px;
+    transition: color 0.2s;
+    border: none;
+    background: none;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .nav-item.active { color: var(--purple-deep); }
+
+  .nav-icon { font-size: 20px; }
+
+  .nav-item-post {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .nav-post-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--purple-deep), var(--red));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(61,26,94,0.3);
+    border: none;
+    cursor: pointer;
+    margin-bottom: -8px;
+  }
+
+  /* ── FOUNDER BADGE ── */
+  .founder-banner {
+    margin: 0 0 16px;
+    background: linear-gradient(135deg, var(--purple-deep) 0%, #5a2080 50%, var(--red) 100%);
+    border-radius: 16px;
+    padding: 14px 16px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .founder-banner::before {
+    content: '✦';
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 48px;
+    opacity: 0.15;
+  }
+
+  .founder-banner-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  .founder-banner-sub {
+    font-size: 11px;
+    opacity: 0.8;
+    line-height: 1.5;
+  }
+
+  .founder-progress {
+    margin-top: 10px;
+    height: 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .founder-progress-bar {
+    height: 100%;
+    background: white;
+    border-radius: 2px;
+    width: 35%;
+  }
+
+  .founder-count {
+    font-size: 11px;
+    margin-top: 4px;
+    opacity: 0.7;
+  }
+
+  /* ── PROFILE VIEW ── */
+  .profile-hero {
+    background: linear-gradient(160deg, var(--purple-deep) 0%, #5a1a7a 50%, var(--red) 100%);
+    padding: 28px 16px 20px;
+    position: relative;
+    overflow: hidden;
+    margin: -20px -16px 20px;
+  }
+
+  .profile-hero::before {
+    content: 'IVE';
+    position: absolute;
+    right: -10px;
+    top: -10px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 120px;
+    font-weight: 600;
+    font-style: italic;
+    color: rgba(255,255,255,0.06);
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .profile-avatar-wrap {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    margin-bottom: 12px;
+  }
+
+  .profile-avatar-img {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--purple-light), #f0a0b0);
+    border: 3px solid rgba(255,255,255,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    flex-shrink: 0;
+  }
+
+  .profile-name-block { flex: 1; }
+
+  .profile-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: white;
+    letter-spacing: 0.04em;
+  }
+
+  .profile-handle {
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 2px;
+  }
+
+  .profile-edit-btn {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    align-self: flex-start;
+    margin-top: 4px;
+  }
+
+  .profile-badges-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .profile-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .pbadge-founder {
+    background: linear-gradient(135deg, #f0c040, #d4a012);
+    color: white;
+  }
+
+  .pbadge-discoverer {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    flex: 1;
+    background: white;
+    border-radius: 14px;
+    padding: 14px 10px;
+    text-align: center;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(61,26,94,0.05);
+  }
+
+  .stat-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--purple-deep);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--text-light);
+    letter-spacing: 0.05em;
+  }
+
+  .profile-section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .badge-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .badge-card {
+    background: white;
+    border-radius: 14px;
+    padding: 14px 10px;
+    text-align: center;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(61,26,94,0.05);
+  }
+
+  .badge-card.locked {
+    opacity: 0.4;
+    filter: grayscale(0.8);
+  }
+
+  .badge-icon { font-size: 28px; margin-bottom: 6px; }
+
+  .badge-name {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--purple-deep);
+    margin-bottom: 2px;
+    line-height: 1.3;
+  }
+
+  .badge-desc {
+    font-size: 9px;
+    color: var(--text-light);
+    line-height: 1.4;
+  }
+
+  .my-spots-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .my-spot-item {
+    background: white;
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(61,26,94,0.04);
+  }
+
+  .my-spot-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--purple-pale);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .my-spot-info { flex: 1; min-width: 0; }
+
+  .my-spot-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--purple-deep);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .my-spot-meta {
+    font-size: 11px;
+    color: var(--text-light);
+    margin-top: 2px;
+  }
+
+  .my-spot-right { text-align: right; flex-shrink: 0; }
+
+  .my-spot-likes {
+    font-size: 13px;
+    color: var(--red);
+    font-weight: 700;
+  }
+
+  .my-spot-date {
+    font-size: 10px;
+    color: var(--text-light);
+    margin-top: 2px;
+  }
+
+  .x-connect-card {
+    background: #000;
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    cursor: pointer;
+  }
+
+  .x-connect-text { flex: 1; }
+
+  .x-connect-title {
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .x-connect-sub {
+    color: rgba(255,255,255,0.5);
+    font-size: 11px;
+  }
+
+  .x-connect-arrow {
+    color: rgba(255,255,255,0.4);
+    font-size: 18px;
+  }
+
+  .settings-list {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+
+  .settings-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    gap: 12px;
+  }
+
+  .settings-item:last-child { border-bottom: none; }
+
+  .settings-item-icon { font-size: 18px; flex-shrink: 0; }
+
+  .settings-item-text {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .settings-item-arrow {
+    color: var(--text-light);
+    font-size: 14px;
+  }
+
+  .settings-item-lang-current {
+    font-size: 12px;
+    color: var(--purple-mid);
+    font-weight: 500;
+    margin-right: 4px;
+  }
+
+  /* ── ROUTE VIEW ── */
+  .route-spot-check {
+    background: white;
+    border-radius: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(61,26,94,0.04);
+  }
+
+  .rsc-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .rsc-check {
+    font-size: 22px;
+    cursor: pointer;
+    color: var(--purple-light);
+    line-height: 1;
+    user-select: none;
+    flex-shrink: 0;
+  }
+
+  .rsc-check.checked { color: var(--purple-deep); }
+
+  .route-spot-check.selected {
+    border-color: var(--purple-mid);
+    background: var(--purple-pale);
+  }
+
+  .rsc-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--purple-pale);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .rsc-info { flex: 1; }
+
+  .rsc-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--purple-deep);
+  }
+
+  .rsc-meta {
+    font-size: 11px;
+    color: var(--text-light);
+  }
+
+  .rsc-memo {
+    width: 100%;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--text);
+    outline: none;
+  }
+
+  .rsc-memo:focus { border-color: var(--purple-mid); }
+
+  .saved-route-item {
+    background: white;
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(61,26,94,0.04);
+    margin-bottom: 10px;
+  }
+
+  .sri-left { display: flex; align-items: center; gap: 10px; }
+
+  .sri-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--purple-pale);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .sri-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--purple-deep);
+  }
+
+  .sri-meta { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+
+  /* ── 言語モーダル ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal-sheet {
+    background: var(--cream);
+    border-radius: 24px 24px 0 0;
+    padding: 20px 16px 40px;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .modal-handle {
+    width: 40px;
+    height: 4px;
+    background: var(--purple-light);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+
+  .modal-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--purple-deep);
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .lang-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-radius: 14px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    border: 2px solid var(--border);
+    background: white;
+    transition: all 0.15s;
+  }
+
+  .lang-option.active {
+    border-color: var(--purple-mid);
+    background: var(--purple-pale);
+  }
+
+  .lang-option-left { display: flex; align-items: center; gap: 12px; }
+  .lang-flag { font-size: 24px; }
+  .lang-name { font-size: 15px; font-weight: 700; color: var(--purple-deep); }
+  .lang-native { font-size: 12px; color: var(--text-light); }
+  .lang-check { color: var(--purple-mid); font-size: 18px; opacity: 0; }
+  .lang-option.active .lang-check { opacity: 1; }
+
+  /* ── 印刷用 ── */
+  @media print {
+    header, .member-tabs, .bottom-nav, .modal-overlay { display: none !important; }
+    body { background: white !important; }
+    main { padding-top: 0 !important; padding-bottom: 0 !important; }
+    #view-map, #view-ranking, #view-feed, #view-post, #view-profile, #view-route { display: none !important; }
+    #print-area { display: block !important; }
+  }
+
+  #print-area {
+    display: none;
+    padding: 20px;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .print-header {
+    text-align: center;
+    border-bottom: 3px solid #3d1a5e;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+  }
+
+  .print-title { font-size: 22px; font-weight: 700; color: #3d1a5e; }
+  .print-subtitle { font-size: 12px; color: #9b8aab; margin-top: 4px; }
+
+  .print-memo-box {
+    background: #f0e8f8;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    margin-bottom: 16px;
+    color: #4a3060;
+  }
+
+  .print-spot {
+    border: 1px solid #c9a8e8;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    page-break-inside: avoid;
+  }
+
+  .print-spot-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .print-spot-num {
+    width: 24px;
+    height: 24px;
+    background: #3d1a5e;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .print-spot-name { font-size: 15px; font-weight: 700; color: #3d1a5e; }
+  .print-spot-meta { font-size: 11px; color: #9b8aab; margin-left: 32px; margin-bottom: 4px; }
+  .print-spot-memo-label { font-size: 11px; color: #7b4fa6; margin-left: 32px; font-weight: 700; }
+  .print-spot-memo-val { font-size: 12px; color: #4a3060; margin-left: 32px; }
+  .print-memo-line { border-bottom: 1px dashed #c9a8e8; margin: 8px 0 4px 32px; height: 18px; }
+
+  .print-footer {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 10px;
+    color: #c9a8e8;
+  }
+
+  /* アニメ */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .ranking-item, .feed-item {
+    animation: fadeUp 0.3s ease both;
+  }
+
+  .ranking-item:nth-child(1) { animation-delay: 0s; }
+  .ranking-item:nth-child(2) { animation-delay: 0.06s; }
+  .ranking-item:nth-child(3) { animation-delay: 0.12s; }
+  .ranking-item:nth-child(4) { animation-delay: 0.18s; }
+  .ranking-item:nth-child(5) { animation-delay: 0.24s; }
+
+  /* カスタムマーカー */
+  .gm-custom-pin {
+    position: relative;
+    cursor: pointer;
+  }
+
+  /* マップローディング */
+  #map-loading {
+    position: absolute;
+    inset: 0;
+    background: #e8e0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 5;
+  }
+
+  .map-loading-text {
+    font-size: 13px;
+    color: var(--text-mid);
+  }
+
+  .map-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--purple-light);
+    border-top-color: var(--purple-deep);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-mark">T</div>
+    <div class="logo-text">Trace <span>IVE</span></div>
+  </div>
+  <div class="header-right">
+    <button class="btn-post" onclick="showView('post')">＋ 投稿する</button>
+    <div class="avatar" onclick="showView('profile')">🌸</div>
+  </div>
+</header>
+
+<!-- MEMBER FILTER TABS -->
+<div class="member-tabs" id="member-tabs">
+  <div class="member-tab-item active" onclick="filterMember(this, 'all')">
+    <div class="member-tab-icon">💜</div>
+    <div class="member-tab-name">全員</div>
+  </div>
+  <div class="member-tab-item" onclick="filterMember(this, 'ユジン')">
+    <div class="member-tab-icon">🐕</div>
+    <div class="member-tab-name">ユジン</div>
+  </div>
+  <div class="member-tab-item" onclick="filterMember(this, 'ガウル')">
+    <div class="member-tab-icon">🐿️</div>
+    <div class="member-tab-name">ガウル</div>
+  </div>
+  <div class="member-tab-item" onclick="filterMember(this, 'レイ')">
+    <div class="member-tab-icon">🐥</div>
+    <div class="member-tab-name">レイ</div>
+  </div>
+  <div class="member-tab-item" onclick="filterMember(this, 'ウォニョン')">
+    <div class="member-tab-icon">🐰</div>
+    <div class="member-tab-name">ウォニョン</div>
+  </div>
+  <div class="member-tab-item" onclick="filterMember(this, 'リズ')">
+    <div class="member-tab-icon">🐱</div>
+    <div class="member-tab-name">リズ</div>
+  </div>
+  <div class="member-tab-item" onclick="filterMember(this, 'イソ')">
+    <div class="member-tab-icon">🐯</div>
+    <div class="member-tab-name">イソ</div>
+  </div>
+</div>
+
+<main>
+
+  <!-- MAP VIEW -->
+  <div id="view-map">
+    <div class="map-container">
+
+      <!-- ローディング -->
+      <div id="map-loading">
+        <div class="map-spinner"></div>
+        <div class="map-loading-text">地図を読み込み中…</div>
+      </div>
+
+      <!-- Google Maps本体 -->
+      <div id="google-map"></div>
+
+      <!-- フィルター -->
+      <div class="map-filter">
+        <button class="filter-btn active" onclick="filterPins(this,'all')">すべて</button>
+        <button class="filter-btn" onclick="filterPins(this,'MV')">MV</button>
+        <button class="filter-btn" onclick="filterPins(this,'来日')">来日</button>
+        <button class="filter-btn" onclick="filterPins(this,'韓国')">韓国</button>
+      </div>
+
+      <!-- スポット数 -->
+      <div class="map-top-left">
+        <div class="spot-count"><strong id="spot-count-num">6</strong> スポット</div>
+      </div>
+
+      <!-- 下部カード -->
+      <div class="map-bottom-card" id="map-card">
+        <div class="card-handle" onclick="toggleCard()"></div>
+        <div class="card-preview" onclick="toggleCard()">
+          <div class="card-thumb" id="card-thumb">📍</div>
+          <div>
+            <div class="card-title" id="card-title">スポットを選択してください</div>
+            <div class="card-sub" id="card-sub">地図のピンをタップ</div>
+            <div class="card-badges" id="card-badges">
+              <span class="badge badge-purple">東京</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-detail" id="card-detail" style="display:none;">
+          <div class="card-detail-row">
+            <span class="icon">📍</span>
+            <span id="card-address">—</span>
+          </div>
+          <div class="card-detail-row">
+            <span class="icon">👤</span>
+            <span>最初の発見者: <strong style="color:var(--purple-deep)" id="card-discoverer">—</strong> 🥇</span>
+          </div>
+          <div class="card-detail-row">
+            <span class="icon">❤️</span>
+            <span id="card-likes">— 件の巡礼報告</span>
+          </div>
+          <div class="card-actions">
+            <button class="btn-primary" onclick="reportVisit()">📸 巡礼した！</button>
+            <button class="btn-secondary" id="btn-navi" onclick="openNavi()">🗺️ ナビ</button>
+            <button class="btn-secondary" onclick="shareX()">🔗 X</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RANKING VIEW -->
+  <div id="view-ranking">
+    <div class="section-title">Ranking</div>
+    <div class="section-sub">人気スポットランキング</div>
+
+    <div class="founder-banner">
+      <div class="founder-banner-title">🏅 創設メンバー募集中</div>
+      <div class="founder-banner-sub">最初の20名に永続の創設メンバーバッジを授与。今だけ取得可能な特別称号です。</div>
+      <div class="founder-progress"><div class="founder-progress-bar"></div></div>
+      <div class="founder-count">7 / 20 名 参加済み</div>
+    </div>
+
+    <div class="ranking-tabs">
+      <div class="rtab active">週間</div>
+      <div class="rtab">月間</div>
+      <div class="rtab">全期間</div>
+    </div>
+
+    <div class="ranking-list">
+      <div class="ranking-item" onclick="jumpToSpot('渋谷スクランブル交差点')">
+        <div class="rank-num rank-1">1</div>
+        <div class="rank-thumb">🎵</div>
+        <div class="rank-info">
+          <div class="rank-name">渋谷スクランブル交差点</div>
+          <div class="rank-meta">東京都渋谷区 · WAVE MV</div>
+        </div>
+        <div class="rank-score">
+          <div class="rank-score-num">128</div>
+          <div class="rank-score-label">巡礼数</div>
+        </div>
+      </div>
+      <div class="ranking-item" onclick="jumpToSpot('代官山 蔦屋書店')">
+        <div class="rank-num rank-2">2</div>
+        <div class="rank-thumb">📚</div>
+        <div class="rank-info">
+          <div class="rank-name">代官山 蔦屋書店</div>
+          <div class="rank-meta">東京都渋谷区 · 来日スポット</div>
+        </div>
+        <div class="rank-score">
+          <div class="rank-score-num">94</div>
+          <div class="rank-score-label">巡礼数</div>
+        </div>
+      </div>
+      <div class="ranking-item" onclick="jumpToSpot('原宿 竹下通り')">
+        <div class="rank-num rank-3">3</div>
+        <div class="rank-thumb">📷</div>
+        <div class="rank-info">
+          <div class="rank-name">原宿 竹下通り</div>
+          <div class="rank-meta">東京都渋谷区 · コンセプトフォト</div>
+        </div>
+        <div class="rank-score">
+          <div class="rank-score-num">76</div>
+          <div class="rank-score-label">巡礼数</div>
+        </div>
+      </div>
+      <div class="ranking-item" onclick="jumpToSpot('六本木ヒルズ')">
+        <div class="rank-num rank-other">4</div>
+        <div class="rank-thumb">🎬</div>
+        <div class="rank-info">
+          <div class="rank-name">六本木ヒルズ</div>
+          <div class="rank-meta">東京都港区 · MV撮影地</div>
+        </div>
+        <div class="rank-score">
+          <div class="rank-score-num">52</div>
+          <div class="rank-score-label">巡礼数</div>
+        </div>
+      </div>
+      <div class="ranking-item" onclick="jumpToSpot('新大久保 コリアタウン')">
+        <div class="rank-num rank-other">5</div>
+        <div class="rank-thumb">🌸</div>
+        <div class="rank-info">
+          <div class="rank-name">新大久保 コリアタウン</div>
+          <div class="rank-meta">東京都新宿区 · 目撃情報</div>
+        </div>
+        <div class="rank-score">
+          <div class="rank-score-num">41</div>
+          <div class="rank-score-label">巡礼数</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEED VIEW -->
+  <div id="view-feed">
+    <div class="section-title">Feed</div>
+    <div class="section-sub">みんなの巡礼レポート</div>
+
+    <div class="feed-list">
+      <div class="feed-item" data-member="ガウル">
+        <div class="feed-header">
+          <div class="feed-avatar">🌸</div>
+          <div class="feed-user">
+            <div class="feed-username">@yuna_dive
+              <span class="feed-founder">🥇 創設メンバー #3</span>
+            </div>
+            <div class="feed-time">2時間前</div>
+          </div>
+        </div>
+        <div class="feed-img">
+          🎵
+          <div class="feed-img-overlay">📍 渋谷スクランブル交差点</div>
+        </div>
+        <div class="feed-body">
+          <div class="feed-spot-name">渋谷スクランブル交差点</div>
+          <div class="feed-comment">WAVEのMVと同じ構図で撮れました！夜がおすすめ。ガウルが立っていた場所の特定成功🎉</div>
+          <div class="card-badges" style="margin-bottom:10px;">
+            <span class="badge badge-red">WAVE MV</span>
+            <span class="badge badge-purple">東京</span>
+            <span class="badge badge-gold">ガウル</span>
+          </div>
+          <div class="feed-footer">
+            <div class="feed-action liked">❤️ 48</div>
+            <div class="feed-action">💬 12</div>
+            <div class="feed-action">🔖 保存</div>
+            <button class="feed-share">𝕏 シェア</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="feed-item" data-member="レイ">
+        <div class="feed-header">
+          <div class="feed-avatar">💜</div>
+          <div class="feed-user">
+            <div class="feed-username">@ive_rei_love</div>
+            <div class="feed-time">5時間前</div>
+          </div>
+        </div>
+        <div class="feed-img" style="background:linear-gradient(135deg,#f0e0e8,#e8d0f0);">
+          📚
+          <div class="feed-img-overlay">📍 代官山 蔦屋書店</div>
+        </div>
+        <div class="feed-body">
+          <div class="feed-spot-name">代官山 蔦屋書店</div>
+          <div class="feed-comment">来日の際にレイが訪れたとされる場所。同じ本を探したら見つかりました📖</div>
+          <div class="card-badges" style="margin-bottom:10px;">
+            <span class="badge badge-purple">来日</span>
+            <span class="badge badge-gold">レイ</span>
+          </div>
+          <div class="feed-footer">
+            <div class="feed-action liked">❤️ 31</div>
+            <div class="feed-action">💬 7</div>
+            <div class="feed-action">🔖 保存</div>
+            <button class="feed-share">𝕏 シェア</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE VIEW -->
+  <div id="view-profile">
+    <div class="profile-hero">
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar-img">🌸</div>
+        <div class="profile-name-block">
+          <div class="profile-name">yuna_dive</div>
+          <div class="profile-handle">@yuna_dive · Chiba, JP</div>
+        </div>
+        <button class="profile-edit-btn">編集</button>
+      </div>
+      <div class="profile-badges-row">
+        <span class="profile-badge pbadge-founder">🥇 創設メンバー #3</span>
+        <span class="profile-badge pbadge-discoverer">🔍 発見者 ×4</span>
+        <span class="profile-badge pbadge-discoverer">💜 DIVE</span>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num">7</div>
+        <div class="stat-label">投稿スポット</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">23</div>
+        <div class="stat-label">巡礼済み</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">312</div>
+        <div class="stat-label">獲得いいね</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">4</div>
+        <div class="stat-label">発見者バッジ</div>
+      </div>
+    </div>
+
+    <div class="profile-section-title">🏅 バッジコレクション</div>
+    <div class="badge-grid">
+      <div class="badge-card">
+        <div class="badge-icon">🥇</div>
+        <div class="badge-name">創設メンバー #3</div>
+        <div class="badge-desc">最初の20名</div>
+      </div>
+      <div class="badge-card">
+        <div class="badge-icon">🔍</div>
+        <div class="badge-name">最初の発見者</div>
+        <div class="badge-desc">渋谷スクランブル</div>
+      </div>
+      <div class="badge-card">
+        <div class="badge-icon">🗺️</div>
+        <div class="badge-name">マッパー</div>
+        <div class="badge-desc">5スポット投稿</div>
+      </div>
+      <div class="badge-card">
+        <div class="badge-icon">🔥</div>
+        <div class="badge-name">バズ投稿</div>
+        <div class="badge-desc">いいね100超え</div>
+      </div>
+      <div class="badge-card locked">
+        <div class="badge-icon">👑</div>
+        <div class="badge-name">トップ貢献者</div>
+        <div class="badge-desc">月間1位</div>
+      </div>
+      <div class="badge-card locked">
+        <div class="badge-icon">🌏</div>
+        <div class="badge-name">海外遠征</div>
+        <div class="badge-desc">韓国スポット投稿</div>
+      </div>
+    </div>
+
+    <div class="profile-section-title">📍 投稿したスポット</div>
+    <div class="my-spots-list">
+      <div class="my-spot-item">
+        <div class="my-spot-icon">🎵</div>
+        <div class="my-spot-info">
+          <div class="my-spot-name">渋谷スクランブル交差点</div>
+          <div class="my-spot-meta">WAVE MV · 東京</div>
+        </div>
+        <div class="my-spot-right">
+          <div class="my-spot-likes">❤️ 128</div>
+          <div class="my-spot-date">3日前</div>
+        </div>
+      </div>
+      <div class="my-spot-item">
+        <div class="my-spot-icon">📚</div>
+        <div class="my-spot-info">
+          <div class="my-spot-name">代官山 蔦屋書店</div>
+          <div class="my-spot-meta">来日スポット · 東京</div>
+        </div>
+        <div class="my-spot-right">
+          <div class="my-spot-likes">❤️ 94</div>
+          <div class="my-spot-date">1週間前</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="x-connect-card">
+      <div style="width:40px;height:40px;background:white;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;font-family:sans-serif;flex-shrink:0;">𝕏</div>
+      <div class="x-connect-text">
+        <div class="x-connect-title">Xアカウント連携済み</div>
+        <div class="x-connect-sub">@yuna_dive · 1タップでシェア可能</div>
+      </div>
+      <div class="x-connect-arrow">›</div>
+    </div>
+
+    <div class="profile-section-title">⚙️ 設定</div>
+    <div class="settings-list">
+      <div class="settings-item" onclick="showView('route')">
+        <div class="settings-item-icon">📂</div>
+        <div class="settings-item-text">ルート保存・印刷</div>
+        <div class="settings-item-arrow">›</div>
+      </div>
+      <div class="settings-item" onclick="openLangModal()">
+        <div class="settings-item-icon">🌐</div>
+        <div class="settings-item-text">言語設定</div>
+        <div class="settings-item-lang-current" id="lang-current-display">日本語</div>
+        <div class="settings-item-arrow">›</div>
+      </div>
+      <div class="settings-item">
+        <div class="settings-item-icon">🔔</div>
+        <div class="settings-item-text">通知設定</div>
+        <div class="settings-item-arrow">›</div>
+      </div>
+      <div class="settings-item">
+        <div class="settings-item-icon">🔒</div>
+        <div class="settings-item-text">プライバシー設定</div>
+        <div class="settings-item-arrow">›</div>
+      </div>
+      <div class="settings-item">
+        <div class="settings-item-icon">❓</div>
+        <div class="settings-item-text">ヘルプ・お問い合わせ</div>
+        <div class="settings-item-arrow">›</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROUTE VIEW -->
+  <div id="view-route">
+    <div class="section-title">ルート保存</div>
+    <div class="section-sub">MY ROUTE</div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <div class="form-label">ルート名</div>
+      <input class="form-input" id="route-name-input" type="text" placeholder="例：東京IVE遠征2024">
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <div class="form-label">メモ</div>
+      <textarea class="form-input form-textarea" id="route-memo-input" placeholder="持ち物・移動手段・注意点など…"></textarea>
+    </div>
+
+    <div class="profile-section-title">📍 スポットを選択</div>
+    <div id="route-spot-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+      <div class="route-spot-check" data-spot="渋谷スクランブル交差点" data-meta="WAVE MV · 東京" data-icon="🎵">
+        <div class="rsc-left">
+          <div class="rsc-check" onclick="toggleRouteSpot(this)">☐</div>
+          <div class="rsc-icon">🎵</div>
+          <div class="rsc-info">
+            <div class="rsc-name">渋谷スクランブル交差点</div>
+            <div class="rsc-meta">WAVE MV · 東京</div>
+          </div>
+        </div>
+        <div class="rsc-memo-wrap">
+          <input class="rsc-memo" type="text" placeholder="メモ（任意）">
+        </div>
+      </div>
+      <div class="route-spot-check" data-spot="代官山 蔦屋書店" data-meta="来日スポット · 東京" data-icon="📚">
+        <div class="rsc-left">
+          <div class="rsc-check" onclick="toggleRouteSpot(this)">☐</div>
+          <div class="rsc-icon">📚</div>
+          <div class="rsc-info">
+            <div class="rsc-name">代官山 蔦屋書店</div>
+            <div class="rsc-meta">来日スポット · 東京</div>
+          </div>
+        </div>
+        <div class="rsc-memo-wrap">
+          <input class="rsc-memo" type="text" placeholder="メモ（任意）">
+        </div>
+      </div>
+      <div class="route-spot-check" data-spot="原宿 竹下通り" data-meta="コンセプトフォト · 東京" data-icon="📷">
+        <div class="rsc-left">
+          <div class="rsc-check" onclick="toggleRouteSpot(this)">☐</div>
+          <div class="rsc-icon">📷</div>
+          <div class="rsc-info">
+            <div class="rsc-name">原宿 竹下通り</div>
+            <div class="rsc-meta">コンセプトフォト · 東京</div>
+          </div>
+        </div>
+        <div class="rsc-memo-wrap">
+          <input class="rsc-memo" type="text" placeholder="メモ（任意）">
+        </div>
+      </div>
+      <div class="route-spot-check" data-spot="六本木ヒルズ" data-meta="MV撮影地 · 東京" data-icon="🎬">
+        <div class="rsc-left">
+          <div class="rsc-check" onclick="toggleRouteSpot(this)">☐</div>
+          <div class="rsc-icon">🎬</div>
+          <div class="rsc-info">
+            <div class="rsc-name">六本木ヒルズ</div>
+            <div class="rsc-meta">MV撮影地 · 東京</div>
+          </div>
+        </div>
+        <div class="rsc-memo-wrap">
+          <input class="rsc-memo" type="text" placeholder="メモ（任意）">
+        </div>
+      </div>
+      <div class="route-spot-check" data-spot="新大久保 コリアタウン" data-meta="目撃情報 · 東京" data-icon="🌸">
+        <div class="rsc-left">
+          <div class="rsc-check" onclick="toggleRouteSpot(this)">☐</div>
+          <div class="rsc-icon">🌸</div>
+          <div class="rsc-info">
+            <div class="rsc-name">新大久保 コリアタウン</div>
+            <div class="rsc-meta">目撃情報 · 東京</div>
+          </div>
+        </div>
+        <div class="rsc-memo-wrap">
+          <input class="rsc-memo" type="text" placeholder="メモ（任意）">
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-bottom:40px;">
+      <button class="btn-primary" style="flex:2;padding:14px;" onclick="saveRoute()">💾 ルートを保存</button>
+      <button class="btn-secondary" style="flex:1;padding:14px;" onclick="printRoute()">🖨️ 印刷</button>
+    </div>
+
+    <div class="profile-section-title">📂 保存済みルート</div>
+    <div id="saved-routes-list">
+      <div class="saved-route-item">
+        <div class="sri-left">
+          <div class="sri-icon">🗺️</div>
+          <div>
+            <div class="sri-name">東京IVE遠征2024春</div>
+            <div class="sri-meta">3スポット · 2024年3月</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-secondary" style="padding:6px 10px;font-size:11px;" onclick="printRoute()">🖨️</button>
+          <button class="btn-secondary" style="padding:6px 10px;font-size:11px;">𝕏</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POST VIEW -->
+  <div id="view-post">
+    <div class="section-title">投稿する</div>
+    <div class="section-sub">聖地情報を共有しよう</div>
+
+    <div class="post-form">
+      <div class="form-group">
+        <div class="form-label">スポット名 <span>*</span></div>
+        <input class="form-input" type="text" placeholder="例：渋谷スクランブル交差点">
+      </div>
+      <div class="form-group">
+        <div class="form-label">住所 / 場所 <span>*</span></div>
+        <input class="form-input" type="text" placeholder="例：東京都渋谷区道玄坂2丁目">
+      </div>
+      <div class="form-group">
+        <div class="form-label">MVシーン / 出典 <span>*</span></div>
+        <input class="form-input" type="text" placeholder="例：WAVE MV 0:42 〜 0:58">
+      </div>
+      <div class="form-group">
+        <div class="form-label">カテゴリー</div>
+        <div class="scene-chips">
+          <div class="chip selected" onclick="toggleChip(this)">MV</div>
+          <div class="chip" onclick="toggleChip(this)">コンセプトフォト</div>
+          <div class="chip" onclick="toggleChip(this)">来日</div>
+          <div class="chip" onclick="toggleChip(this)">バラエティ</div>
+          <div class="chip" onclick="toggleChip(this)">目撃情報</div>
+          <div class="chip" onclick="toggleChip(this)">韓国</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">メンバー</div>
+        <div class="scene-chips">
+          <div class="chip" onclick="toggleChip(this)">ユジン</div>
+          <div class="chip" onclick="toggleChip(this)">ガウル</div>
+          <div class="chip" onclick="toggleChip(this)">レイ</div>
+          <div class="chip" onclick="toggleChip(this)">ウォニョン</div>
+          <div class="chip" onclick="toggleChip(this)">リズ</div>
+          <div class="chip" onclick="toggleChip(this)">イソ</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">写真</div>
+        <div class="photo-upload">
+          <div class="icon">📷</div>
+          <div>タップして写真を追加</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">コメント</div>
+        <textarea class="form-input form-textarea" placeholder="特定できた理由、おすすめの時間帯、行き方など…"></textarea>
+      </div>
+      <div class="consent-box">
+        ℹ️ 投稿された情報はTrace IVEのデータベースに登録されます。最初の投稿者には永続的な「発見者」クレジットが付与されます。
+      </div>
+      <div class="submit-area">
+        <button class="btn-primary" style="width:100%;padding:15px;">投稿する 🌸</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="nav-item active" id="nav-map" onclick="showView('map')">
+    <div class="nav-icon">🗺️</div>
+    MAP
+  </button>
+  <button class="nav-item" id="nav-ranking" onclick="showView('ranking')">
+    <div class="nav-icon">🏆</div>
+    ランキング
+  </button>
+  <div class="nav-item-post">
+    <button class="nav-post-btn" onclick="showView('post')">＋</button>
+  </div>
+  <button class="nav-item" id="nav-feed" onclick="showView('feed')">
+    <div class="nav-icon">🕐</div>
+    タイムライン
+  </button>
+  <button class="nav-item" id="nav-profile" onclick="showView('profile')">
+    <div class="nav-icon">👤</div>
+    My Page
+  </button>
+</div>
+
+<!-- 言語モーダル -->
+<div class="modal-overlay" id="lang-modal" onclick="closeLangModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🌐 言語 / Language / 언어</div>
+    <div class="lang-option active" onclick="setLang('ja')">
+      <div class="lang-option-left">
+        <div class="lang-flag">🇯🇵</div>
+        <div>
+          <div class="lang-name">日本語</div>
+          <div class="lang-native">Japanese</div>
+        </div>
+      </div>
+      <div class="lang-check">✓</div>
+    </div>
+    <div class="lang-option" onclick="showLangComingSoon()">
+      <div class="lang-option-left">
+        <div class="lang-flag">🇰🇷</div>
+        <div>
+          <div class="lang-name">한국어</div>
+          <div class="lang-native" style="color:var(--red);">🚧 準備中</div>
+        </div>
+      </div>
+      <div class="lang-check">✓</div>
+    </div>
+    <div class="lang-option" onclick="showLangComingSoon()">
+      <div class="lang-option-left">
+        <div class="lang-flag">🌏</div>
+        <div>
+          <div class="lang-name">English</div>
+          <div class="lang-native" style="color:var(--red);">🚧 Coming soon</div>
+        </div>
+      </div>
+      <div class="lang-check">✓</div>
+    </div>
+  </div>
+</div>
+
+<!-- 印刷エリア -->
+<div id="print-area">
+  <div class="print-header">
+    <div class="print-title" id="print-route-title">Trace IVE — 巡礼ルート</div>
+    <div class="print-subtitle" id="print-route-date"></div>
+  </div>
+  <div class="print-memo-box" id="print-route-memo"></div>
+  <div id="print-spots-list"></div>
+  <div class="print-footer">Trace IVE — 聖地巡礼MAP | traceive.app</div>
+</div>
+
+<!-- Google Maps API -->
+<script>
+// ── スポットデータ ──
+const SPOTS = [
+  {
+    name: '渋谷スクランブル交差点',
+    lat: 35.6595, lng: 139.7004,
+    sub: 'WAVE MV ロケ地',
+    icon: '🎵',
+    category: 'MV',
+    address: '東京都渋谷区道玄坂2丁目',
+    discoverer: '@yuna_dive',
+    likes: 128,
+    badges: ['MV','東京'],
+    member: 'ガウル',
+    color: '#c0392b'
+  },
+  {
+    name: '代官山 蔦屋書店',
+    lat: 35.6485, lng: 139.7025,
+    sub: '来日時 立ち寄りスポット',
+    icon: '📚',
+    category: '来日',
+    address: '東京都渋谷区猿楽町17-5',
+    discoverer: '@rei_books',
+    likes: 94,
+    badges: ['来日','東京'],
+    member: 'レイ',
+    color: '#3d1a5e'
+  },
+  {
+    name: '原宿 竹下通り',
+    lat: 35.6704, lng: 139.7025,
+    sub: 'コンセプトフォト撮影地',
+    icon: '📷',
+    category: 'MV',
+    address: '東京都渋谷区神宮前1丁目',
+    discoverer: '@wonyoung_fan',
+    likes: 76,
+    badges: ['コンセプトフォト','東京'],
+    member: 'ウォニョン',
+    color: '#c9a84c'
+  },
+  {
+    name: '六本木ヒルズ',
+    lat: 35.6604, lng: 139.7292,
+    sub: 'SHOW WHAT I HAVE MV',
+    icon: '🎬',
+    category: 'MV',
+    address: '東京都港区六本木6丁目10-1',
+    discoverer: '@liz_lover',
+    likes: 52,
+    badges: ['MV','東京'],
+    member: 'リズ',
+    color: '#c0392b'
+  },
+  {
+    name: '新大久保 コリアタウン',
+    lat: 35.7024, lng: 139.7003,
+    sub: 'メンバー目撃スポット',
+    icon: '🌸',
+    category: '来日',
+    address: '東京都新宿区大久保1丁目',
+    discoverer: '@ive_tracker',
+    likes: 41,
+    badges: ['来日','東京'],
+    member: 'ユジン',
+    color: '#3d1a5e'
+  },
+  {
+    name: '中目黒 川沿い',
+    lat: 35.6440, lng: 139.6984,
+    sub: '来日 散歩スポット',
+    icon: '🌸',
+    category: '来日',
+    address: '東京都目黒区上目黒',
+    discoverer: '@meguro_dive',
+    likes: 38,
+    badges: ['来日','東京'],
+    member: 'イソ',
+    color: '#c9a84c'
+  }
+];
+
+let map;
+let markers = [];
+let currentSpot = null;
+let cardOpen = false;
+
+// ── Google Maps 初期化 ──
+function initMap() {
+  map = new google.maps.Map(document.getElementById('google-map'), {
+    center: { lat: 35.6762, lng: 139.7073 },
+    zoom: 13,
+    mapTypeControl: false,
+    streetViewControl: false,
+    fullscreenControl: false,
+    zoomControl: true,
+    zoomControlOptions: {
+      position: google.maps.ControlPosition.RIGHT_CENTER
+    },
+    styles: [
+      { featureType: 'all', elementType: 'geometry', stylers: [{ saturation: -20 }] },
+      { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+      { featureType: 'transit', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+      { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#d0c8e8' }] },
+      { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f0ece8' }] },
+      { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+      { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#e8ddf5' }] }
+    ]
+  });
+
+  // ローディング非表示
+  document.getElementById('map-loading').style.display = 'none';
+
+  // ピンを追加
+  SPOTS.forEach(spot => {
+    const marker = new google.maps.Marker({
+      position: { lat: spot.lat, lng: spot.lng },
+      map: map,
+      title: spot.name,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 14,
+        fillColor: spot.color,
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 2.5
+      },
+      label: {
+        text: spot.icon,
+        fontSize: '14px'
+      }
+    });
+
+    marker.spotData = spot;
+
+    marker.addListener('click', () => {
+      openCard(spot);
+      map.panTo({ lat: spot.lat, lng: spot.lng });
+    });
+
+    markers.push(marker);
+  });
+}
+
+// Google Maps API エラー時のフォールバック
+function gm_authFailure() {
+  document.getElementById('map-loading').innerHTML = `
+    <div style="text-align:center;padding:20px;color:#c0392b;">
+      <div style="font-size:32px;margin-bottom:8px;">⚠️</div>
+      <div style="font-size:14px;font-weight:700;">地図の読み込みに失敗しました</div>
+      <div style="font-size:12px;color:#9b8aab;margin-top:4px;">APIキーまたは設定を確認してください</div>
+    </div>`;
+}
+
+// ── カード操作 ──
+function openCard(spot) {
+  currentSpot = spot;
+  document.getElementById('card-title').textContent = spot.name;
+  document.getElementById('card-sub').textContent = spot.sub;
+  document.getElementById('card-thumb').textContent = spot.icon;
+  document.getElementById('card-address').textContent = spot.address;
+  document.getElementById('card-discoverer').textContent = spot.discoverer;
+  document.getElementById('card-likes').textContent = spot.likes + ' 件の巡礼報告';
+
+  const badgeEl = document.getElementById('card-badges');
+  badgeEl.innerHTML = spot.badges.map((b, i) =>
+    `<span class="badge ${i === 0 ? 'badge-red' : 'badge-purple'}">${b}</span>`
+  ).join('') + `<span class="badge badge-gold">${spot.member}</span>`;
+
+  document.getElementById('card-detail').style.display = 'block';
+  document.getElementById('map-card').classList.add('open');
+  cardOpen = true;
+}
+
+function toggleCard() {
+  cardOpen = !cardOpen;
+  const card = document.getElementById('map-card');
+  if (cardOpen) {
+    card.classList.add('open');
+  } else {
+    card.classList.remove('open');
+  }
+}
+
+// ── フィルター ──
+function filterPins(btn, cat) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  let count = 0;
+  markers.forEach(marker => {
+    const show = cat === 'all' || marker.spotData.category === cat;
+    marker.setVisible(show);
+    if (show) count++;
+  });
+  document.getElementById('spot-count-num').textContent = count;
+}
+
+// ── ランキングからジャンプ ──
+function jumpToSpot(name) {
+  const spot = SPOTS.find(s => s.name === name);
+  if (!spot) return;
+  showView('map');
+  setTimeout(() => {
+    if (map) {
+      map.panTo({ lat: spot.lat, lng: spot.lng });
+      map.setZoom(16);
+      openCard(spot);
+    }
+  }, 100);
+}
+
+// ── 巡礼報告 ──
+function reportVisit() {
+  if (!currentSpot) return;
+  alert(`「${currentSpot.name}」の巡礼を報告しました！\n\n🌸 ありがとうございます！`);
+}
+
+// ── ナビ ──
+function openNavi() {
+  if (!currentSpot) return;
+  const url = `https://www.google.com/maps/dir/?api=1&destination=${currentSpot.lat},${currentSpot.lng}`;
+  window.open(url, '_blank');
+}
+
+// ── Xシェア ──
+function shareX() {
+  if (!currentSpot) return;
+  const text = encodeURIComponent(`【聖地巡礼】${currentSpot.name}\n${currentSpot.sub}\n\n#TraceIVE #IVE #アイブ`);
+  window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+}
+
+// ── ビュー切り替え ──
+function showView(name) {
+  ['map','ranking','feed','post','profile','route'].forEach(v => {
+    const el = document.getElementById('view-'+v);
+    if (el) el.style.display = 'none';
+    const nav = document.getElementById('nav-'+v);
+    if (nav) nav.classList.remove('active');
+  });
+  const target = document.getElementById('view-'+name);
+  if (target) target.style.display = 'block';
+  const nav = document.getElementById('nav-'+name);
+  if (nav) nav.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ── メンバーフィルター ──
+function filterMember(el, member) {
+  document.querySelectorAll('.member-tab-item').forEach(x => x.classList.remove('active'));
+  el.classList.add('active');
+
+  // フィードフィルター
+  document.querySelectorAll('.feed-item').forEach(item => {
+    if (member === 'all') {
+      item.style.display = 'block';
+    } else {
+      const m = item.getAttribute('data-member');
+      item.style.display = m === member ? 'block' : 'none';
+    }
+  });
+
+  // マップフィルター（メンバー別）
+  if (map) {
+    let count = 0;
+    markers.forEach(marker => {
+      const show = member === 'all' || marker.spotData.member === member;
+      marker.setVisible(show);
+      if (show) count++;
+    });
+    document.getElementById('spot-count-num').textContent = count;
+  }
+}
+
+// ── チップ切り替え ──
+function toggleChip(el) { el.classList.toggle('selected'); }
+
+// ── ルートスポット ──
+function toggleRouteSpot(checkEl) {
+  const item = checkEl.closest('.route-spot-check');
+  const checked = item.classList.toggle('selected');
+  checkEl.textContent = checked ? '☑' : '☐';
+  checkEl.classList.toggle('checked', checked);
+}
+
+// ── ルート保存 ──
+function saveRoute() {
+  const name = document.getElementById('route-name-input').value || '名称未設定ルート';
+  const selected = [...document.querySelectorAll('.route-spot-check.selected')];
+  if (selected.length === 0) {
+    alert('スポットを1つ以上選択してください。');
+    return;
+  }
+  const today = new Date().toLocaleDateString('ja-JP', { year:'numeric', month:'long' });
+  const newItem = document.createElement('div');
+  newItem.className = 'saved-route-item';
+  newItem.innerHTML = `
+    <div class="sri-left">
+      <div class="sri-icon">🗺️</div>
+      <div>
+        <div class="sri-name">${name}</div>
+        <div class="sri-meta">${selected.length}スポット · ${today}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button class="btn-secondary" style="padding:6px 10px;font-size:11px;" onclick="printRoute()">🖨️</button>
+      <button class="btn-secondary" style="padding:6px 10px;font-size:11px;">𝕏</button>
+    </div>`;
+  document.getElementById('saved-routes-list').prepend(newItem);
+  alert(`「${name}」を保存しました！`);
+}
+
+// ── 印刷 ──
+function printRoute() {
+  const name = document.getElementById('route-name-input').value || 'Trace IVE 巡礼ルート';
+  const memo = document.getElementById('route-memo-input').value;
+  const selected = [...document.querySelectorAll('.route-spot-check.selected')];
+  if (selected.length === 0) {
+    alert('スポットを1つ以上選択してください。');
+    return;
+  }
+  const today = new Date().toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric' });
+  document.getElementById('print-route-title').textContent = `Trace IVE — ${name}`;
+  document.getElementById('print-route-date').textContent = today;
+  const memoBox = document.getElementById('print-route-memo');
+  memoBox.textContent = memo ? `📝 メモ：${memo}` : '';
+  memoBox.style.display = memo ? 'block' : 'none';
+  const list = document.getElementById('print-spots-list');
+  list.innerHTML = '';
+  selected.forEach((item, i) => {
+    const spotName = item.querySelector('.rsc-name').textContent;
+    const spotMeta = item.querySelector('.rsc-meta').textContent;
+    const spotMemo = item.querySelector('.rsc-memo').value;
+    const div = document.createElement('div');
+    div.className = 'print-spot';
+    div.innerHTML = `
+      <div class="print-spot-header">
+        <div class="print-spot-num">${i+1}</div>
+        <div class="print-spot-name">${spotName}</div>
+      </div>
+      <div class="print-spot-meta">${spotMeta}</div>
+      ${spotMemo
+        ? `<div class="print-spot-memo-label">メモ：</div><div class="print-spot-memo-val">${spotMemo}</div>`
+        : `<div class="print-spot-memo-label">メモ：</div><div class="print-memo-line"></div>`}
+    `;
+    list.appendChild(div);
+  });
+  window.print();
+}
+
+// ── 言語モーダル ──
+function openLangModal() {
+  document.getElementById('lang-modal').classList.add('open');
+}
+
+function closeLangModal(e) {
+  if (e.target === document.getElementById('lang-modal')) {
+    document.getElementById('lang-modal').classList.remove('open');
+  }
+}
+
+function setLang(lang) {
+  document.getElementById('lang-modal').classList.remove('open');
+}
+
+function showLangComingSoon() {
+  alert('🚧 この言語は現在準備中です。\nComing soon / 준비 중');
+}
+
+// ── ランキングタブ ──
+document.querySelectorAll('.rtab').forEach(t => {
+  t.addEventListener('click', function() {
+    document.querySelectorAll('.rtab').forEach(x => x.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+
+<!-- Google Maps API 読み込み -->
+<script async defer
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCEKakeNjAzKN6msNTsrUb2J6TMiXaInm0&callback=initMap&language=ja">
+</script>
+
+</body>
+</html>
