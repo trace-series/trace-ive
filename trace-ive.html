@@ -1966,27 +1966,27 @@
     <div class="member-tab-icon">💜</div>
     <div class="member-tab-name">全員</div>
   </div>
-  <div class="member-tab-item" onclick="filterMember(this, 'ユジン')">
+  <div class="member-tab-item" onclick="filterMember(this, 'ユジン')" ondblclick="showOshiRanking('ユジン')">
     <div class="member-tab-icon">🐕</div>
     <div class="member-tab-name">ユジン</div>
   </div>
-  <div class="member-tab-item" onclick="filterMember(this, 'ガウル')">
+  <div class="member-tab-item" onclick="filterMember(this, 'ガウル')" ondblclick="showOshiRanking('ガウル')">
     <div class="member-tab-icon">🐿️</div>
     <div class="member-tab-name">ガウル</div>
   </div>
-  <div class="member-tab-item" onclick="filterMember(this, 'レイ')">
+  <div class="member-tab-item" onclick="filterMember(this, 'レイ')" ondblclick="showOshiRanking('レイ')">
     <div class="member-tab-icon">🐥</div>
     <div class="member-tab-name">レイ</div>
   </div>
-  <div class="member-tab-item" onclick="filterMember(this, 'ウォニョン')">
+  <div class="member-tab-item" onclick="filterMember(this, 'ウォニョン')" ondblclick="showOshiRanking('ウォニョン')">
     <div class="member-tab-icon">🐰</div>
     <div class="member-tab-name">ウォニョン</div>
   </div>
-  <div class="member-tab-item" onclick="filterMember(this, 'リズ')">
+  <div class="member-tab-item" onclick="filterMember(this, 'リズ')" ondblclick="showOshiRanking('リズ')">
     <div class="member-tab-icon">🐱</div>
     <div class="member-tab-name">リズ</div>
   </div>
-  <div class="member-tab-item" onclick="filterMember(this, 'イソ')">
+  <div class="member-tab-item" onclick="filterMember(this, 'イソ')" ondblclick="showOshiRanking('イソ')">
     <div class="member-tab-icon">🐯</div>
     <div class="member-tab-name">イソ</div>
   </div>
@@ -2014,7 +2014,7 @@
         <button class="filter-btn" onclick="filterPins(this,'撮影')">📷 撮影</button>
         <button class="filter-btn" onclick="filterPins(this,'メディア')">📺 メディア</button>
         <button class="filter-btn" onclick="filterPins(this,'イベント')">🎤 イベント</button>
-        <button class="filter-btn" onclick="filterPins(this,'目撃')">✈️ 目撃</button>
+        <button class="filter-btn" onclick="filterPins(this,'イベント')">🎤 イベント</button>
         <button class="filter-btn" onclick="filterPins(this,'グルメ')">🍽️ グルメ</button>
         <button class="filter-btn" onclick="filterPins(this,'ショップ')">🛍️ ショップ</button>
         <button class="filter-btn help-btn" onclick="openCategoryHelp()">？</button>
@@ -2105,73 +2105,110 @@
       <div class="founder-count">7 / 20 名 参加済み</div>
     </div>
 
-    <div class="ranking-tabs">
-      <div class="rtab active">週間</div>
-      <div class="rtab">月間</div>
-      <div class="rtab">全期間</div>
+    <!-- メンバーフィルタータブ -->
+    <div id="ranking-member-tabs" style="display:flex;gap:8px;overflow-x:auto;padding:0 0 4px;margin-bottom:12px;scrollbar-width:none;">
+      <button class="rmtab active" onclick="filterRankingMember(this,'all')" style="flex-shrink:0;padding:7px 14px;border-radius:20px;border:none;font-size:12px;font-weight:700;cursor:pointer;background:var(--purple-deep);color:#fff;font-family:'Noto Sans JP',sans-serif;">全員</button>
     </div>
 
-    <div class="ranking-list">
-      <div class="ranking-item" onclick="jumpToSpot('渋谷スクランブル交差点')">
+    <div class="ranking-tabs" id="ranking-period-tabs">
+      <div class="rtab active" onclick="switchRankingPeriod(this,'year')">年間</div>
+      <div class="rtab" onclick="switchRankingPeriod(this,'half')">半年</div>
+      <div class="rtab" onclick="switchRankingPeriod(this,'quarter')">3ヶ月</div>
+      <div class="rtab" onclick="switchRankingPeriod(this,'month')">月間</div>
+    </div>
+
+    <div class="ranking-list" id="ranking-list">
+      <div class="ranking-item" onclick="jumpToSpot('渋谷スクランブル交差点')" data-member="ガウル">
         <div class="rank-num rank-1">1</div>
         <div class="rank-thumb">🎵</div>
         <div class="rank-info">
           <div class="rank-name">渋谷スクランブル交差点</div>
           <div class="rank-meta">東京都渋谷区 · WAVE MV</div>
+          <span style="display:inline-block;margin-top:3px;padding:2px 8px;background:var(--purple-pale);color:var(--purple-deep);border-radius:10px;font-size:11px;font-weight:700;">ガウル</span>
         </div>
         <div class="rank-score">
           <div class="rank-score-num">128</div>
           <div class="rank-score-label">巡礼数</div>
         </div>
       </div>
-      <div class="ranking-item" onclick="jumpToSpot('代官山 蔦屋書店')">
+      <div class="ranking-item" onclick="jumpToSpot('代官山 蔦屋書店')" data-member="レイ">
         <div class="rank-num rank-2">2</div>
         <div class="rank-thumb">📚</div>
         <div class="rank-info">
           <div class="rank-name">代官山 蔦屋書店</div>
           <div class="rank-meta">東京都渋谷区 · 来日スポット</div>
+          <span style="display:inline-block;margin-top:3px;padding:2px 8px;background:var(--purple-pale);color:var(--purple-deep);border-radius:10px;font-size:11px;font-weight:700;">レイ</span>
         </div>
         <div class="rank-score">
           <div class="rank-score-num">94</div>
           <div class="rank-score-label">巡礼数</div>
         </div>
       </div>
-      <div class="ranking-item" onclick="jumpToSpot('原宿 竹下通り')">
+      <div class="ranking-item" onclick="jumpToSpot('原宿 竹下通り')" data-member="ウォニョン">
         <div class="rank-num rank-3">3</div>
         <div class="rank-thumb">📷</div>
         <div class="rank-info">
           <div class="rank-name">原宿 竹下通り</div>
           <div class="rank-meta">東京都渋谷区 · コンセプトフォト</div>
+          <span style="display:inline-block;margin-top:3px;padding:2px 8px;background:var(--purple-pale);color:var(--purple-deep);border-radius:10px;font-size:11px;font-weight:700;">ウォニョン</span>
         </div>
         <div class="rank-score">
           <div class="rank-score-num">76</div>
           <div class="rank-score-label">巡礼数</div>
         </div>
       </div>
-      <div class="ranking-item" onclick="jumpToSpot('六本木ヒルズ')">
+      <div class="ranking-item" onclick="jumpToSpot('六本木ヒルズ')" data-member="リズ">
         <div class="rank-num rank-other">4</div>
         <div class="rank-thumb">🎬</div>
         <div class="rank-info">
           <div class="rank-name">六本木ヒルズ</div>
           <div class="rank-meta">東京都港区 · MV撮影地</div>
+          <span style="display:inline-block;margin-top:3px;padding:2px 8px;background:var(--purple-pale);color:var(--purple-deep);border-radius:10px;font-size:11px;font-weight:700;">リズ</span>
         </div>
         <div class="rank-score">
           <div class="rank-score-num">52</div>
           <div class="rank-score-label">巡礼数</div>
         </div>
       </div>
-      <div class="ranking-item" onclick="jumpToSpot('新大久保 コリアタウン')">
+      <div class="ranking-item" onclick="jumpToSpot('新大久保 コリアタウン')" data-member="ユジン">
         <div class="rank-num rank-other">5</div>
         <div class="rank-thumb">🌸</div>
         <div class="rank-info">
           <div class="rank-name">新大久保 コリアタウン</div>
-          <div class="rank-meta">東京都新宿区 · 目撃情報</div>
+          <div class="rank-meta">東京都新宿区 · イベント</div>
+          <span style="display:inline-block;margin-top:3px;padding:2px 8px;background:var(--purple-pale);color:var(--purple-deep);border-radius:10px;font-size:11px;font-weight:700;">ユジン</span>
         </div>
         <div class="rank-score">
           <div class="rank-score-num">41</div>
           <div class="rank-score-label">巡礼数</div>
         </div>
       </div>
+      <div class="ranking-item" onclick="jumpToSpot('中目黒 川沿い')" data-member="イソ">
+        <div class="rank-num rank-other">6</div>
+        <div class="rank-thumb">🌸</div>
+        <div class="rank-info">
+          <div class="rank-name">中目黒 川沿い</div>
+          <div class="rank-meta">東京都目黒区 · 来日散歩</div>
+          <span style="display:inline-block;margin-top:3px;padding:2px 8px;background:var(--purple-pale);color:var(--purple-deep);border-radius:10px;font-size:11px;font-weight:700;">イソ</span>
+        </div>
+        <div class="rank-score">
+          <div class="rank-score-num">28</div>
+          <div class="rank-score-label">巡礼数</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- メンバー別空表示 -->
+    <div id="ranking-empty" style="display:none;text-align:center;padding:40px 20px;color:var(--text-light);">
+      <div style="font-size:32px;margin-bottom:8px;">🔍</div>
+      <div style="font-size:14px;">このメンバーのスポットはまだありません</div>
+    </div>
+
+    <!-- 推しメン熱量ランキング -->
+    <div style="margin-top:28px;">
+      <div style="font-size:16px;font-weight:700;color:var(--purple-deep);margin-bottom:4px;">💜 推しメン熱量ランキング</div>
+      <div style="font-size:12px;color:var(--text-light);margin-bottom:14px;">巡礼数・投稿数・評価数の合計で算出</div>
+      <div id="oshi-ranking-list"></div>
     </div>
   </div>
 
@@ -2419,6 +2456,11 @@
 
     <div class="profile-section-title">⚙️ 設定</div>
     <div class="settings-list">
+      <div class="settings-item" onclick="openOshiModal()">
+        <div class="settings-item-icon">💜</div>
+        <div class="settings-item-text">推し設定</div>
+        <div class="settings-item-arrow" id="oshi-setting-preview" style="font-size:12px;color:var(--purple-deep);font-weight:700;">未設定</div>
+      </div>
       <div class="settings-item" onclick="showView('route')">
         <div class="settings-item-icon">📂</div>
         <div class="settings-item-text">ルート保存・印刷</div>
@@ -2445,11 +2487,27 @@
         <div class="settings-item-text">プライバシー設定</div>
         <div class="settings-item-arrow">›</div>
       </div>
+      <div class="settings-item" onclick="openTransferModal()">
+        <div class="settings-item-icon">📲</div>
+        <div class="settings-item-text">データ引き継ぎ</div>
+        <div class="settings-item-arrow">›</div>
+      </div>
       <div class="settings-item">
         <div class="settings-item-icon">❓</div>
         <div class="settings-item-text">ヘルプ・お問い合わせ</div>
         <div class="settings-item-arrow">›</div>
       </div>
+    </div>
+
+    <!-- 設定画面下部 免責表示 -->
+    <div style="margin:24px 0 8px;padding:16px;background:#f0e8f8;border-radius:14px;font-size:11px;color:#4a3060;line-height:1.8;">
+      <div style="font-weight:700;margin-bottom:4px;">⚠️ ご利用にあたって</div>
+      非公式ファンアプリです。STARSHIP ENTERTAINMENT・IVEとは一切関係ありません。<br>
+      掲載情報はファンによる投稿に基づくものであり、正確性を保証するものではありません。情報の利用・訪問により生じた損害について責任を負いかねます。<br>
+      コンテンツ・システムの無断転用・商用利用を禁止します。
+    </div>
+    <div style="text-align:center;font-size:11px;color:#9b8aab;padding:8px 0 40px;">
+      © 2025 missing link / Trace IVE
     </div>
   </div>
 
@@ -2928,13 +2986,13 @@
           <input class="rsc-memo" type="text" placeholder="メモ（任意）">
         </div>
       </div>
-      <div class="route-spot-check" data-spot="新大久保 コリアタウン" data-meta="目撃 · 東京" data-icon="🌸" data-lat="35.7024" data-lng="139.7003" data-region="tokyo">
+      <div class="route-spot-check" data-spot="新大久保 コリアタウン" data-meta="イベント · 東京" data-icon="🌸" data-lat="35.7024" data-lng="139.7003" data-region="tokyo">
         <div class="rsc-left">
           <div class="rsc-check" onclick="toggleRouteSpot(this)">☐</div>
           <div class="rsc-icon">🌸</div>
           <div class="rsc-info">
             <div class="rsc-name">新大久保 コリアタウン</div>
-            <div class="rsc-meta">目撃 · 東京</div>
+            <div class="rsc-meta">イベント · 東京</div>
           </div>
         </div>
         <div class="rsc-memo-wrap">
@@ -3017,7 +3075,7 @@
           <div class="chip" onclick="toggleChip(this)" data-cat="撮影">📷 撮影</div>
           <div class="chip" onclick="toggleChip(this)" data-cat="メディア">📺 メディア</div>
           <div class="chip" onclick="toggleChip(this)" data-cat="イベント">🎤 イベント</div>
-          <div class="chip" onclick="toggleChip(this)" data-cat="目撃">✈️ 目撃</div>
+          <div class="chip" onclick="toggleChip(this)" data-cat="イベント">🎤 イベント</div>
           <div class="chip" onclick="toggleChip(this)" data-cat="グルメ">🍽️ グルメ</div>
           <div class="chip" onclick="toggleChip(this)" data-cat="ショップ">🛍️ ショップ</div>
         </div>
@@ -3047,6 +3105,14 @@
         <div class="form-label">コメント</div>
         <textarea class="form-input form-textarea" placeholder="特定できた理由、おすすめの時間帯、行き方など…"></textarea>
       </div>
+      <div class="form-group">
+        <div class="form-label">参照元 X ポストURL <span style="font-weight:400;color:#9b8aab;font-size:12px;">（任意）</span></div>
+        <input class="form-input" id="post-source-url" type="url" placeholder="https://x.com/username/status/...">
+        <div style="font-size:11px;color:#9b8aab;margin-top:6px;line-height:1.6;">
+          📌 聖地を特定するきっかけになったXのポストがあれば貼ってください。<br>
+          投稿者への感謝クレジットとして表示されます。将来的な自動収集との照合にも使われます。
+        </div>
+      </div>
       <div class="consent-box">
         ℹ️ 投稿された情報はTrace IVEのデータベースに登録されます。最初の投稿者には永続的な「発見者」クレジットが付与されます。
       </div>
@@ -3057,6 +3123,27 @@
   </div>
 
 </main>
+
+<!-- APP FOOTER（設定画面スクロール最下部にも表示） -->
+<div id="app-footer" style="
+  background:#1a1025;color:rgba(255,255,255,0.5);
+  font-size:11px;line-height:1.7;
+  padding:20px 20px 100px;text-align:center;
+  border-top:1px solid rgba(123,79,166,0.2);
+">
+  <div style="margin-bottom:6px;font-weight:700;color:rgba(255,255,255,0.7);letter-spacing:0.05em;">
+    Trace IVE — 聖地巡礼MAP
+  </div>
+  <div style="margin-bottom:8px;">
+    非公式ファンアプリです。STARSHIP ENTERTAINMENT・IVEとは一切関係ありません。<br>
+    掲載情報はファンによる投稿・調査に基づくものであり、正確性を保証するものではありません。<br>
+    情報の利用・訪問により生じたいかなる損害についても責任を負いかねます。
+  </div>
+  <div style="margin-bottom:8px;">
+    本アプリのコンテンツ・デザイン・システムの無断転用・商用利用を禁止します。
+  </div>
+  <div style="opacity:0.4;">© 2025 missing link / Trace IVE · All rights reserved.</div>
+</div>
 
 <!-- BOTTOM NAV -->
 <div class="bottom-nav">
@@ -3153,10 +3240,10 @@
       </div>
     </div>
     <div class="cat-help-item">
-      <div class="cat-help-icon">✈️</div>
+      <div class="cat-help-icon">🎤</div>
       <div>
-        <div class="cat-help-name">目撃</div>
-        <div class="cat-help-desc">空港・プライベートでの目撃情報・訪問が確認されたスポット</div>
+        <div class="cat-help-name">イベント</div>
+        <div class="cat-help-desc">空港・プライベートでのイベント・訪問が確認されたスポット</div>
       </div>
     </div>
     <div class="cat-help-item">
@@ -3189,6 +3276,116 @@
 
 <!-- Google Maps API -->
 <script>
+// ════════════════════════════════════════
+// GROUP_CONFIG — 別グループへの転用時はここだけ書き換える
+// ════════════════════════════════════════
+const GROUP_CONFIG = {
+  groupName: 'IVE',
+  appName: 'Trace IVE',
+  appHandle: '@TraceIVE',
+  hashtags: ['#TraceIVE', '#IVE', '#アイブ', '#聖地巡礼'],
+  pilgrimHashtag: '#TraceIVE',
+  officialDisclaimer: '非公式ファンアプリです。STARSHIP ENTERTAINMENT・IVEとは一切関係ありません。',
+
+  members: [
+    { name: 'ユジン',    nameEn: 'YUJIN',     birthday: { month: 9,  day: 1  }, hashtag: 'HAPPY_YUJIN_DAY'    },
+    { name: 'ガウル',    nameEn: 'GAEUL',     birthday: { month: 9,  day: 24 }, hashtag: 'HAPPY_GAEUL_DAY'    },
+    { name: 'レイ',      nameEn: 'REI',       birthday: { month: 2,  day: 3  }, hashtag: 'HAPPY_REI_DAY'      },
+    { name: 'ウォニョン', nameEn: 'WONYOUNG',  birthday: { month: 8,  day: 31 }, hashtag: 'HAPPY_WONYOUNG_DAY' },
+    { name: 'リズ',      nameEn: 'LIZ',       birthday: { month: 11, day: 21 }, hashtag: 'HAPPY_LIZ_DAY'      },
+    { name: 'イソ',      nameEn: 'LEESEO',    birthday: { month: 2,  day: 21 }, hashtag: 'HAPPY_LEESEO_DAY'   },
+  ],
+
+  // ポイント倍率
+  birthdayMonthMultiplier: 2,   // 誕生月：2倍
+  birthdayDayMultiplier:   3,   // 誕生当日：3倍
+};
+
+// ── 誕生日イベント判定 ──
+function getBirthdayEvent() {
+  const now = new Date();
+  const m = now.getMonth() + 1;
+  const d = now.getDate();
+  for (const member of GROUP_CONFIG.members) {
+    const b = member.birthday;
+    if (b.month === m && b.day === d) {
+      return { member, type: 'day', multiplier: GROUP_CONFIG.birthdayDayMultiplier };
+    }
+    if (b.month === m) {
+      return { member, type: 'month', multiplier: GROUP_CONFIG.birthdayMonthMultiplier };
+    }
+  }
+  return null;
+}
+
+// ── 誕生日ポップアップ表示 ──
+function showBirthdayPopup(event) {
+  const overlay = document.createElement('div');
+  overlay.id = 'birthday-overlay';
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:9999;
+    background:rgba(61,26,94,0.85);
+    display:flex;align-items:center;justify-content:center;
+    animation:fadeInBd 0.4s ease;
+  `;
+
+  const isDay = event.type === 'day';
+  const member = event.member;
+  const tag = `#${member.hashtag}`;
+  const stars = isDay ? '🎂🎉🎊✨🎈' : '🌸💜✨';
+
+  overlay.innerHTML = `
+    <div style="
+      background:linear-gradient(135deg,#3d1a5e,#7b1a3e);
+      border-radius:24px;padding:32px 28px;max-width:320px;width:90%;
+      text-align:center;color:#fff;position:relative;
+      box-shadow:0 20px 60px rgba(0,0,0,0.5);
+    ">
+      <button onclick="document.getElementById('birthday-overlay').remove()" style="
+        position:absolute;top:14px;right:16px;background:none;border:none;
+        color:rgba(255,255,255,0.6);font-size:22px;cursor:pointer;
+      ">×</button>
+      <div style="font-size:40px;margin-bottom:8px;">${isDay ? '🎂' : '🌸'}</div>
+      <div style="font-size:22px;font-weight:700;margin-bottom:4px;">
+        ${isDay ? `Happy Birthday\n${member.name}！` : `${member.name}の誕生月🎉`}
+      </div>
+      <div style="font-size:14px;opacity:0.85;margin:10px 0 16px;">${stars}</div>
+      <div style="
+        background:rgba(255,255,255,0.15);border-radius:12px;
+        padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:1.6;
+      ">
+        ${member.name}関連スポットへの投稿・評価が<br>
+        <span style="font-size:20px;font-weight:700;color:#ffd700;">${event.multiplier}倍</span>
+        ポイント！
+      </div>
+      <div style="
+        background:rgba(255,255,255,0.1);border-radius:10px;
+        padding:8px 12px;font-size:13px;color:#e8d0f8;margin-bottom:16px;
+      ">${tag}</div>
+      <button onclick="shareBirthdayX('${member.name}','${member.nameEn}','${tag}')" style="
+        background:linear-gradient(135deg,#c0392b,#e74c3c);
+        border:none;border-radius:14px;padding:10px 20px;
+        color:#fff;font-size:13px;font-weight:700;cursor:pointer;width:100%;
+      ">𝕏 お祝いポストを送る</button>
+    </div>
+    <style>
+      @keyframes fadeInBd { from{opacity:0;transform:scale(0.92)} to{opacity:1;transform:scale(1)} }
+    </style>
+  `;
+
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+function shareBirthdayX(nameJa, nameEn, tag) {
+  const text = encodeURIComponent(
+    `🎂 Happy Birthday ${nameJa}！\n` +
+    `${tag} #${nameEn} ${GROUP_CONFIG.hashtags[0]} #IVE\n\n` +
+    `Trace IVEで${nameJa}の聖地を巡ろう🌸`
+  );
+  window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+}
+
 // ── スポットデータ ──
 const SPOTS = [
   {
@@ -3254,13 +3451,13 @@ const SPOTS = [
   {
     name: '新大久保 コリアタウン',
     lat: 35.7024, lng: 139.7003,
-    sub: 'メンバー目撃スポット',
+    sub: 'イベントスポット',
     icon: '🌸',
-    category: '目撃',
+    category: 'イベント',
     address: '東京都新宿区大久保1丁目',
     discoverer: '@ive_tracker',
     likes: 41,
-    badges: ['目撃','東京'],
+    badges: ['イベント','東京'],
     member: 'ユジン',
     color: '#3d1a5e',
     trustScore: 2, goodCount: 3, badCount: 1,
@@ -3269,13 +3466,13 @@ const SPOTS = [
   {
     name: '中目黒 川沿い',
     lat: 35.6440, lng: 139.6984,
-    sub: '来日 散歩スポット',
+    sub: 'イベントスポット',
     icon: '🌸',
-    category: '目撃',
+    category: 'イベント',
     address: '東京都目黒区上目黒',
     discoverer: '@meguro_dive',
     likes: 38,
-    badges: ['目撃','東京'],
+    badges: ['イベント','東京'],
     member: 'イソ',
     color: '#c9a84c',
     trustScore: 1, goodCount: 2, badCount: 1,
@@ -3460,7 +3657,8 @@ function openNavi() {
 // ── Xシェア ──
 function shareX() {
   if (!currentSpot) return;
-  const text = encodeURIComponent(`【聖地巡礼】${currentSpot.name}\n${currentSpot.sub}\n\n#TraceIVE #IVE #アイブ`);
+  const tags = GROUP_CONFIG.hashtags.join(' ');
+  const text = encodeURIComponent(`【聖地巡礼】${currentSpot.name}\n${currentSpot.sub}\n\n${tags}`);
   window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
 }
 
@@ -3725,14 +3923,33 @@ function showLangComingSoon() {
 
     updateTrustUI(currentSpot);
 
-    // 確定待ちポイントに追加
+    // 確定待ちポイントに追加（誕生日倍率を適用）
     const ptMap = { visited:30, matched:50, wrong:40, unclear:20, closed:20, outdated:10 };
     const labelMap = {
       visited:'📸 行って確認と報告', matched:'🎯 構図一致を報告',
       wrong:'❌ 場所が違うと報告', unclear:'🤔 特定できないと報告',
       closed:'🚫 立入不可と報告', outdated:'⚠️ 情報が古いと報告'
     };
-    addPendingPoint(currentSpot.name, labelMap[type], ptMap[type]);
+    let basePt = ptMap[type];
+    let multiplier = 1;
+
+    // 誕生日倍率
+    const bdEvent = getBirthdayEvent();
+    if (bdEvent && currentSpot.member) {
+      const isBdMember = bdEvent.member.name === currentSpot.member || bdEvent.member.nameEn === currentSpot.member;
+      if (isBdMember) multiplier *= bdEvent.multiplier;
+    }
+
+    // 推し倍率
+    const oshiMult = getOshiMultiplier(currentSpot.member);
+    multiplier *= oshiMult;
+
+    const finalPt = Math.round(basePt * multiplier);
+    const notes = [];
+    if (bdEvent && multiplier > 1) notes.push(`誕生${bdEvent.type === 'day' ? '日' : '月'}`);
+    if (oshiMult > 1) notes.push(oshi1 === currentSpot.member ? '1推し' : '2推し');
+    const multiplierNote = multiplier > 1 ? ` (×${multiplier.toFixed(1)} ${notes.join('・')})` : '';
+    addPendingPoint(currentSpot.name, labelMap[type] + multiplierNote, finalPt);
 
     // スコア表示を一瞬色変え
     const scoreEl = document.getElementById('card-trust-score');
@@ -3942,7 +4159,7 @@ function showLangComingSoon() {
     card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
-  // 初期化時にボタン状態を設定
+  // 初期化時にボタン状態を設定（localStorage復元はこの後のDOMContentLoadedで行う）
   document.addEventListener('DOMContentLoaded', () => {
     updateOptimizeBtn();
     const limitEl = document.getElementById('route-save-limit');
@@ -3950,6 +4167,26 @@ function showLangComingSoon() {
       const limit = getRouteLimit();
       limitEl.textContent = limit.saveMax === 999 ? '無制限' : `${limit.saveMax}件まで保存可`;
     }
+    // localStorage から復元
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) loadUserData(JSON.parse(raw));
+    } catch(e) {
+      console.warn('loadUserData error:', e);
+    }
+    // 誕生日ポップアップ（500ms遅延でページ表示後に出す）
+    setTimeout(() => {
+      const bdEvent = getBirthdayEvent();
+      if (bdEvent) showBirthdayPopup(bdEvent);
+    }, 500);
+    // 推し設定を読み込む
+    loadOshiSettings();
+    // ランキング メンバータブを生成
+    buildRankingMemberTabs();
+    // 推しメン熱量ランキングを生成
+    buildOshiRanking();
+    // メンバータブ長押し初期化
+    initMemberTabLongPress();
   });
 
   const CAT_DESC = {
@@ -3957,7 +4194,7 @@ function showLangComingSoon() {
     '撮影': '📷 コンセプトフォト・雑誌・アルバムジャケットの撮影場所',
     'メディア': '📺 TV・バラエティ・YouTube・VLIVEなどで登場した場所',
     'イベント': '🎤 ファンサイン・握手会・コンサート・ショーケース会場',
-    '目撃': '✈️ 空港・プライベートでの目撃情報・訪問確認スポット',
+    'イベント': '🎤 公式イベント・ライブ・来日時に確認されたスポット',
     'グルメ': '🍽️ メンバーが訪れたレストラン・カフェ・食事スポット',
     'ショップ': '🛍️ 訪れたブランドショップ・書店・セレクトショップなど',
   };
@@ -3991,6 +4228,316 @@ function showLangComingSoon() {
     }
   }
 
+// ════════════════════════════════════════
+// 推し設定システム
+// ════════════════════════════════════════
+const MEMBER_ICONS = { 'ユジン':'🐕','ガウル':'🐿️','レイ':'🐥','ウォニョン':'🐰','リズ':'🐱','イソ':'🐯' };
+const OSHI_MULTIPLIER_1 = 1.5;
+const OSHI_MULTIPLIER_2 = 1.2;
+
+let oshi1 = null; // 1推しメンバー名
+let oshi2 = null; // 2推しメンバー名
+
+function loadOshiSettings() {
+  try {
+    const raw = localStorage.getItem('traceive_oshi_v1');
+    if (raw) {
+      const d = JSON.parse(raw);
+      oshi1 = d.oshi1 || null;
+      oshi2 = d.oshi2 || null;
+      updateOshiPreview();
+    }
+  } catch(e) {}
+}
+
+function updateOshiPreview() {
+  const el = document.getElementById('oshi-setting-preview');
+  if (!el) return;
+  if (!oshi1 && !oshi2) { el.textContent = '未設定'; return; }
+  const parts = [];
+  if (oshi1) parts.push(`${MEMBER_ICONS[oshi1]||''}${oshi1}`);
+  if (oshi2) parts.push(`${MEMBER_ICONS[oshi2]||''}${oshi2}`);
+  el.textContent = parts.join(' / ');
+}
+
+function openOshiModal() {
+  buildOshiGrids();
+  document.getElementById('oshi-modal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeOshiModal(e) {
+  if (e.target === document.getElementById('oshi-modal')) {
+    document.getElementById('oshi-modal').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+}
+
+function buildOshiGrids() {
+  ['oshi1-grid','oshi2-grid'].forEach((id, idx) => {
+    const grid = document.getElementById(id);
+    if (!grid) return;
+    const rank = idx === 0 ? 1 : 2;
+    grid.innerHTML = GROUP_CONFIG.members.map(m => {
+      const selected = (rank === 1 && oshi1 === m.name) || (rank === 2 && oshi2 === m.name);
+      return `<button onclick="selectOshi(${rank},'${m.name}')" id="oshi${rank}-btn-${m.name}" style="
+        padding:10px 6px;border-radius:14px;border:2px solid ${selected ? '#3d1a5e' : '#e8d8f8'};
+        background:${selected ? '#f0e0ff' : '#fff'};cursor:pointer;text-align:center;
+        font-family:'Noto Sans JP',sans-serif;transition:all 0.15s;
+      ">
+        <div style="font-size:24px;">${MEMBER_ICONS[m.name]||'💜'}</div>
+        <div style="font-size:11px;font-weight:700;color:#3d1a5e;margin-top:4px;">${m.name}</div>
+        ${selected ? '<div style="font-size:10px;color:#c0392b;margin-top:2px;">✓ 選択中</div>' : ''}
+      </button>`;
+    }).join('');
+  });
+}
+
+function selectOshi(rank, name) {
+  if (rank === 1) {
+    oshi1 = (oshi1 === name) ? null : name;
+    if (oshi1 === oshi2) oshi2 = null;
+  } else {
+    oshi2 = (oshi2 === name) ? null : name;
+    if (oshi2 === oshi1) oshi1 = null;
+  }
+  buildOshiGrids();
+}
+
+function saveOshiSettings() {
+  localStorage.setItem('traceive_oshi_v1', JSON.stringify({ oshi1, oshi2 }));
+  updateOshiPreview();
+  buildOshiRanking();
+  const msg = document.getElementById('oshi-save-msg');
+  msg.textContent = '✅ 保存しました！';
+  setTimeout(() => {
+    document.getElementById('oshi-modal').style.display = 'none';
+    document.body.style.overflow = '';
+    msg.textContent = '';
+  }, 1000);
+}
+
+// 推し倍率をポイント計算に適用（evalSpotから呼ばれる）
+function getOshiMultiplier(memberName) {
+  if (!memberName) return 1;
+  if (oshi1 && oshi1 === memberName) return OSHI_MULTIPLIER_1;
+  if (oshi2 && oshi2 === memberName) return OSHI_MULTIPLIER_2;
+  return 1;
+}
+
+// ── 推しメンランキングモーダル ──
+
+// ダミーランキングデータ生成（バックエンド実装後はAPIに差し替え）
+function getDummyOshiRankingData(member) {
+  const base = [
+    { name:'@yuna_dive',       pt:1840 },
+    { name:'@ive_love_jp',     pt:1620 },
+    { name:'@pilgrim_rei',     pt:1430 },
+    { name:'@wony_hunter',     pt:1280 },
+    { name:'@liz_forever',     pt:1100 },
+    { name:'@leeseo_walk',     pt:980  },
+    { name:'@ive_gaul_fan',    pt:870  },
+    { name:'@trace_yujin',     pt:740  },
+    { name:'@k_pilgrim_2024',  pt:690  },
+    { name:'@ive_spot_jp',     pt:610  },
+    { name:'@wonyoung_jp',     pt:560  },
+    { name:'@rei_aichi_fan',   pt:490  },
+    { name:'@ive_diary',       pt:430  },
+    { name:'@sacred_ive',      pt:380  },
+    { name:'@pilgrim_tokyo',   pt:310  },
+    { name:'@liz_fan_club',    pt:270  },
+    { name:'@ive_map_hunter',  pt:230  },
+    { name:'@yujin_smile',     pt:190  },
+    { name:'@gaeul_nyan',      pt:150  },
+    { name:'@leeseo_maknae',   pt:110  },
+  ];
+  // メンバーによってランダムにシャッフルしてダミー感を出す
+  const seed = member.charCodeAt(0);
+  return base.map((u, i) => ({
+    ...u,
+    pt: Math.max(50, u.pt - (seed % 5) * i * 10)
+  })).sort((a,b) => b.pt - a.pt);
+}
+
+function showOshiRanking(member) {
+  const icon = MEMBER_ICONS[member] || '💜';
+  document.getElementById('oshi-ranking-icon').textContent = icon;
+  document.getElementById('oshi-ranking-title').textContent = `${member} 推しランキング`;
+  renderOshiRankingList(member, 'year');
+  document.getElementById('oshi-ranking-modal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+  // タブをリセット
+  document.querySelectorAll('.orm-tab').forEach((t,i) => {
+    t.style.color = i===0 ? 'var(--purple-deep)' : '#9b8aab';
+    t.style.borderBottom = i===0 ? '2px solid var(--purple-deep)' : '2px solid transparent';
+    t.classList.toggle('active', i===0);
+  });
+  // モーダルにメンバー名を保持
+  document.getElementById('oshi-ranking-modal').dataset.member = member;
+}
+
+function renderOshiRankingList(member, period) {
+  const list = document.getElementById('oshi-ranking-modal-list');
+  const data = getDummyOshiRankingData(member);
+  // 期間で倍率調整（ダミー）
+  const periodMult = {year:1, half:0.55, quarter:0.28, month:0.1};
+  const mult = periodMult[period] || 1;
+  const medals = ['🥇','🥈','🥉'];
+
+  list.innerHTML = data.map((u, i) => {
+    const pt = Math.round(u.pt * mult);
+    return `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f5f0fa;">
+      <div style="width:28px;text-align:center;font-size:${i<3?'20':'13'}px;font-weight:700;color:#9b8aab;flex-shrink:0;">
+        ${i<3 ? medals[i] : i+1}
+      </div>
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#3d1a5e,#c0392b);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0;">
+        ${u.name.slice(1,3).toUpperCase()}
+      </div>
+      <div style="flex:1;font-size:13px;font-weight:600;color:#3d1a5e;">${u.name}</div>
+      <div style="font-size:15px;font-weight:700;color:var(--purple-deep);">${pt.toLocaleString()}<span style="font-size:10px;font-weight:400;color:#9b8aab;">pt</span></div>
+    </div>`;
+  }).join('');
+}
+
+function switchOshiRankingPeriod(el, period) {
+  document.querySelectorAll('.orm-tab').forEach(t => {
+    t.style.color = '#9b8aab';
+    t.style.borderBottom = '2px solid transparent';
+    t.classList.remove('active');
+  });
+  el.style.color = 'var(--purple-deep)';
+  el.style.borderBottom = '2px solid var(--purple-deep)';
+  el.classList.add('active');
+  const member = document.getElementById('oshi-ranking-modal').dataset.member;
+  renderOshiRankingList(member, period);
+}
+
+function closeOshiRankingModal(e) {
+  if (e.target === document.getElementById('oshi-ranking-modal')) {
+    document.getElementById('oshi-ranking-modal').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+}
+
+// ── 期間タブ切替（スポットランキング） ──
+function switchRankingPeriod(el, period) {
+  document.querySelectorAll('#ranking-period-tabs .rtab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  // バックエンド実装後にperiodに応じたデータ取得を追加
+}
+
+// ── メンバータブ長押しで推しランキングへ ──
+function initMemberTabLongPress() {
+  document.querySelectorAll('.member-tab-item[ondblclick]').forEach(tab => {
+    let timer;
+    tab.addEventListener('touchstart', e => {
+      const member = tab.querySelector('.member-tab-name')?.textContent;
+      if (!member || member === '全員') return;
+      timer = setTimeout(() => showOshiRanking(member), 500);
+    });
+    tab.addEventListener('touchend', () => clearTimeout(timer));
+    tab.addEventListener('touchmove', () => clearTimeout(timer));
+  });
+}
+
+// ── 推しメン熱量ランキング（既存のbuildOshiRankingを上書き） ──
+function buildOshiRanking() {
+  const wrap = document.getElementById('oshi-ranking-list');
+  if (!wrap) return;
+
+  // ダミーデータ（バックエンド接続後にリアルデータへ差し替え）
+  const dummyRankings = {
+    'ユジン':    [{ user:'@yujin_love_jp', pt:1240 },{ user:'@dive_yujin',    pt:980 },{ user:'@ive_yjfan',    pt:740 }],
+    'ガウル':    [{ user:'@gaeul_diary',   pt:1100 },{ user:'@trace_gaeul',   pt:860 },{ user:'@kimgaeul_jp', pt:530 }],
+    'レイ':      [{ user:'@rei_oshi_rei',  pt:1380 },{ user:'@naoirei_fan',   pt:990 },{ user:'@rei_pilgrm',  pt:660 }],
+    'ウォニョン': [{ user:'@wony_chaser',  pt:1560 },{ user:'@jangwony_jp',   pt:1200 },{ user:'@wonyoung1',  pt:870 }],
+    'リズ':      [{ user:'@liz_oshi_jpn',  pt:920  },{ user:'@kimliz_trace',  pt:710 },{ user:'@liz_fan_kr',  pt:480 }],
+    'イソ':      [{ user:'@leeseo_diary',  pt:840  },{ user:'@iseo_pilgrim',  pt:630 },{ user:'@ive_leeseo',  pt:410 }],
+  };
+
+  const medals = ['🥇','🥈','🥉'];
+  const myOshi1 = oshi1;
+  const myOshi2 = oshi2;
+
+  wrap.innerHTML = GROUP_CONFIG.members.map(m => {
+    const users = dummyRankings[m.name] || [];
+    const isMyOshi1 = myOshi1 === m.name;
+    const isMyOshi2 = myOshi2 === m.name;
+    const oshiBadge = isMyOshi1
+      ? '<span style="background:#3d1a5e;color:#fff;font-size:10px;padding:2px 6px;border-radius:8px;margin-left:6px;">💜 1推し</span>'
+      : isMyOshi2
+      ? '<span style="background:#9b8aab;color:#fff;font-size:10px;padding:2px 6px;border-radius:8px;margin-left:6px;">🩷 2推し</span>'
+      : '';
+
+    return `
+    <div style="background:#fff;border-radius:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(61,26,94,0.08);overflow:hidden;">
+      <div style="
+        background:${isMyOshi1 ? 'linear-gradient(135deg,#3d1a5e,#7b1a3e)' : isMyOshi2 ? 'linear-gradient(135deg,#6b3a8e,#9b4a6e)' : 'linear-gradient(135deg,#f0e8f8,#e8d8f0)'};
+        padding:12px 16px;display:flex;align-items:center;gap:10px;
+      ">
+        <div style="font-size:28px;">${MEMBER_ICONS[m.name]||'💜'}</div>
+        <div style="font-size:15px;font-weight:700;color:${isMyOshi1||isMyOshi2 ? '#fff' : '#3d1a5e'};">
+          ${m.name}${oshiBadge}
+        </div>
+      </div>
+      <div style="padding:10px 12px;">
+        ${users.map((u,i) => `
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;${i < users.length-1 ? 'border-bottom:1px solid #f0e8f8;' : ''}">
+            <div style="font-size:18px;width:24px;text-align:center;">${medals[i]||''}</div>
+            <div style="flex:1;font-size:13px;color:#4a3060;font-weight:600;">${u.user}</div>
+            <div style="font-size:14px;font-weight:700;color:#3d1a5e;">${u.pt.toLocaleString()}<span style="font-size:10px;font-weight:400;color:#9b8aab;"> pt</span></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── ランキング メンバーフィルター ──
+function buildRankingMemberTabs() {
+  const wrap = document.getElementById('ranking-member-tabs');
+  if (!wrap) return;
+  GROUP_CONFIG.members.forEach(m => {
+    const btn = document.createElement('button');
+    btn.className = 'rmtab';
+    btn.textContent = m.name;
+    btn.setAttribute('data-member', m.name);
+    btn.style.cssText = 'flex-shrink:0;padding:7px 14px;border-radius:20px;border:none;font-size:12px;font-weight:700;cursor:pointer;background:var(--purple-pale);color:var(--purple-deep);font-family:"Noto Sans JP",sans-serif;';
+    btn.onclick = function() { filterRankingMember(this, m.name); };
+    wrap.appendChild(btn);
+  });
+}
+
+function filterRankingMember(el, member) {
+  document.querySelectorAll('.rmtab').forEach(b => {
+    b.style.background = 'var(--purple-pale)';
+    b.style.color = 'var(--purple-deep)';
+  });
+  el.style.background = 'var(--purple-deep)';
+  el.style.color = '#fff';
+
+  const items = document.querySelectorAll('#ranking-list .ranking-item');
+  let visibleCount = 0;
+  items.forEach((item, i) => {
+    const m = item.getAttribute('data-member') || '';
+    const show = member === 'all' || m === member;
+    item.style.display = show ? 'flex' : 'none';
+    if (show) {
+      visibleCount++;
+      // 順位番号を振り直し
+      const numEl = item.querySelector('.rank-num');
+      if (numEl) {
+        numEl.textContent = visibleCount;
+        numEl.className = 'rank-num ' + (visibleCount === 1 ? 'rank-1' : visibleCount === 2 ? 'rank-2' : visibleCount === 3 ? 'rank-3' : 'rank-other');
+      }
+    }
+  });
+
+  const empty = document.getElementById('ranking-empty');
+  if (empty) empty.style.display = visibleCount === 0 ? 'block' : 'none';
+}
+
 // ── ランキングタブ ──
 document.querySelectorAll('.rtab').forEach(t => {
   t.addEventListener('click', function() {
@@ -3998,12 +4545,319 @@ document.querySelectorAll('.rtab').forEach(t => {
     this.classList.add('active');
   });
 });
+
+// ════════════════════════════════════════
+// localStorage 保存・復元システム
+// ════════════════════════════════════════
+
+const LS_KEY = 'traceive_userdata_v1';
+
+// 保存するデータをまとめて取得
+function collectUserData() {
+  // 評価済みスポット（evalSpot で voted クラスがついているもの）
+  const votedSpots = {};
+  document.querySelectorAll('.eval-btn.voted').forEach(b => {
+    const type = (b.getAttribute('onclick') || '').match(/evalSpot\('(.+?)'\)/);
+    if (type) votedSpots[type[1]] = true;
+  });
+
+  // 確定待ちポイントリスト
+  const pendingItems = [];
+  document.querySelectorAll('#pending-list .pending-item').forEach(item => {
+    const name = item.querySelector('.pending-item-name')?.textContent || '';
+    const type = item.querySelector('.pending-item-type')?.textContent || '';
+    const pt   = item.querySelector('.pending-item-pt')?.textContent || '';
+    if (name) pendingItems.push({ name, type, pt });
+  });
+
+  // 貢献ポイント表示値
+  const contribText = document.getElementById('profile-contrib-total')?.textContent || '0 pt';
+  const contribPt = parseInt(contribText) || 0;
+
+  return {
+    v: 1,
+    contrib: contribPt,
+    rank: currentUserRank,
+    optimizeUsed: optimizeUsedThisMonth,
+    pending: pendingItems,
+    voted: votedSpots,
+    savedAt: Date.now(),
+  };
+}
+
+// localStorageに保存
+function saveUserData() {
+  try {
+    const data = collectUserData();
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+  } catch(e) {
+    console.warn('saveUserData error:', e);
+  }
+}
+
+// localStorageから復元して画面に反映
+function loadUserData(data) {
+  if (!data || data.v !== 1) return;
+
+  // ランク・最適化回数
+  if (data.rank) {
+    currentUserRank = data.rank;
+  }
+  if (typeof data.optimizeUsed === 'number') {
+    optimizeUsedThisMonth = data.optimizeUsed;
+  }
+  updateOptimizeBtn();
+
+  // 貢献ポイント表示
+  const el = document.getElementById('profile-contrib-total');
+  if (el && typeof data.contrib === 'number') {
+    el.textContent = data.contrib + ' pt';
+  }
+
+  // 確定待ちポイント復元
+  if (Array.isArray(data.pending) && data.pending.length > 0) {
+    const list = document.getElementById('pending-list');
+    if (list) {
+      list.innerHTML = '';
+      data.pending.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'pending-item';
+        item.innerHTML = `<div class="pending-item-left"><div class="pending-item-name">${escapeText(p.name)}</div><div class="pending-item-type">${escapeText(p.type)}</div></div><div class="pending-item-pt">${escapeText(p.pt)}</div>`;
+        list.appendChild(item);
+      });
+    }
+  }
+}
+
+// ページ起動時に復元（上のDOMContentLoadedで処理済みのため不要だが念のため残す）
+// ※ 復元ロジックはDOMContentLoaded内に統合済み
+
+// evalSpot 後に自動保存（既存関数をラップ）
+const _origEvalSpot = evalSpot;
+// evalSpot は既に定義済みなので、保存フックを追加
+const _origAddPendingPoint = addPendingPoint;
+function addPendingPoint(spotName, typeLabel, pt) {
+  _origAddPendingPoint(spotName, typeLabel, pt);
+  setTimeout(saveUserData, 100);
+}
+
+// ════════════════════════════════════════
+// 引き継ぎコード生成・復元
+// ════════════════════════════════════════
+
+function openTransferModal() {
+  saveUserData(); // 最新状態を保存してからコードを生成
+  generateTransferCode();
+  document.getElementById('transfer-modal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeTransferModal(e) {
+  if (e.target === document.getElementById('transfer-modal')) {
+    document.getElementById('transfer-modal').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+}
+
+function switchTransferTab(tab) {
+  document.getElementById('tpanel-export').style.display = tab === 'export' ? 'block' : 'none';
+  document.getElementById('tpanel-import').style.display = tab === 'import' ? 'block' : 'none';
+  document.getElementById('ttab-export').style.background = tab === 'export' ? '#3d1a5e' : '#f0e8f8';
+  document.getElementById('ttab-export').style.color = tab === 'export' ? '#fff' : '#3d1a5e';
+  document.getElementById('ttab-import').style.background = tab === 'import' ? '#3d1a5e' : '#f0e8f8';
+  document.getElementById('ttab-import').style.color = tab === 'import' ? '#fff' : '#3d1a5e';
+}
+
+function generateTransferCode() {
+  try {
+    const data = collectUserData();
+    const json = JSON.stringify(data);
+    // btoa はASCII限定なのでURI encode → btoa
+    const encoded = btoa(unescape(encodeURIComponent(json)));
+    // チェックサム（末尾4文字）
+    let cs = 0;
+    for (let i = 0; i < encoded.length; i++) cs = (cs + encoded.charCodeAt(i)) % 9999;
+    const checksum = cs.toString().padStart(4, '0');
+    // 12文字ずつ区切り
+    const chunks = encoded.match(/.{1,12}/g) || [];
+    const code = 'TIV1-' + chunks.join('-') + '-' + checksum;
+    document.getElementById('transfer-code-display').textContent = code;
+  } catch(e) {
+    document.getElementById('transfer-code-display').textContent = '（コード生成エラー）';
+  }
+}
+
+function copyTransferCode() {
+  const code = document.getElementById('transfer-code-display').textContent;
+  const msg = document.getElementById('copy-transfer-msg');
+  navigator.clipboard.writeText(code).then(() => {
+    msg.textContent = '✅ コピーしました！新しい端末で貼り付けてください';
+    msg.style.color = '#15803d';
+  }).catch(() => {
+    // フォールバック：テキスト選択
+    const el = document.getElementById('transfer-code-display');
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    msg.textContent = '長押し→「コピー」でコピーしてください';
+    msg.style.color = '#92400e';
+  });
+}
+
+function applyTransferCode() {
+  const raw = document.getElementById('transfer-input').value.trim();
+  const msg = document.getElementById('import-transfer-msg');
+
+  if (!raw.startsWith('TIV1-')) {
+    msg.textContent = '❌ コードの形式が正しくありません';
+    msg.style.color = '#dc2626';
+    return;
+  }
+
+  try {
+    // プレフィックスとチェックサムを取り除いてデコード
+    const parts = raw.split('-');
+    // TIV1 + チェックサム(末尾) を除いた部分を結合
+    const checksum = parts[parts.length - 1];
+    const encoded = parts.slice(1, parts.length - 1).join('');
+
+    // チェックサム検証
+    let cs = 0;
+    for (let i = 0; i < encoded.length; i++) cs = (cs + encoded.charCodeAt(i)) % 9999;
+    if (cs.toString().padStart(4, '0') !== checksum) {
+      msg.textContent = '❌ コードが破損しています。コピーし直してください';
+      msg.style.color = '#dc2626';
+      return;
+    }
+
+    const json = decodeURIComponent(escape(atob(encoded)));
+    const data = JSON.parse(json);
+
+    if (data.v !== 1) {
+      msg.textContent = '❌ バージョンが異なります';
+      msg.style.color = '#dc2626';
+      return;
+    }
+
+    // localStorage に保存して反映
+    localStorage.setItem(LS_KEY, json);
+    loadUserData(data);
+
+    msg.textContent = '✅ 復元しました！';
+    msg.style.color = '#15803d';
+    document.getElementById('transfer-input').value = '';
+
+    setTimeout(() => {
+      document.getElementById('transfer-modal').style.display = 'none';
+      document.body.style.overflow = '';
+    }, 1200);
+
+  } catch(e) {
+    msg.textContent = '❌ 読み込みに失敗しました。コードを確認してください';
+    msg.style.color = '#dc2626';
+  }
+}
 </script>
 
 <!-- Google Maps API 読み込み -->
 <script async defer
   src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCEKakeNjAzKN6msNTsrUb2J6TMiXaInm0&callback=initMap&language=ja">
 </script>
+
+<!-- 推し設定モーダル -->
+<div id="oshi-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.6);overflow-y:auto;" onclick="closeOshiModal(event)">
+  <div style="background:#fff;border-radius:20px;margin:60px 16px 40px;padding:24px 20px;" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <div style="font-size:17px;font-weight:700;color:#3d1a5e;">💜 推し設定</div>
+      <button onclick="document.getElementById('oshi-modal').style.display='none';document.body.style.overflow='';" style="background:none;border:none;font-size:22px;cursor:pointer;color:#9b8aab;">×</button>
+    </div>
+    <div style="font-size:12px;color:#9b8aab;margin-bottom:20px;">推しのスポットを評価するとポイントアップ！</div>
+
+    <!-- 1推し -->
+    <div style="margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:700;color:#3d1a5e;margin-bottom:8px;">
+        💜 1推し <span style="font-weight:400;color:#c0392b;font-size:12px;">×1.5倍ポイント</span>
+      </div>
+      <div id="oshi1-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>
+    </div>
+
+    <!-- 2推し -->
+    <div style="margin-bottom:24px;">
+      <div style="font-size:13px;font-weight:700;color:#3d1a5e;margin-bottom:8px;">
+        🩷 2推し <span style="font-weight:400;color:#9b8aab;font-size:12px;">×1.2倍ポイント</span>
+      </div>
+      <div id="oshi2-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>
+    </div>
+
+    <div style="padding:12px;background:#fef3c7;border-radius:10px;font-size:12px;color:#92400e;margin-bottom:16px;">
+      ⚠️ 1推しと2推しに同じメンバーは設定できません
+    </div>
+
+    <button onclick="saveOshiSettings()" style="width:100%;padding:12px;background:linear-gradient(135deg,#3d1a5e,#c0392b);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;">保存する</button>
+    <div id="oshi-save-msg" style="text-align:center;font-size:12px;color:#15803d;margin-top:8px;min-height:18px;"></div>
+  </div>
+</div>
+
+<!-- 推しメンランキングモーダル -->
+<div id="oshi-ranking-modal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.7);overflow-y:auto;" onclick="closeOshiRankingModal(event)">
+  <div style="background:#fff;border-radius:20px;margin:50px 16px 40px;padding:0 0 24px;overflow:hidden;" onclick="event.stopPropagation()">
+    <!-- ヘッダー -->
+    <div id="oshi-ranking-header" style="padding:20px 20px 16px;background:linear-gradient(135deg,#3d1a5e,#c0392b);color:#fff;position:relative;">
+      <button onclick="document.getElementById('oshi-ranking-modal').style.display='none';document.body.style.overflow='';" style="position:absolute;top:14px;right:16px;background:none;border:none;color:rgba(255,255,255,0.7);font-size:22px;cursor:pointer;">×</button>
+      <div id="oshi-ranking-icon" style="font-size:36px;margin-bottom:6px;">🐕</div>
+      <div id="oshi-ranking-title" style="font-size:18px;font-weight:700;">ユジン 推しランキング</div>
+      <div style="font-size:12px;opacity:0.8;margin-top:2px;">推しポイント累計ランキング</div>
+    </div>
+
+    <!-- 期間タブ -->
+    <div style="display:flex;gap:0;border-bottom:1px solid #f0e8f8;">
+      <button class="orm-tab active" onclick="switchOshiRankingPeriod(this,'year')"  style="flex:1;padding:10px 0;border:none;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:var(--purple-deep);border-bottom:2px solid var(--purple-deep);">年間</button>
+      <button class="orm-tab" onclick="switchOshiRankingPeriod(this,'half')"  style="flex:1;padding:10px 0;border:none;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:#9b8aab;border-bottom:2px solid transparent;">半年</button>
+      <button class="orm-tab" onclick="switchOshiRankingPeriod(this,'quarter')" style="flex:1;padding:10px 0;border:none;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:#9b8aab;border-bottom:2px solid transparent;">3ヶ月</button>
+      <button class="orm-tab" onclick="switchOshiRankingPeriod(this,'month')"  style="flex:1;padding:10px 0;border:none;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:#9b8aab;border-bottom:2px solid transparent;">月間</button>
+    </div>
+
+    <!-- ランキングリスト -->
+    <div id="oshi-ranking-modal-list" style="padding:16px 16px 0;"></div>
+  </div>
+</div>
+
+<!-- データ引き継ぎモーダル -->
+<div id="transfer-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.6);overflow-y:auto;" onclick="closeTransferModal(event)">
+  <div style="background:#fff;border-radius:20px;margin:60px 16px 40px;padding:24px 20px;" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div style="font-size:17px;font-weight:700;color:#3d1a5e;">📲 データ引き継ぎ</div>
+      <button onclick="document.getElementById('transfer-modal').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:#9b8aab;">×</button>
+    </div>
+
+    <!-- タブ -->
+    <div style="display:flex;gap:8px;margin-bottom:18px;">
+      <button id="ttab-export" onclick="switchTransferTab('export')" style="flex:1;padding:9px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:#3d1a5e;color:#fff;">📤 引き継ぎコードを発行</button>
+      <button id="ttab-import" onclick="switchTransferTab('import')" style="flex:1;padding:9px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer;background:#f0e8f8;color:#3d1a5e;">📥 コードを入力して復元</button>
+    </div>
+
+    <!-- 発行パネル -->
+    <div id="tpanel-export">
+      <div style="font-size:13px;color:#4a3060;margin-bottom:12px;">下のコードをコピーして、新しい端末のアプリで貼り付けてください。</div>
+      <div style="background:#1a1025;border-radius:12px;padding:16px;margin-bottom:12px;position:relative;">
+        <div id="transfer-code-display" style="font-family:monospace;font-size:13px;color:#e8d8f8;letter-spacing:0.08em;word-break:break-all;line-height:1.8;user-select:all;">─</div>
+      </div>
+      <button onclick="copyTransferCode()" id="copy-transfer-btn" style="width:100%;padding:12px;background:linear-gradient(135deg,#3d1a5e,#c0392b);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;">📋 コードをコピー</button>
+      <div id="copy-transfer-msg" style="text-align:center;font-size:12px;color:#15803d;margin-top:8px;min-height:18px;"></div>
+      <div style="margin-top:14px;padding:12px;background:#fef3c7;border-radius:10px;font-size:12px;color:#92400e;">⚠️ このコードは端末に保存されません。機種変更・アプリ削除の前に必ずコピーしてください。</div>
+    </div>
+
+    <!-- 復元パネル -->
+    <div id="tpanel-import" style="display:none;">
+      <div style="font-size:13px;color:#4a3060;margin-bottom:12px;">引き継ぎコードを貼り付けて「復元する」を押してください。</div>
+      <textarea id="transfer-input" placeholder="TIV1-XXXX-XXXX-..." style="width:100%;height:100px;border:2px solid #c9a8e8;border-radius:12px;padding:12px;font-size:13px;font-family:monospace;resize:none;outline:none;color:#1a1025;"></textarea>
+      <button onclick="applyTransferCode()" style="width:100%;padding:12px;background:linear-gradient(135deg,#3d1a5e,#c0392b);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;">✅ 復元する</button>
+      <div id="import-transfer-msg" style="text-align:center;font-size:12px;margin-top:8px;min-height:18px;"></div>
+      <div style="margin-top:14px;padding:12px;background:#fef3c7;border-radius:10px;font-size:12px;color:#92400e;">⚠️ 復元すると現在のデータに上書きされます。</div>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
