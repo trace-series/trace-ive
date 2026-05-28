@@ -232,21 +232,6 @@
     z-index: 10;
   }
 
-  .spot-count {
-    background: white;
-    border-radius: 20px;
-    padding: 6px 12px;
-    font-size: 11px;
-    color: var(--text-mid);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    border: 1px solid var(--border);
-  }
-
-  .spot-count strong {
-    color: var(--purple-deep);
-    font-weight: 700;
-  }
-
   /* MAP下部カード */
   .map-bottom-card {
     position: absolute;
@@ -2012,18 +1997,13 @@
 
       <!-- フィルター -->
       <div class="map-filter">
-        <button class="filter-btn active" onclick="filterPins(this,'all')">すべて</button>
-        <button class="filter-btn" onclick="filterPins(this,'カフェ・飲食店')">🍜 カフェ・飲食</button>
-        <button class="filter-btn" onclick="filterPins(this,'撮影スポット')">📸 撮影</button>
-        <button class="filter-btn" onclick="filterPins(this,'ライブ・イベント会場')">🎤 ライブ・イベント</button>
-        <button class="filter-btn" onclick="filterPins(this,'観光・名所')">🏯 観光・名所</button>
-        <button class="filter-btn" onclick="filterPins(this,'ショップ')">🛍️ ショップ</button>
+        <button id="fbtn-all"   class="filter-btn active" onclick="filterPins(this,'all')">すべて</button>
+        <button id="fbtn-cafe"  class="filter-btn" onclick="filterPins(this,'カフェ・飲食店')">🍜 カフェ・飲食</button>
+        <button id="fbtn-photo" class="filter-btn" onclick="filterPins(this,'撮影スポット')">📸 撮影</button>
+        <button id="fbtn-live"  class="filter-btn" onclick="filterPins(this,'ライブ・イベント会場')">🎤 ライブ・イベント</button>
+        <button id="fbtn-sight" class="filter-btn" onclick="filterPins(this,'観光・名所')">🏯 観光・名所</button>
+        <button id="fbtn-shop"  class="filter-btn" onclick="filterPins(this,'ショップ')">🛍️ ショップ</button>
         <button class="filter-btn help-btn" onclick="openCategoryHelp()">？</button>
-      </div>
-
-      <!-- スポット数 -->
-      <div class="map-top-left">
-        <div class="spot-count"><strong id="spot-count-num">6</strong> スポット</div>
       </div>
 
       <!-- 下部カード -->
@@ -4302,15 +4282,44 @@ let activeMember = 'all';
 let activeCategory = 'all';
 
 function applyFilters() {
-  let count = 0;
+  // カテゴリ別カウント
+  const catCount = {
+    all: 0,
+    'カフェ・飲食店': 0,
+    '撮影スポット': 0,
+    'ライブ・イベント会場': 0,
+    '観光・名所': 0,
+    'ショップ': 0,
+  };
+
   markers.forEach(marker => {
     const memberMatch = activeMember === 'all' || marker.spotData.member === activeMember;
     const categoryMatch = activeCategory === 'all' || marker.spotData.category === activeCategory;
     const show = memberMatch && categoryMatch;
     marker.setVisible(show);
-    if (show) count++;
+    if (show) catCount.all++;
+    // メンバーフィルター適用時の各カテゴリ件数
+    if (memberMatch) {
+      const cat = marker.spotData.category;
+      if (cat in catCount) catCount[cat]++;
+    }
   });
-  document.getElementById('spot-count-num').textContent = count;
+
+  // ボタン件数を更新
+  const btnMap = {
+    'fbtn-all':   { cat: 'all',             label: 'すべて' },
+    'fbtn-cafe':  { cat: 'カフェ・飲食店',   label: '🍜 カフェ・飲食' },
+    'fbtn-photo': { cat: '撮影スポット',      label: '📸 撮影' },
+    'fbtn-live':  { cat: 'ライブ・イベント会場', label: '🎤 ライブ・イベント' },
+    'fbtn-sight': { cat: '観光・名所',        label: '🏯 観光・名所' },
+    'fbtn-shop':  { cat: 'ショップ',          label: '🛍️ ショップ' },
+  };
+  Object.entries(btnMap).forEach(([id, { cat, label }]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const n = catCount[cat] || 0;
+    el.textContent = n > 0 ? `${label} (${n})` : label;
+  });
 }
 
 // ── Google Maps 初期化 ──
