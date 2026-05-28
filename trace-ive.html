@@ -3663,6 +3663,8 @@ function shareX() {
 }
 
 // ── ビュー切り替え ──
+let activeView = 'map';
+
 function showView(name) {
   ['map','ranking','feed','post','profile','route','pointrules'].forEach(v => {
     const el = document.getElementById('view-'+v);
@@ -3674,11 +3676,18 @@ function showView(name) {
   if (target) target.style.display = 'block';
   const nav = document.getElementById('nav-'+name);
   if (nav) nav.classList.add('active');
+  activeView = name;
   window.scrollTo(0, 0);
 }
 
-// ── メンバーフィルター ──
+// ── メンバーフィルター（画面によって動作が変わる） ──
 function filterMember(el, member) {
+  // ランキング画面では推しランキングモーダルを開く
+  if (activeView === 'ranking' && member !== 'all') {
+    showOshiRanking(member);
+    return;
+  }
+
   document.querySelectorAll('.member-tab-item').forEach(x => x.classList.remove('active'));
   el.classList.add('active');
   activeMember = member;
