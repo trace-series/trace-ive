@@ -2500,6 +2500,11 @@
         <div class="settings-item-text">ヘルプ・お問い合わせ</div>
         <div class="settings-item-arrow">›</div>
       </div>
+      <div class="settings-item" onclick="openAdminLogin()" style="border-top:1px solid var(--border);">
+        <div class="settings-item-icon">🛡️</div>
+        <div class="settings-item-text" style="color:var(--purple-deep);font-weight:600;">管理者パネル</div>
+        <div class="settings-item-arrow">›</div>
+      </div>
     </div>
 
     <!-- 設定画面下部 免責表示 -->
@@ -4823,6 +4828,260 @@ async function submitNewSpot() {
     return Math.max(0, Math.ceil(7 - diffDays));
   }
 
+
+  // ── 管理者パネル ──
+  const ADMIN_PW_KEY = 'traceive_admin_auth_v1';
+  // パスワードはSHA-256ハッシュで保存（平文をコードに書かない）
+  // 初期パスワード: traceive_admin_2025 → ハッシュ値
+  const ADMIN_PW_HASH = 'dc36b467308cfd7d654c6f05df6d2aa75be3d1322e80f06704c14bb12c3308a8';
+
+  async function sha256(message) {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  function openAdminLogin() {
+    const authed = sessionStorage.getItem(ADMIN_PW_KEY);
+    if (authed === 'true') {
+      openAdminPanel();
+    } else {
+      const loginModal = document.getElementById('admin-login-modal');
+      loginModal.style.display = 'flex';
+      document.getElementById('admin-pw-input').value = '';
+      document.getElementById('admin-pw-error').textContent = '';
+      setTimeout(() => document.getElementById('admin-pw-input').focus(), 100);
+    }
+  }
+
+  async function verifyAdminPassword() {
+    const pw = document.getElementById('admin-pw-input').value;
+    const hash = await sha256(pw);
+    if (hash === ADMIN_PW_HASH) {
+      sessionStorage.setItem(ADMIN_PW_KEY, 'true');
+      document.getElementById('admin-login-modal').style.display = 'none';
+      openAdminPanel();
+    } else {
+      document.getElementById('admin-pw-error').textContent = '❌ パスワードが違います';
+      document.getElementById('admin-pw-input').value = '';
+    }
+  }
+
+  async function openAdminPanel() {
+    document.getElementById('admin-modal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    document.getElementById('admin-role-label').textContent = 'super_admin: @missing_link';
+    await loadPendingSubmissions();
+    switchAdminTab('pending');
+  }
+
+  function closeAdminPanel() {
+    document.getElementById('admin-modal').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function switchAdminTab(tab) {
+    ['pending','spots','admins'].forEach(t => {
+      document.getElementById('admin-tab-' + t).style.display = t === tab ? 'block' : 'none';
+      const btn = document.getElementById('atab-' + t);
+      if (btn) {
+        btn.style.background = t === tab ? 'linear-gradient(135deg,#3d1a5e,#6b2d8b)' : 'rgba(255,255,255,0.08)';
+        btn.style.color = t === tab ? '#fff' : 'rgba(255,255,255,0.6)';
+        btn.style.fontWeight = t === tab ? '700' : '400';
+      }
+    });
+    if (tab === 'spots') loadAdminSpots();
+    if (tab === 'admins') loadAdminList();
+  }
+
+  async function loadPendingSubmissions() {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/submissions?status=eq.pending&order=created_at.desc`, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    const data = await res.json();
+    const badge = document.getElementById('pending-count-badge');
+    if (badge) badge.textContent = data.length + '件';
+    const list = document.getElementById('pending-list');
+    if (!data.length) {
+      list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.4);padding:40px;">承認待ちの投稿はありません</div>';
+      return;
+    }
+    list.innerHTML = data.map(s => `
+      <div style="background:rgba(255,255,255,0.06);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.1);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <div>
+            <div style="font-size:15px;font-weight:700;color:#fff;">${escHtml(s.spot_name)}</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;">${s.category || ''} · ${s.member || ''} · ${s.submitter || ''}</div>
+          </div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.3);">${new Date(s.created_at).toLocaleDateString('ja-JP')}</div>
+        </div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:8px;line-height:1.6;">${escHtml(s.description || '')}</div>
+        ${s.source_url ? `<a href="${escHtml(s.source_url)}" target="_blank" style="font-size:11px;color:#c9a84c;">🔗 出典を確認</a>` : ''}
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button onclick="approveSubmission('${s.id}')" style="flex:1;padding:10px;background:linear-gradient(135deg,#15803d,#16a34a);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ 承認</button>
+          <button onclick="rejectSubmission('${s.id}')" style="flex:1;padding:10px;background:rgba(220,38,38,0.3);color:#fca5a5;border:1px solid rgba(220,38,38,0.4);border-radius:10px;font-size:13px;cursor:pointer;">❌ 却下</button>
+          <button onclick="holdSubmission('${s.id}')" style="padding:10px 14px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);border:none;border-radius:10px;font-size:13px;cursor:pointer;">⏸</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function approveSubmission(id) {
+    // submissionsから取得
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/submissions?id=eq.${id}`, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    const [s] = await res.json();
+    if (!s) return;
+
+    // spotsに追加
+    const spotRes = await fetch(`${SUPABASE_URL}/rest/v1/spots`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({
+        name: s.spot_name,
+        lat: s.lat,
+        lng: s.lng,
+        sub: s.description,
+        icon: '📍',
+        category: s.category,
+        address: '',
+        member: s.member,
+        discoverer: s.submitter,
+        trust_score: 5,
+        good_count: 0,
+        bad_count: 0,
+        admin_level: 'pending_review',
+      })
+    });
+
+    // submissionをapprovedに更新
+    await fetch(`${SUPABASE_URL}/rest/v1/submissions?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: 'approved' })
+    });
+
+    await loadPendingSubmissions();
+    showEvalToast('✅ 承認しました！スポットに追加されました');
+  }
+
+  async function rejectSubmission(id) {
+    await fetch(`${SUPABASE_URL}/rest/v1/submissions?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: 'rejected' })
+    });
+    await loadPendingSubmissions();
+    showEvalToast('❌ 却下しました');
+  }
+
+  async function holdSubmission(id) {
+    await fetch(`${SUPABASE_URL}/rest/v1/submissions?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: 'hold' })
+    });
+    await loadPendingSubmissions();
+    showEvalToast('⏸ 保留にしました');
+  }
+
+  async function loadAdminSpots() {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/spots?select=id,name,category,member,admin_level&order=created_at.desc&limit=50`, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    const data = await res.json();
+    const list = document.getElementById('admin-spots-list');
+    list.innerHTML = data.map(s => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(255,255,255,0.05);border-radius:10px;margin-bottom:6px;">
+        <div>
+          <div style="font-size:13px;color:#fff;font-weight:600;">${escHtml(s.name)}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);">${s.category || ''} · ${s.member || ''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:10px;padding:3px 8px;background:rgba(255,255,255,0.1);border-radius:20px;color:rgba(255,255,255,0.5);">${s.admin_level}</span>
+          <button onclick="deleteSpot('${s.id}','${escHtml(s.name)}')" style="background:rgba(220,38,38,0.2);border:none;color:#fca5a5;padding:5px 10px;border-radius:8px;font-size:12px;cursor:pointer;">削除</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function deleteSpot(id, name) {
+    if (!confirm('「' + name + '」を削除しますか？')) return;
+    await fetch(`${SUPABASE_URL}/rest/v1/spots?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    loadAdminSpots();
+    showEvalToast('🗑️ 削除しました');
+  }
+
+  async function loadAdminList() {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/admins?select=*&order=created_at.asc`, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    const data = await res.json();
+    const list = document.getElementById('admin-list');
+    list.innerHTML = data.map(a => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(255,255,255,0.05);border-radius:10px;margin-bottom:8px;">
+        <div>
+          <div style="font-size:14px;color:#fff;font-weight:600;">${escHtml(a.username)}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);">${new Date(a.created_at).toLocaleDateString('ja-JP')} 登録</div>
+        </div>
+        <span style="font-size:12px;padding:4px 10px;border-radius:20px;font-weight:700;
+          background:${a.role === 'super_admin' ? 'linear-gradient(135deg,#c9a84c,#e8c96b)' : 'rgba(61,26,94,0.5)'};
+          color:${a.role === 'super_admin' ? '#1a0a2e' : '#c9a8e8'};">
+          ${a.role === 'super_admin' ? '👑 super_admin' : '🛡️ moderator'}
+        </span>
+      </div>
+    `).join('');
+  }
+
+  async function addModerator() {
+    const username = document.getElementById('new-mod-username').value.trim();
+    if (!username) { alert('ユーザー名を入力してください'); return; }
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/admins`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({ username, role: 'moderator' })
+    });
+    if (res.ok) {
+      document.getElementById('new-mod-username').value = '';
+      loadAdminList();
+      showEvalToast('🛡️ ' + username + ' をモデレーターに追加しました');
+    } else {
+      alert('追加に失敗しました（重複の可能性）');
+    }
+  }
+
+  function escHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
 function toggleCard() {
   cardOpen = !cardOpen;
   const card = document.getElementById('map-card');
@@ -6505,6 +6764,79 @@ function applyTransferCode() {
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ── 管理者画面モーダル ── -->
+<div id="admin-modal" style="display:none;position:fixed;inset:0;z-index:800;background:#0f0720;overflow-y:auto;">
+  <div style="max-width:600px;margin:0 auto;padding:24px 16px 80px;">
+
+    <!-- ヘッダー -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.1);">
+      <div>
+        <div style="font-size:18px;font-weight:700;color:#fff;">🛡️ 管理者パネル</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;" id="admin-role-label"></div>
+      </div>
+      <button onclick="closeAdminPanel()" style="background:rgba(255,255,255,0.1);border:none;color:#fff;padding:8px 14px;border-radius:10px;font-size:13px;cursor:pointer;">閉じる</button>
+    </div>
+
+    <!-- タブ -->
+    <div style="display:flex;gap:8px;margin-bottom:20px;">
+      <button onclick="switchAdminTab('pending')" id="atab-pending" style="flex:1;padding:10px;background:linear-gradient(135deg,#3d1a5e,#6b2d8b);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">
+        承認待ち <span id="pending-count-badge" style="background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:20px;font-size:11px;"></span>
+      </button>
+      <button onclick="switchAdminTab('spots')" id="atab-spots" style="flex:1;padding:10px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border:none;border-radius:10px;font-size:13px;cursor:pointer;">
+        スポット管理
+      </button>
+      <button onclick="switchAdminTab('admins')" id="atab-admins" style="flex:1;padding:10px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border:none;border-radius:10px;font-size:13px;cursor:pointer;">
+        管理者
+      </button>
+    </div>
+
+    <!-- 承認待ちタブ -->
+    <div id="admin-tab-pending">
+      <div id="pending-list">
+        <div style="text-align:center;color:rgba(255,255,255,0.4);padding:40px;">読み込み中...</div>
+      </div>
+    </div>
+
+    <!-- スポット管理タブ -->
+    <div id="admin-tab-spots" style="display:none;">
+      <div style="color:rgba(255,255,255,0.5);font-size:13px;margin-bottom:12px;">登録済みスポット一覧（クリックで削除・編集）</div>
+      <div id="admin-spots-list">
+        <div style="text-align:center;color:rgba(255,255,255,0.4);padding:40px;">読み込み中...</div>
+      </div>
+    </div>
+
+    <!-- 管理者タブ -->
+    <div id="admin-tab-admins" style="display:none;">
+      <div style="margin-bottom:16px;">
+        <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:12px;">🛡️ 管理者一覧</div>
+        <div id="admin-list">読み込み中...</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.06);border-radius:14px;padding:16px;margin-top:16px;">
+        <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:10px;">準管理者を追加</div>
+        <input id="new-mod-username" type="text" placeholder="@username" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#fff;font-size:13px;margin-bottom:10px;box-sizing:border-box;">
+        <button onclick="addModerator()" style="width:100%;padding:10px;background:linear-gradient(135deg,#3d1a5e,#6b2d8b);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">
+          🛡️ モデレーターとして追加
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 管理者ログインモーダル -->
+<div id="admin-login-modal" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;">
+  <div style="background:#1a0a2e;border-radius:20px;padding:28px 24px;width:300px;border:1px solid rgba(255,255,255,0.1);">
+    <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:4px;">🔐 管理者認証</div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:20px;">管理者専用エリアです</div>
+    <input id="admin-pw-input" type="password" placeholder="パスワードを入力" style="width:100%;padding:12px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#fff;font-size:14px;margin-bottom:12px;box-sizing:border-box;" onkeydown="if(event.key==='Enter')verifyAdminPassword()">
+    <div id="admin-pw-error" style="font-size:12px;color:#f87171;min-height:16px;margin-bottom:8px;"></div>
+    <button onclick="verifyAdminPassword()" style="width:100%;padding:12px;background:linear-gradient(135deg,#3d1a5e,#c0392b);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
+      ログイン
+    </button>
+    <button onclick="document.getElementById('admin-login-modal').style.display='none';" style="width:100%;padding:10px;background:none;border:none;color:rgba(255,255,255,0.3);font-size:12px;cursor:pointer;margin-top:8px;">キャンセル</button>
   </div>
 </div>
 </body>
