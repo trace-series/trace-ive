@@ -4898,35 +4898,45 @@ async function submitNewSpot() {
   }
 
   async function loadPendingSubmissions() {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/submissions?status=eq.pending&order=created_at.desc`, {
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
-    });
-    const data = await res.json();
-    const badge = document.getElementById('pending-count-badge');
-    if (badge) badge.textContent = data.length + '件';
     const list = document.getElementById('pending-list');
-    if (!data.length) {
-      list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.4);padding:40px;">承認待ちの投稿はありません</div>';
-      return;
-    }
-    list.innerHTML = data.map(s => `
-      <div style="background:rgba(255,255,255,0.06);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.1);">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-          <div>
-            <div style="font-size:15px;font-weight:700;color:#fff;">${escHtml(s.spot_name)}</div>
-            <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;">${s.category || ''} · ${s.member || ''} · ${s.submitter || ''}</div>
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/submissions?status=eq.pending&order=created_at.desc`, {
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+      });
+      const data = await res.json();
+      if (!Array.isArray(data)) {
+        list.innerHTML = '<div style="text-align:center;color:#f87171;padding:40px;">読み込みエラー（' + (data.message || JSON.stringify(data)) + '）</div>';
+        console.error('submissions fetch error:', data);
+        return;
+      }
+      const badge = document.getElementById('pending-count-badge');
+      if (badge) badge.textContent = data.length + '件';
+      if (!data.length) {
+        list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.4);padding:40px;">承認待ちの投稿はありません</div>';
+        return;
+      }
+      list.innerHTML = data.map(s => `
+        <div style="background:rgba(255,255,255,0.06);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.1);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+            <div>
+              <div style="font-size:15px;font-weight:700;color:#fff;">${escHtml(s.spot_name)}</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;">${s.category || ''} · ${s.member || ''} · ${s.submitter || ''}</div>
+            </div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.3);">${new Date(s.created_at).toLocaleDateString('ja-JP')}</div>
           </div>
-          <div style="font-size:10px;color:rgba(255,255,255,0.3);">${new Date(s.created_at).toLocaleDateString('ja-JP')}</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:8px;line-height:1.6;">${escHtml(s.description || '')}</div>
+          ${s.source_url ? `<a href="${escHtml(s.source_url)}" target="_blank" style="font-size:11px;color:#c9a84c;">🔗 出典を確認</a>` : ''}
+          <div style="display:flex;gap:8px;margin-top:12px;">
+            <button onclick="approveSubmission('${s.id}')" style="flex:1;padding:10px;background:linear-gradient(135deg,#15803d,#16a34a);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ 承認</button>
+            <button onclick="rejectSubmission('${s.id}')" style="flex:1;padding:10px;background:rgba(220,38,38,0.3);color:#fca5a5;border:1px solid rgba(220,38,38,0.4);border-radius:10px;font-size:13px;cursor:pointer;">❌ 却下</button>
+            <button onclick="holdSubmission('${s.id}')" style="padding:10px 14px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);border:none;border-radius:10px;font-size:13px;cursor:pointer;">⏸</button>
+          </div>
         </div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:8px;line-height:1.6;">${escHtml(s.description || '')}</div>
-        ${s.source_url ? `<a href="${escHtml(s.source_url)}" target="_blank" style="font-size:11px;color:#c9a84c;">🔗 出典を確認</a>` : ''}
-        <div style="display:flex;gap:8px;margin-top:12px;">
-          <button onclick="approveSubmission('${s.id}')" style="flex:1;padding:10px;background:linear-gradient(135deg,#15803d,#16a34a);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ 承認</button>
-          <button onclick="rejectSubmission('${s.id}')" style="flex:1;padding:10px;background:rgba(220,38,38,0.3);color:#fca5a5;border:1px solid rgba(220,38,38,0.4);border-radius:10px;font-size:13px;cursor:pointer;">❌ 却下</button>
-          <button onclick="holdSubmission('${s.id}')" style="padding:10px 14px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);border:none;border-radius:10px;font-size:13px;cursor:pointer;">⏸</button>
-        </div>
-      </div>
-    `).join('');
+      `).join('');
+    } catch(e) {
+      list.innerHTML = '<div style="text-align:center;color:#f87171;padding:40px;">通信エラー：' + e.message + '</div>';
+      console.error('loadPendingSubmissions error:', e);
+    }
   }
 
   async function approveSubmission(id) {
