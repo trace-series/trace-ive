@@ -4425,12 +4425,27 @@ function openCard(spot) {
   updateTrustUI(spot);
 
   // eval ボタンのvoted状態リセット→既評価を復元
-  document.querySelectorAll('.eval-btn').forEach(b => b.classList.remove('voted'));
-  const _evaled = getEvaledTypes(spot.name);
   document.querySelectorAll('.eval-btn').forEach(b => {
-    const match = b.getAttribute('onclick') && b.getAttribute('onclick').match(/evalSpot\('(\w+)'\)/);
-    if (match && _evaled.has(match[1])) b.classList.add('voted');
-    if (b.id === 'btn-matched' && _evaled.has('matched')) b.classList.add('voted');
+    b.classList.remove('voted');
+    b.disabled = false;
+    b.style.opacity = '';
+    b.style.cursor = '';
+  });
+  const _evaled = getEvaledTypes(spot.name);
+  const _onsiteUsed = [..._evaled].some(t => ['visited','matched'].includes(t));
+  document.querySelectorAll('.eval-btn').forEach(b => {
+    const oc = b.getAttribute('onclick') || '';
+    const m = oc.match(/evalSpot\('(\w+)'\)/);
+    const btnType = m ? m[1] : (b.id === 'btn-matched' ? 'matched' : null);
+    if (!btnType) return;
+    // voted復元
+    if (_evaled.has(btnType)) b.classList.add('voted');
+    // 現地系：片方使用済みならもう片方グレーアウト
+    if (_onsiteUsed && ['visited','matched'].includes(btnType) && !_evaled.has(btnType)) {
+      b.disabled = true;
+      b.style.opacity = '0.35';
+      b.style.cursor = 'not-allowed';
+    }
   });
 
   document.getElementById('card-detail').style.display = 'block';
@@ -4897,13 +4912,42 @@ function showLangComingSoon() {
     toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2000);
   }
 
+  // 現地系（どちらか1つのみ）
+  const ONSITE_TYPES = new Set(['visited', 'matched']);
+  // リモート系（複数可・合計上限10pt）
+  const REMOTE_TYPES = new Set(['sns', 'video', 'media', 'source']);
+  const REMOTE_PT_CAP = 10;
+
   function evalSpot(type) {
     if (!currentSpot) return;
 
-    // 重複チェック
-    if (getEvaledTypes(currentSpot.name).has(type)) {
-      showEvalToast('⚠️ このスポットにはすでに同じ評価をしています');
+    const evaled = getEvaledTypes(currentSpot.name);
+
+    // 同一タイプの重複チェック
+    if (evaled.has(type)) {
+      showEvalToast('⚠️ すでに同じ評価をしています');
       return;
+    }
+
+    // 現地系：どちらか1つのみ
+    if (ONSITE_TYPES.has(type)) {
+      const onsiteAlready = [...evaled].some(t => ONSITE_TYPES.has(t));
+      if (onsiteAlready) {
+        showEvalToast('⚠️ 現地確認系は1種類のみ報告できます');
+        return;
+      }
+    }
+
+    // リモート系：合計ポイント上限チェック
+    if (REMOTE_TYPES.has(type)) {
+      const remotePtMap = { sns:5, video:5, media:5, source:5 };
+      const usedRemotePt = [...evaled]
+        .filter(t => REMOTE_TYPES.has(t))
+        .reduce((sum, t) => sum + (remotePtMap[t] || 0), 0);
+      if (usedRemotePt >= REMOTE_PT_CAP) {
+        showEvalToast(`⚠️ リモート確認の上限（${REMOTE_PT_CAP}pt）に達しています`);
+        return;
+      }
     }
 
     const weight = EVAL_WEIGHTS[type] || 0;
@@ -4923,15 +4967,26 @@ function showLangComingSoon() {
     // 評価済みをlocalStorageに記録
     recordEval(currentSpot.name, type);
 
-    // ボタンをvoted状態に
+    // ボタンをvoted状態に／現地系は片方押したらもう片方をdisable
     document.querySelectorAll('.eval-btn').forEach(b => {
-      if (b.getAttribute('onclick') === `evalSpot('${type}')`) b.classList.add('voted');
+      const oc = b.getAttribute('onclick') || '';
+      const m = oc.match(/evalSpot\('(\w+)'\)/);
+      const btnType = m ? m[1] : (b.id === 'btn-matched' ? 'matched' : null);
+      if (btnType === type || (type === 'matched' && b.id === 'btn-matched')) {
+        b.classList.add('voted');
+      }
+      // 現地系の反対ボタンをグレーアウト
+      if (ONSITE_TYPES.has(type) && ONSITE_TYPES.has(btnType) && btnType !== type) {
+        b.disabled = true;
+        b.style.opacity = '0.35';
+        b.style.cursor = 'not-allowed';
+      }
     });
 
     updateTrustUI(currentSpot);
 
-    // 確定待ちポイントに追加
-    const ptMap = { visited:30, matched:50, sns:20, video:15, media:20, source:20, wrong:40, unclear:20, closed:20, outdated:10 };
+    // ポイント計算（リモート系は上限適用）
+    const ptMap = { visited:30, matched:50, sns:5, video:5, media:5, source:5, wrong:40, unclear:20, closed:20, outdated:10 };
     const labelMap = {
       visited:'📸 行って確認と報告', matched:'🎯 構図一致を報告',
       sns:'📱 SNSで確認と報告', video:'🎬 動画で確認と報告',
@@ -4939,7 +4994,17 @@ function showLangComingSoon() {
       wrong:'❌ 場所が違うと報告', unclear:'🤔 特定できないと報告',
       closed:'🚫 立入不可と報告', outdated:'⚠️ 情報が古いと報告'
     };
-    let basePt = ptMap[type];
+    let basePt = ptMap[type] || 0;
+
+    // リモート系：残り枠に収める
+    if (REMOTE_TYPES.has(type)) {
+      const remotePtMap = { sns:5, video:5, media:5, source:5 };
+      const usedRemotePt = [...getEvaledTypes(currentSpot.name)]
+        .filter(t => REMOTE_TYPES.has(t) && t !== type)
+        .reduce((sum, t) => sum + (remotePtMap[t] || 0), 0);
+      basePt = Math.min(basePt, REMOTE_PT_CAP - usedRemotePt);
+    }
+
     let multiplier = 1;
 
     // 誕生日倍率
