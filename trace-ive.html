@@ -1991,6 +1991,9 @@
     <div class="member-tab-name">イソ</div>
   </div>
 </div>
+<div id="member-tabs-hint" style="display:none;background:#f0e8f8;text-align:center;font-size:11px;color:#7b4fa6;padding:4px 0;">
+  👆 タップしてスポットのメンバーを選択
+</div>
 
 <main>
 
@@ -3075,7 +3078,6 @@
           <div class="chip" onclick="toggleChip(this)" data-cat="撮影">📷 撮影</div>
           <div class="chip" onclick="toggleChip(this)" data-cat="メディア">📺 メディア</div>
           <div class="chip" onclick="toggleChip(this)" data-cat="イベント">🎤 イベント</div>
-          <div class="chip" onclick="toggleChip(this)" data-cat="イベント">🎤 イベント</div>
           <div class="chip" onclick="toggleChip(this)" data-cat="グルメ">🍽️ グルメ</div>
           <div class="chip" onclick="toggleChip(this)" data-cat="ショップ">🛍️ ショップ</div>
         </div>
@@ -3677,6 +3679,29 @@ function showView(name) {
   const nav = document.getElementById('nav-'+name);
   if (nav) nav.classList.add('active');
   activeView = name;
+
+  // メンバータブの表示制御
+  const tabs = document.getElementById('member-tabs');
+  if (tabs) {
+    if (name === 'profile' || name === 'route' || name === 'pointrules') {
+      // My Page系：非表示
+      tabs.style.display = 'none';
+    } else if (name === 'post') {
+      // 投稿画面：メンバー選択モードとして表示
+      tabs.style.display = 'flex';
+      tabs.dataset.mode = 'post-select';
+      // ラベルを一時的に変更
+      const hint = document.getElementById('member-tabs-hint');
+      if (hint) hint.style.display = 'block';
+    } else {
+      // MAP・ランキング・タイムライン：通常表示
+      tabs.style.display = 'flex';
+      tabs.dataset.mode = '';
+      const hint = document.getElementById('member-tabs-hint');
+      if (hint) hint.style.display = 'none';
+    }
+  }
+
   window.scrollTo(0, 0);
 }
 
@@ -3689,6 +3714,23 @@ function filterMember(el, member) {
     } else {
       showOshiRanking(member);
     }
+    return;
+  }
+
+  // 投稿画面ではフォームのメンバー欄を自動選択
+  if (activeView === 'post') {
+    document.querySelectorAll('.member-tab-item').forEach(x => x.classList.remove('active'));
+    el.classList.add('active');
+    // フォームのメンバーchipsを連動
+    document.querySelectorAll('#view-post .chip[data-member]').forEach(c => {
+      c.classList.toggle('active', c.dataset.member === member);
+    });
+    // メンバー名テキストchipsも連動（data-member未設定の場合テキスト一致）
+    document.querySelectorAll('#view-post .scene-chips .chip').forEach(c => {
+      if (!c.dataset.cat) { // メンバーchipはdata-catなし
+        c.classList.toggle('active', c.textContent.trim() === member);
+      }
+    });
     return;
   }
 
