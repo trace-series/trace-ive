@@ -3682,9 +3682,13 @@ function showView(name) {
 
 // ── メンバーフィルター（画面によって動作が変わる） ──
 function filterMember(el, member) {
-  // ランキング画面では推しランキングモーダルを開く
-  if (activeView === 'ranking' && member !== 'all') {
-    showOshiRanking(member);
+  // ランキング画面ではポイントランキングモーダルを開く
+  if (activeView === 'ranking') {
+    if (member === 'all') {
+      showOshiRanking('all');
+    } else {
+      showOshiRanking(member);
+    }
     return;
   }
 
@@ -4369,29 +4373,45 @@ function getDummyOshiRankingData(member) {
 }
 
 function showOshiRanking(member) {
-  const icon = MEMBER_ICONS[member] || '💜';
+  const isAll = member === 'all';
+  const icon = isAll ? '💜' : (MEMBER_ICONS[member] || '💜');
   document.getElementById('oshi-ranking-icon').textContent = icon;
-  document.getElementById('oshi-ranking-title').textContent = `${member} 推しランキング`;
+  document.getElementById('oshi-ranking-title').textContent = isAll
+    ? '総合ポイントランキング'
+    : `${member} 推しランキング`;
   renderOshiRankingList(member, 'year');
   document.getElementById('oshi-ranking-modal').style.display = 'block';
   document.body.style.overflow = 'hidden';
-  // タブをリセット
   document.querySelectorAll('.orm-tab').forEach((t,i) => {
     t.style.color = i===0 ? 'var(--purple-deep)' : '#9b8aab';
     t.style.borderBottom = i===0 ? '2px solid var(--purple-deep)' : '2px solid transparent';
     t.classList.toggle('active', i===0);
   });
-  // モーダルにメンバー名を保持
   document.getElementById('oshi-ranking-modal').dataset.member = member;
 }
 
 function renderOshiRankingList(member, period) {
   const list = document.getElementById('oshi-ranking-modal-list');
-  const data = getDummyOshiRankingData(member);
-  // 期間で倍率調整（ダミー）
   const periodMult = {year:1, half:0.55, quarter:0.28, month:0.1};
   const mult = periodMult[period] || 1;
   const medals = ['🥇','🥈','🥉'];
+
+  let data;
+  if (member === 'all') {
+    // 全メンバーのデータをマージして合算
+    const merged = {};
+    GROUP_CONFIG.members.forEach(m => {
+      getDummyOshiRankingData(m.name).forEach(u => {
+        merged[u.name] = (merged[u.name] || 0) + u.pt;
+      });
+    });
+    data = Object.entries(merged)
+      .map(([name, pt]) => ({ name, pt }))
+      .sort((a,b) => b.pt - a.pt)
+      .slice(0, 20);
+  } else {
+    data = getDummyOshiRankingData(member);
+  }
 
   list.innerHTML = data.map((u, i) => {
     const pt = Math.round(u.pt * mult);
