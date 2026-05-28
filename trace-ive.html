@@ -2071,7 +2071,11 @@
             <div class="eval-title">✅ GOOD評価</div>
             <div class="eval-btns">
               <button class="eval-btn eval-good" onclick="evalSpot('visited')">📸 行って確認</button>
-              <button class="eval-btn eval-good" onclick="evalSpot('matched')">🎯 構図一致</button>
+              <button class="eval-btn eval-good" id="btn-matched" onclick="openMatchedModal()">🎯 構図一致</button>
+              <button class="eval-btn eval-good" onclick="evalSpot('sns')">📱 SNSで確認</button>
+              <button class="eval-btn eval-good" onclick="evalSpot('video')">🎬 動画で確認</button>
+              <button class="eval-btn eval-good" onclick="evalSpot('media')">📰 メディア掲載</button>
+              <button class="eval-btn eval-good" onclick="evalSpot('source')">🔗 出典あり</button>
             </div>
           </div>
 
@@ -4754,12 +4758,93 @@ function showLangComingSoon() {
 
   const EVAL_WEIGHTS = {
     visited: 3,   // 行って確認
-    matched: 5,   // 構図一致（最も強い証拠）
+    matched: 5,   // 構図一致（証拠必須・最も強い）
+    sns:     2,   // SNSで確認
+    video:   1,   // 動画で確認
+    media:   2,   // メディア掲載
+    source:  2,   // 出典あり
     wrong:   -4,  // 場所が違う
     unclear: -2,  // 特定できない
     closed:  -2,  // 立入不可
     outdated:-1,  // 情報が古い
   };
+
+
+  // ── 構図一致証拠モーダル ──
+  let matchedPhotoDataUrl = null;
+
+  function openMatchedModal() {
+    if (!currentSpot) return;
+    // 入力リセット
+    matchedPhotoDataUrl = null;
+    document.getElementById('matched-photo-preview').style.display = 'none';
+    document.getElementById('matched-photo-img').src = '';
+    document.getElementById('matched-url-input').value = '';
+    document.getElementById('matched-submit-msg').textContent = '';
+    updateMatchedSubmitBtn();
+    document.getElementById('matched-modal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeMatchedModal(e) {
+    if (e.target === document.getElementById('matched-modal')) {
+      document.getElementById('matched-modal').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+  }
+
+  function onMatchedPhotoSelected(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      matchedPhotoDataUrl = e.target.result;
+      document.getElementById('matched-photo-img').src = matchedPhotoDataUrl;
+      document.getElementById('matched-photo-preview').style.display = 'block';
+      updateMatchedSubmitBtn();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeMatchedPhoto() {
+    matchedPhotoDataUrl = null;
+    document.getElementById('matched-photo-preview').style.display = 'none';
+    document.getElementById('matched-photo-img').src = '';
+    document.getElementById('matched-photo-input').value = '';
+    updateMatchedSubmitBtn();
+  }
+
+  function updateMatchedSubmitBtn() {
+    const url = document.getElementById('matched-url-input').value.trim();
+    const hasEvidence = matchedPhotoDataUrl || url.length > 0;
+    const btn = document.getElementById('matched-submit-btn');
+    btn.disabled = !hasEvidence;
+    btn.style.background = hasEvidence ? 'linear-gradient(135deg,#3d1a5e,#c0392b)' : '#ccc';
+    btn.style.cursor = hasEvidence ? 'pointer' : 'not-allowed';
+  }
+
+  function submitMatched() {
+    const url = document.getElementById('matched-url-input').value.trim();
+    if (!matchedPhotoDataUrl && !url) return;
+
+    // モーダルを閉じてevalSpotを実行
+    document.getElementById('matched-modal').style.display = 'none';
+    document.body.style.overflow = '';
+
+    // voted状態をボタンに反映
+    document.querySelectorAll('.eval-btn').forEach(b => {
+      if (b.id === 'btn-matched') b.classList.add('voted');
+    });
+
+    evalSpot('matched');
+
+    // 証拠の簡易表示（将来はDB保存）
+    const msg = document.getElementById('matched-submit-msg');
+    if (msg) {
+      msg.textContent = '🎯 構図一致を報告しました！証拠を受理しました。';
+      msg.style.color = '#15803d';
+    }
+  }
 
   function evalSpot(type) {
     if (!currentSpot) return;
@@ -4785,9 +4870,11 @@ function showLangComingSoon() {
     updateTrustUI(currentSpot);
 
     // 確定待ちポイントに追加（誕生日倍率を適用）
-    const ptMap = { visited:30, matched:50, wrong:40, unclear:20, closed:20, outdated:10 };
+    const ptMap = { visited:30, matched:50, sns:20, video:15, media:20, source:20, wrong:40, unclear:20, closed:20, outdated:10 };
     const labelMap = {
       visited:'📸 行って確認と報告', matched:'🎯 構図一致を報告',
+      sns:'📱 SNSで確認と報告', video:'🎬 動画で確認と報告',
+      media:'📰 メディア掲載を報告', source:'🔗 出典ありを報告',
       wrong:'❌ 場所が違うと報告', unclear:'🤔 特定できないと報告',
       closed:'🚫 立入不可と報告', outdated:'⚠️ 情報が古いと報告'
     };
@@ -5733,6 +5820,57 @@ function applyTransferCode() {
       <div id="import-transfer-msg" style="text-align:center;font-size:12px;margin-top:8px;min-height:18px;"></div>
       <div style="margin-top:14px;padding:12px;background:#fef3c7;border-radius:10px;font-size:12px;color:#92400e;">⚠️ 復元すると現在のデータに上書きされます。</div>
     </div>
+  </div>
+</div>
+
+
+<!-- 構図一致証拠モーダル -->
+<div id="matched-modal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.65);overflow-y:auto;" onclick="closeMatchedModal(event)">
+  <div style="background:#fff;border-radius:20px;margin:60px 16px 40px;padding:24px 20px;" onclick="event.stopPropagation()">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <div style="font-size:17px;font-weight:700;color:#3d1a5e;">🎯 構図一致の証拠</div>
+      <button onclick="document.getElementById('matched-modal').style.display='none';document.body.style.overflow='';" style="background:none;border:none;font-size:22px;cursor:pointer;color:#9b8aab;">×</button>
+    </div>
+    <div style="font-size:12px;color:#9b8aab;margin-bottom:20px;">写真またはSNS投稿URLのどちらか一方以上が必要です</div>
+
+    <!-- 写真アップロード -->
+    <div style="margin-bottom:18px;">
+      <div style="font-size:13px;font-weight:700;color:#3d1a5e;margin-bottom:8px;">📷 写真を添付</div>
+      <input type="file" id="matched-photo-input" accept="image/*" capture="environment"
+        style="display:none;" onchange="onMatchedPhotoSelected(event)">
+      <div id="matched-photo-preview" style="display:none;position:relative;margin-bottom:8px;">
+        <img id="matched-photo-img" style="width:100%;max-height:200px;object-fit:cover;border-radius:12px;border:2px solid #c9a8e8;" />
+        <button onclick="removeMatchedPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.5);border:none;border-radius:50%;width:26px;height:26px;color:#fff;font-size:14px;cursor:pointer;line-height:1;">×</button>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="document.getElementById('matched-photo-input').setAttribute('capture','environment');document.getElementById('matched-photo-input').click();"
+          style="flex:1;padding:10px;background:#f0e8f8;border:1.5px dashed #c9a8e8;border-radius:12px;font-size:12px;color:#3d1a5e;font-weight:700;cursor:pointer;">
+          📸 カメラで撮影
+        </button>
+        <button onclick="document.getElementById('matched-photo-input').removeAttribute('capture');document.getElementById('matched-photo-input').click();"
+          style="flex:1;padding:10px;background:#f0e8f8;border:1.5px dashed #c9a8e8;border-radius:12px;font-size:12px;color:#3d1a5e;font-weight:700;cursor:pointer;">
+          🖼️ ライブラリから
+        </button>
+      </div>
+    </div>
+
+    <!-- URL入力 -->
+    <div style="margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:700;color:#3d1a5e;margin-bottom:8px;">🔗 SNS投稿URL（X・インスタなど）</div>
+      <input id="matched-url-input" type="url" placeholder="https://x.com/..." oninput="updateMatchedSubmitBtn()"
+        style="width:100%;padding:11px 14px;border:2px solid #c9a8e8;border-radius:12px;font-size:13px;outline:none;color:#1a1025;font-family:'Noto Sans JP',sans-serif;" />
+    </div>
+
+    <div style="padding:12px;background:#fef3c7;border-radius:10px;font-size:12px;color:#92400e;margin-bottom:16px;">
+      ⚠️ 虚偽の証拠を提出するとポイントが剥奪される場合があります
+    </div>
+
+    <button id="matched-submit-btn" onclick="submitMatched()" disabled
+      style="width:100%;padding:12px;background:#ccc;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:not-allowed;transition:background 0.2s;">
+      証拠を提出して構図一致を報告
+    </button>
+    <div id="matched-submit-msg" style="text-align:center;font-size:12px;color:#15803d;margin-top:8px;min-height:18px;"></div>
   </div>
 </div>
 
