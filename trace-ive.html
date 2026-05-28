@@ -4424,8 +4424,14 @@ function openCard(spot) {
   // 信頼度UI
   updateTrustUI(spot);
 
-  // eval ボタンのvoted状態リセット
+  // eval ボタンのvoted状態リセット→既評価を復元
   document.querySelectorAll('.eval-btn').forEach(b => b.classList.remove('voted'));
+  const _evaled = getEvaledTypes(spot.name);
+  document.querySelectorAll('.eval-btn').forEach(b => {
+    const match = b.getAttribute('onclick') && b.getAttribute('onclick').match(/evalSpot\('(\w+)'\)/);
+    if (match && _evaled.has(match[1])) b.classList.add('voted');
+    if (b.id === 'btn-matched' && _evaled.has('matched')) b.classList.add('voted');
+  });
 
   document.getElementById('card-detail').style.display = 'block';
   document.getElementById('map-card').classList.add('open');
@@ -4853,8 +4859,53 @@ function showLangComingSoon() {
     }
   }
 
+  // 評価済み履歴管理
+  const EVAL_HISTORY_KEY = 'traceive_eval_history_v1';
+
+  function getEvalHistory() {
+    try { return JSON.parse(localStorage.getItem(EVAL_HISTORY_KEY) || '{}'); }
+    catch(e) { return {}; }
+  }
+
+  function saveEvalHistory(h) {
+    localStorage.setItem(EVAL_HISTORY_KEY, JSON.stringify(h));
+  }
+
+  function getEvaledTypes(spotName) {
+    return new Set(getEvalHistory()[spotName] || []);
+  }
+
+  function recordEval(spotName, type) {
+    const h = getEvalHistory();
+    if (!h[spotName]) h[spotName] = [];
+    if (!h[spotName].includes(type)) h[spotName].push(type);
+    saveEvalHistory(h);
+  }
+
+  // 評価重複トースト
+  function showEvalToast(msg) {
+    let toast = document.getElementById('eval-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'eval-toast';
+      toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1025;color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;font-family:\'Noto Sans JP\',sans-serif;z-index:999;opacity:0;transition:opacity 0.2s;white-space:nowrap;pointer-events:none;';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.style.opacity = '1';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+  }
+
   function evalSpot(type) {
     if (!currentSpot) return;
+
+    // 重複チェック
+    if (getEvaledTypes(currentSpot.name).has(type)) {
+      showEvalToast('⚠️ このスポットにはすでに同じ評価をしています');
+      return;
+    }
+
     const weight = EVAL_WEIGHTS[type] || 0;
     currentSpot.trustScore += weight;
     if (weight > 0) {
@@ -4869,6 +4920,9 @@ function showLangComingSoon() {
       alert('⚠️ このスポットに「要確認」フラグが立ちました。管理者の確認をお待ちください。');
     }
 
+    // 評価済みをlocalStorageに記録
+    recordEval(currentSpot.name, type);
+
     // ボタンをvoted状態に
     document.querySelectorAll('.eval-btn').forEach(b => {
       if (b.getAttribute('onclick') === `evalSpot('${type}')`) b.classList.add('voted');
@@ -4876,7 +4930,7 @@ function showLangComingSoon() {
 
     updateTrustUI(currentSpot);
 
-    // 確定待ちポイントに追加（誕生日倍率を適用）
+    // 確定待ちポイントに追加
     const ptMap = { visited:30, matched:50, sns:20, video:15, media:20, source:20, wrong:40, unclear:20, closed:20, outdated:10 };
     const labelMap = {
       visited:'📸 行って確認と報告', matched:'🎯 構図一致を報告',
@@ -4901,8 +4955,10 @@ function showLangComingSoon() {
 
     const finalPt = Math.round(basePt * multiplier);
     const notes = [];
-    if (bdEvent && multiplier > 1) notes.push(`誕生${bdEvent.type === 'day' ? '日' : '月'}`);
-    if (oshiMult > 1) notes.push(oshi1 === currentSpot.member ? '1推し' : '2推し');
+    if (bdEvent && bdEvent.member && (bdEvent.member.name === currentSpot.member || bdEvent.member.nameEn === currentSpot.member)) {
+      notes.push(`誕生${bdEvent.type === 'day' ? '日' : '月'}`);
+    }
+    if (oshiMult > 1) notes.push(oshi1 === currentSpot.member ? '💜1推し' : '🩷2推し');
     const multiplierNote = multiplier > 1 ? ` (×${multiplier.toFixed(1)} ${notes.join('・')})` : '';
     addPendingPoint(currentSpot.name, labelMap[type] + multiplierNote, finalPt);
 
