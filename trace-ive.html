@@ -2336,7 +2336,7 @@
     <div class="pending-card">
       <div class="pending-title">⏳ 確定待ちポイント</div>
       <div class="pending-desc">管理者が判定すると確定されます</div>
-      <div class="pending-list" id="pending-list">
+      <div class="pending-list" id="admin-pending-list">
         <div class="pending-item">
           <div class="pending-item-left">
             <div class="pending-item-name">新大久保 コリアタウン</div>
@@ -4898,7 +4898,7 @@ async function submitNewSpot() {
   }
 
   async function loadPendingSubmissions() {
-    const list = document.getElementById('pending-list');
+    const list = document.getElementById('admin-pending-list');
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/submissions?status=eq.pending&order=created_at.desc`, {
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
@@ -5676,7 +5676,7 @@ function showLangComingSoon() {
   }
 
   function addPendingPoint(spotName, typeLabel, pt) {
-    const list = document.getElementById('pending-list');
+    const list = document.getElementById('admin-pending-list');
     if (!list) return;
     const item = document.createElement('div');
     item.className = 'pending-item';
@@ -6350,7 +6350,7 @@ function loadUserData(data) {
 
   // 確定待ちポイント復元
   if (Array.isArray(data.pending) && data.pending.length > 0) {
-    const list = document.getElementById('pending-list');
+    const list = document.getElementById('admin-pending-list');
     if (list) {
       list.innerHTML = '';
       data.pending.forEach(p => {
@@ -6807,7 +6807,7 @@ function applyTransferCode() {
 
     <!-- 承認待ちタブ -->
     <div id="admin-tab-pending">
-      <div id="pending-list">
+      <div id="admin-pending-list">
         <div style="text-align:center;color:rgba(255,255,255,0.4);padding:40px;">読み込み中...</div>
       </div>
     </div>
