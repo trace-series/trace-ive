@@ -2504,10 +2504,21 @@
 
     <!-- 設定画面下部 免責表示 -->
     <div style="margin:24px 0 8px;padding:16px;background:#f0e8f8;border-radius:14px;font-size:11px;color:#4a3060;line-height:1.8;">
-      <div style="font-weight:700;margin-bottom:4px;">⚠️ ご利用にあたって</div>
+      <div style="font-weight:700;margin-bottom:8px;">⚠️ ご利用にあたって</div>
       非公式ファンアプリです。STARSHIP ENTERTAINMENT・IVEとは一切関係ありません。<br>
       掲載情報はファンによる投稿に基づくものであり、正確性を保証するものではありません。情報の利用・訪問により生じた損害について責任を負いかねます。<br>
       コンテンツ・システムの無断転用・商用利用を禁止します。
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(61,26,94,0.15);">
+        <div style="font-weight:700;margin-bottom:6px;">🙏 聖地訪問のお願い</div>
+        <div style="line-height:1.8;">
+        • 周辺住民・通行人への配慮を忘れずに<br>
+        • 大声・長時間の滞在は避けましょう<br>
+        • 私有地・立入禁止エリアには入らないでください<br>
+        • 撮影時は周囲への迷惑にならないよう心がけて<br>
+        • ゴミは必ず持ち帰りましょう<br>
+        • マナーある行動がK-POPファンの印象を守ります
+        </div>
+      </div>
     </div>
     <div style="text-align:center;font-size:11px;color:#9b8aab;padding:8px 0 40px;">
       © 2025 missing link / Trace IVE
@@ -3093,67 +3104,61 @@
     <div class="section-sub">聖地情報を共有しよう</div>
 
     <div class="post-form">
+
+      <!-- エラー表示エリア -->
+      <div id="post-error-box" style="display:none;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#dc2626;line-height:1.6;"></div>
+
+      <!-- 1日の投稿上限表示 -->
+      <div id="post-limit-box" style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#15803d;"></div>
+
       <div class="form-group">
         <div class="form-label">スポット名 <span>*</span></div>
-        <input class="form-input" type="text" placeholder="例：渋谷スクランブル交差点">
+        <input class="form-input" id="post-name" type="text" placeholder="例：渋谷スクランブル交差点" maxlength="50" oninput="checkDuplicateSpot(this.value)">
+        <div id="post-name-hint" style="font-size:11px;margin-top:5px;min-height:16px;"></div>
       </div>
       <div class="form-group">
         <div class="form-label">住所 / 場所 <span>*</span></div>
-        <input class="form-input" type="text" placeholder="例：東京都渋谷区道玄坂2丁目">
+        <input class="form-input" id="post-address" type="text" placeholder="例：東京都渋谷区道玄坂2丁目" maxlength="100">
       </div>
       <div class="form-group">
-        <div class="form-label">MVシーン / 出典 <span>*</span></div>
-        <input class="form-input" type="text" placeholder="例：WAVE MV 0:42 〜 0:58">
+        <div class="form-label">聖地の説明 <span>*</span> <span style="font-weight:400;color:#9b8aab;font-size:12px;">20文字以上</span></div>
+        <textarea class="form-input form-textarea" id="post-desc" placeholder="例：REBEL HEARTのMVでレイが映るシーン。0:42あたりで確認できます。" maxlength="300" oninput="updateDescCount(this)"></textarea>
+        <div id="post-desc-count" style="font-size:11px;color:#9b8aab;text-align:right;margin-top:4px;">0 / 300</div>
       </div>
       <div class="form-group">
-        <div class="form-label">カテゴリー</div>
-        <div class="scene-chips">
+        <div class="form-label">カテゴリー <span>*</span></div>
+        <div class="scene-chips" id="post-cat-chips">
           <div class="chip" onclick="toggleChip(this)" data-cat="カフェ・飲食店">🍜 カフェ・飲食</div>
           <div class="chip" onclick="toggleChip(this)" data-cat="撮影スポット">📸 撮影</div>
           <div class="chip" onclick="toggleChip(this)" data-cat="ライブ・イベント会場">🎤 ライブ・イベント</div>
           <div class="chip" onclick="toggleChip(this)" data-cat="観光・名所">🏯 観光・名所</div>
-          <div class="chip" onclick="toggleChip(this)" data-cat="グルメ">🍽️ グルメ</div>
           <div class="chip" onclick="toggleChip(this)" data-cat="ショップ">🛍️ ショップ</div>
         </div>
-        <div class="cat-desc-box" id="cat-desc-box">
-          カテゴリーを選択すると説明が表示されます
+      </div>
+      <div class="form-group">
+        <div class="form-label">メンバー <span>*</span></div>
+        <div class="scene-chips" id="post-member-chips">
+          <div class="chip" onclick="toggleChip(this)" data-member="アン・ユジン">ユジン</div>
+          <div class="chip" onclick="toggleChip(this)" data-member="ガウル">ガウル</div>
+          <div class="chip" onclick="toggleChip(this)" data-member="レイ">レイ</div>
+          <div class="chip" onclick="toggleChip(this)" data-member="ウォニョン">ウォニョン</div>
+          <div class="chip" onclick="toggleChip(this)" data-member="リズ">リズ</div>
+          <div class="chip" onclick="toggleChip(this)" data-member="イソ">イソ</div>
+          <div class="chip" onclick="toggleChip(this)" data-member="IVE">IVE全体</div>
         </div>
       </div>
       <div class="form-group">
-        <div class="form-label">メンバー</div>
-        <div class="scene-chips">
-          <div class="chip" onclick="toggleChip(this)">ユジン</div>
-          <div class="chip" onclick="toggleChip(this)">ガウル</div>
-          <div class="chip" onclick="toggleChip(this)">レイ</div>
-          <div class="chip" onclick="toggleChip(this)">ウォニョン</div>
-          <div class="chip" onclick="toggleChip(this)">リズ</div>
-          <div class="chip" onclick="toggleChip(this)">イソ</div>
-        </div>
-      </div>
-      <div class="form-group">
-        <div class="form-label">写真</div>
-        <div class="photo-upload">
-          <div class="icon">📷</div>
-          <div>タップして写真を追加</div>
-        </div>
-      </div>
-      <div class="form-group">
-        <div class="form-label">コメント</div>
-        <textarea class="form-input form-textarea" placeholder="特定できた理由、おすすめの時間帯、行き方など…"></textarea>
-      </div>
-      <div class="form-group">
-        <div class="form-label">参照元 X ポストURL <span style="font-weight:400;color:#9b8aab;font-size:12px;">（任意）</span></div>
+        <div class="form-label">参照元 X ポストURL <span style="font-weight:400;color:#9b8aab;font-size:12px;">（任意・あると信頼度UP）</span></div>
         <input class="form-input" id="post-source-url" type="url" placeholder="https://x.com/username/status/...">
         <div style="font-size:11px;color:#9b8aab;margin-top:6px;line-height:1.6;">
-          📌 聖地を特定するきっかけになったXのポストがあれば貼ってください。<br>
-          投稿者への感謝クレジットとして表示されます。将来的な自動収集との照合にも使われます。
+          📌 聖地を特定するきっかけになったXのポストがあれば貼ってください。投稿者への感謝クレジットとして表示されます。
         </div>
       </div>
       <div class="consent-box">
         ℹ️ 投稿された情報はTrace IVEのデータベースに登録されます。最初の投稿者には永続的な「発見者」クレジットが付与されます。
       </div>
       <div class="submit-area">
-        <button class="btn-primary" style="width:100%;padding:15px;" onclick="submitNewSpot()">投稿する 🌸</button>
+        <button class="btn-primary" id="post-submit-btn" style="width:100%;padding:15px;" onclick="submitNewSpot()">投稿する 🌸</button>
       </div>
     </div>
   </div>
@@ -3177,6 +3182,17 @@
   </div>
   <div style="margin-bottom:8px;">
     本アプリのコンテンツ・デザイン・システムの無断転用・商用利用を禁止します。
+  </div>
+  <div style="margin-bottom:8px;padding:10px 0;border-top:1px solid rgba(255,255,255,0.1);text-align:left;">
+    <div style="font-weight:700;margin-bottom:6px;color:rgba(255,255,255,0.7);">🙏 聖地訪問のお願い</div>
+    <div style="line-height:1.9;color:rgba(255,255,255,0.5);">
+      周辺住民・通行人への配慮を忘れずに ·
+      大声・長時間の滞在は避けましょう ·
+      私有地・立入禁止エリアには入らないでください ·
+      撮影時は周囲への迷惑にならないよう心がけて ·
+      ゴミは必ず持ち帰りましょう ·
+      マナーある行動がK-POPファンの印象を守ります
+    </div>
   </div>
   <div style="opacity:0.4;">© 2025 missing link / Trace IVE · All rights reserved.</div>
 </div>
@@ -4469,6 +4485,9 @@ async function initMap() {
   // ローディング非表示
   document.getElementById('map-loading').style.display = 'none';
 
+  // 初回起動チェック
+  checkOnboarding();
+
   // ピンを追加
   SPOTS.forEach(spot => {
     const marker = new google.maps.Marker({
@@ -4575,21 +4594,133 @@ function openCard(spot) {
 }
 
 
+// ── 投稿フォーム バリデーション・補助関数 ──
+const POST_DAILY_KEY = 'traceive_post_daily_v1';
+const POST_DAILY_LIMIT = 3;
+
+function getPostDailyCount() {
+  try {
+    const d = JSON.parse(localStorage.getItem(POST_DAILY_KEY) || '{}');
+    const today = new Date().toDateString();
+    return d.date === today ? (d.count || 0) : 0;
+  } catch(e) { return 0; }
+}
+
+function incrementPostDailyCount() {
+  const today = new Date().toDateString();
+  const count = getPostDailyCount() + 1;
+  localStorage.setItem(POST_DAILY_KEY, JSON.stringify({ date: today, count }));
+}
+
+function updateDescCount(el) {
+  const count = el.value.length;
+  const box = document.getElementById('post-desc-count');
+  if (!box) return;
+  box.textContent = count + ' / 300';
+  box.style.color = count >= 20 ? '#15803d' : '#dc2626';
+}
+
+function checkDuplicateSpot(name) {
+  const hint = document.getElementById('post-name-hint');
+  if (!hint) return;
+  if (!name || name.length < 2) { hint.textContent = ''; return; }
+  const dup = SPOTS.find(s => s.name === name.trim());
+  if (dup) {
+    hint.style.color = '#dc2626';
+    hint.textContent = '⚠️ 同じ名前のスポットが既に登録されています';
+  } else {
+    hint.style.color = '#15803d';
+    hint.textContent = '✅ 新しいスポットです';
+  }
+}
+
+function showPostError(msg) {
+  const box = document.getElementById('post-error-box');
+  if (!box) return;
+  box.textContent = msg;
+  box.style.display = 'block';
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function clearPostError() {
+  const box = document.getElementById('post-error-box');
+  if (box) box.style.display = 'none';
+}
+
+function initPostForm() {
+  clearPostError();
+  const limitBox = document.getElementById('post-limit-box');
+  const btn = document.getElementById('post-submit-btn');
+
+  // 7日間待機チェック
+  if (!canSubmitPost()) {
+    if (limitBox) {
+      limitBox.innerHTML = '🔒 <strong>新規ユーザーの投稿は制限されています</strong><br><span style="font-size:11px;opacity:0.85;">情報の信憑性を保つための措置です</span>';
+      limitBox.style.background = '#fef2f2';
+      limitBox.style.borderColor = '#fca5a5';
+      limitBox.style.color = '#dc2626';
+    }
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.textContent = '🔒 投稿が制限されています'; }
+    return;
+  }
+
+  const remaining = POST_DAILY_LIMIT - getPostDailyCount();
+  if (limitBox) {
+    if (remaining <= 0) {
+      limitBox.textContent = '⚠️ 本日の投稿上限（' + POST_DAILY_LIMIT + '件）に達しています。明日またお願いします。';
+      limitBox.style.background = '#fef2f2';
+      limitBox.style.borderColor = '#fca5a5';
+      limitBox.style.color = '#dc2626';
+      if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+    } else {
+      limitBox.textContent = '📝 本日あと' + remaining + '件投稿できます';
+      limitBox.style.background = '#f0fdf4';
+      limitBox.style.borderColor = '#86efac';
+      limitBox.style.color = '#15803d';
+      if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.textContent = '投稿する 🌸'; }
+    }
+  }
+}
+
 // ── 新規スポット投稿（Supabase保存） ──
 async function submitNewSpot() {
-  const nameEl = document.getElementById('post-name');
-  const descEl = document.getElementById('post-desc');
-  const sourceEl = document.getElementById('post-source');
-  const name = nameEl ? nameEl.value.trim() : '';
-  const desc = descEl ? descEl.value.trim() : '';
-  const sourceUrl = sourceEl ? sourceEl.value.trim() : '';
+  clearPostError();
 
-  if (!name) { alert('スポット名を入力してください'); return; }
+  const name = (document.getElementById('post-name')?.value || '').trim();
+  const address = (document.getElementById('post-address')?.value || '').trim();
+  const desc = (document.getElementById('post-desc')?.value || '').trim();
+  const sourceUrl = (document.getElementById('post-source-url')?.value || '').trim();
 
-  const memberChip = document.querySelector('.member-chip.active');
-  const catChip = document.querySelector('.chip.active');
-  const member = memberChip ? memberChip.dataset.member : '';
-  const category = catChip ? catChip.dataset.cat : '';
+  // ── バリデーション ──
+  if (!name) { showPostError('❌ スポット名を入力してください'); return; }
+  if (name.length < 2) { showPostError('❌ スポット名は2文字以上入力してください'); return; }
+  if (!address) { showPostError('❌ 住所・場所を入力してください'); return; }
+  if (!desc || desc.length < 20) { showPostError('❌ 聖地の説明は20文字以上入力してください（現在' + desc.length + '文字）'); return; }
+
+  const catChip = document.querySelector('#post-cat-chips .chip.active');
+  if (!catChip) { showPostError('❌ カテゴリーを選択してください'); return; }
+
+  const memberChip = document.querySelector('#post-member-chips .chip.active');
+  if (!memberChip) { showPostError('❌ メンバーを選択してください'); return; }
+
+  // 7日間待機チェック
+  if (!canSubmitPost()) {
+    showPostError('🔒 新規ユーザーの投稿は制限されています。情報の信憑性を保つための措置です。');
+    return;
+  }
+
+  // 重複チェック
+  const dup = SPOTS.find(s => s.name === name);
+  if (dup) { showPostError('⚠️ 「' + name + '」はすでに登録されています'); return; }
+
+  // 1日上限チェック
+  if (getPostDailyCount() >= POST_DAILY_LIMIT) {
+    showPostError('⚠️ 本日の投稿上限（' + POST_DAILY_LIMIT + '件）に達しています');
+    return;
+  }
+
+  const category = catChip.dataset.cat;
+  const member = memberChip.dataset.member;
   const center = map ? map.getCenter() : null;
 
   const submission = {
@@ -4599,12 +4730,12 @@ async function submitNewSpot() {
     category: category,
     member: member,
     description: desc,
-    source_url: sourceUrl,
+    source_url: sourceUrl || null,
     submitter: '@anonymous',
     status: 'pending',
   };
 
-  const btn = document.querySelector('.submit-area .btn-primary');
+  const btn = document.getElementById('post-submit-btn');
   if (btn) { btn.disabled = true; btn.textContent = '送信中...'; }
 
   const ok = await saveSubmissionToDB(submission);
@@ -4612,12 +4743,85 @@ async function submitNewSpot() {
   if (btn) { btn.disabled = false; btn.textContent = '投稿する 🌸'; }
 
   if (ok) {
+    incrementPostDailyCount();
     alert('「' + name + '」の投稿を受け付けました！\n\n管理者の確認後、マップに反映されます。\n最初の発見者クレジットが付与されます 🌸');
+    // フォームリセット
+    document.getElementById('post-name').value = '';
+    document.getElementById('post-address').value = '';
+    document.getElementById('post-desc').value = '';
+    document.getElementById('post-source-url').value = '';
+    document.querySelectorAll('#post-cat-chips .chip, #post-member-chips .chip').forEach(c => c.classList.remove('active'));
     showView('map');
   } else {
-    alert('投稿に失敗しました。通信状況を確認してください。');
+    showPostError('通信エラーが発生しました。接続状況を確認してください。');
   }
 }
+
+
+  // ── オンボーディング ──
+  const OB_KEY = 'traceive_onboarding_v1';
+  const ANON_FIRST_KEY = 'traceive_anon_first_v1';
+
+  function checkOnboarding() {
+    const done = localStorage.getItem(OB_KEY);
+    if (!done) {
+      document.getElementById('onboarding-modal').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  function showObPage(n) {
+    [1,2,3].forEach(i => {
+      const el = document.getElementById('ob-page-' + i);
+      if (el) el.style.display = i === n ? 'block' : 'none';
+    });
+  }
+
+  function startWithX() {
+    // X連携（将来実装）→ 現在は匿名と同じ扱いでフラグを立てる
+    localStorage.setItem(OB_KEY, JSON.stringify({
+      method: 'x',
+      date: new Date().toISOString(),
+    }));
+    closeOnboarding();
+    // 将来：Supabase OAuth X連携へリダイレクト
+    alert('X連携は近日公開予定です。\n現在は匿名モードで起動します。連携機能が公開されたらお知らせします！');
+  }
+
+  function startAnonymous() {
+    const firstDate = new Date().toISOString();
+    localStorage.setItem(OB_KEY, JSON.stringify({
+      method: 'anonymous',
+      date: firstDate,
+    }));
+    localStorage.setItem(ANON_FIRST_KEY, firstDate);
+    closeOnboarding();
+  }
+
+  function closeOnboarding() {
+    document.getElementById('onboarding-modal').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  // 投稿可能かどうかの判定（7日間待機）
+  function canSubmitPost() {
+    const ob = JSON.parse(localStorage.getItem(OB_KEY) || 'null');
+    if (!ob) return false;
+    if (ob.method === 'x') return true; // X連携は即時可（将来）
+    const first = new Date(ob.date);
+    const now = new Date();
+    const diffDays = (now - first) / (1000 * 60 * 60 * 24);
+    return diffDays >= 7;
+  }
+
+  function getDaysUntilPostUnlock() {
+    const ob = JSON.parse(localStorage.getItem(OB_KEY) || 'null');
+    if (!ob) return 7;
+    const first = new Date(ob.date);
+    const now = new Date();
+    const diffDays = (now - first) / (1000 * 60 * 60 * 24);
+    return Math.max(0, Math.ceil(7 - diffDays));
+  }
 
 function toggleCard() {
   cardOpen = !cardOpen;
@@ -4684,6 +4888,7 @@ function showView(name) {
   });
   const target = document.getElementById('view-'+name);
   if (target) target.style.display = 'block';
+  if (name === 'post') setTimeout(initPostForm, 50);
   const nav = document.getElementById('nav-'+name);
   if (nav) nav.classList.add('active');
   activeView = name;
@@ -6168,5 +6373,139 @@ function applyTransferCode() {
   </div>
 </div>
 
+
+<!-- ── オンボーディングモーダル ── -->
+<div id="onboarding-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:linear-gradient(160deg,#1a0a2e 0%,#3d1a5e 60%,#6b2d8b 100%);overflow-y:auto;">
+  <div style="max-width:480px;margin:0 auto;padding:40px 24px 60px;min-height:100vh;display:flex;flex-direction:column;justify-content:center;">
+
+    <!-- ページ1：ようこそ -->
+    <div id="ob-page-1">
+      <div style="text-align:center;margin-bottom:32px;">
+        <div style="font-size:56px;margin-bottom:12px;">🗺️</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:32px;color:#fff;font-weight:600;letter-spacing:2px;">Trace IVE</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-top:6px;letter-spacing:1px;">K-POP 聖地巡礼MAP</div>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.08);border-radius:16px;padding:20px;margin-bottom:24px;">
+        <div style="font-size:14px;color:rgba(255,255,255,0.9);line-height:1.8;">
+          IVEメンバーゆかりの場所を地図で探し、巡礼を記録できるアプリです。<br><br>
+          コミュニティで聖地を育て、ポイントを貯めてランクアップしよう。
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <button onclick="showObPage(2)" style="
+          padding:16px;background:linear-gradient(135deg,#c9a84c,#e8c96b);
+          color:#1a0a2e;border:none;border-radius:16px;font-size:15px;
+          font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;
+          display:flex;align-items:center;justify-content:center;gap:10px;">
+          𝕏 Xアカウントで始める <span style="font-size:11px;background:rgba(0,0,0,0.15);padding:3px 8px;border-radius:20px;">おすすめ</span>
+        </button>
+        <button onclick="showObPage(3)" style="
+          padding:16px;background:rgba(255,255,255,0.12);
+          color:rgba(255,255,255,0.85);border:1.5px solid rgba(255,255,255,0.25);
+          border-radius:16px;font-size:14px;font-weight:600;cursor:pointer;
+          font-family:'Noto Sans JP',sans-serif;">
+          匿名で始める
+        </button>
+      </div>
+    </div>
+
+    <!-- ページ2：X連携のメリット -->
+    <div id="ob-page-2" style="display:none;">
+      <button onclick="showObPage(1)" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:13px;cursor:pointer;margin-bottom:24px;padding:0;">← 戻る</button>
+
+      <div style="text-align:center;margin-bottom:28px;">
+        <div style="font-size:44px;margin-bottom:10px;">𝕏</div>
+        <div style="font-size:20px;font-weight:700;color:#fff;">X連携でできること</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px;">
+        <div style="background:rgba(255,255,255,0.08);border-radius:14px;padding:16px;display:flex;gap:14px;align-items:flex-start;">
+          <div style="font-size:24px;flex-shrink:0;">🏅</div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">発見者クレジットが永続</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.65);line-height:1.6;">投稿した聖地に「最初の発見者」として名前が残ります</div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,0.08);border-radius:14px;padding:16px;display:flex;gap:14px;align-items:flex-start;">
+          <div style="font-size:24px;flex-shrink:0;">⭐</div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">ポイントが端末をまたいで保持</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.65);line-height:1.6;">スマホを変えてもランクとポイントが引き継がれます</div>
+          </div>
+        </div>
+        <div style="background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.4);border-radius:14px;padding:16px;display:flex;gap:14px;align-items:flex-start;">
+          <div style="font-size:24px;flex-shrink:0;">🚀</div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:#c9a84c;margin-bottom:4px;">近日公開：#TraceIVEでポイント獲得</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.65);line-height:1.6;">Xのポストにタグをつけるだけでポイントがもらえるようになります</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:14px;margin-bottom:24px;font-size:12px;color:rgba(255,255,255,0.5);line-height:1.7;">
+        ℹ️ X連携はXのOAuth認証を使用します。パスワードはTrace IVEには送信されません。フォロワー情報・DM等へのアクセスは行いません。
+      </div>
+
+      <button onclick="startWithX()" style="
+        width:100%;padding:16px;background:linear-gradient(135deg,#c9a84c,#e8c96b);
+        color:#1a0a2e;border:none;border-radius:16px;font-size:15px;
+        font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">
+        Xアカウントで始める
+      </button>
+      <div style="text-align:center;margin-top:14px;">
+        <button onclick="showObPage(3)" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer;">匿名で始める（機能制限あり）</button>
+      </div>
+    </div>
+
+    <!-- ページ3：匿名の説明 -->
+    <div id="ob-page-3" style="display:none;">
+      <button onclick="showObPage(1)" style="background:none;border:none;color:rgba(255,255,255,0.5);font-size:13px;cursor:pointer;margin-bottom:24px;padding:0;">← 戻る</button>
+
+      <div style="text-align:center;margin-bottom:28px;">
+        <div style="font-size:44px;margin-bottom:10px;">👤</div>
+        <div style="font-size:20px;font-weight:700;color:#fff;">匿名で始める</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
+        <div style="background:rgba(255,255,255,0.08);border-radius:14px;padding:14px;display:flex;gap:12px;align-items:flex-start;">
+          <div style="font-size:20px;flex-shrink:0;">✅</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.85);line-height:1.6;">地図の閲覧・フィルター</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.08);border-radius:14px;padding:14px;display:flex;gap:12px;align-items:flex-start;">
+          <div style="font-size:20px;flex-shrink:0;">✅</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.85);line-height:1.6;">スポットの評価・ポイント獲得</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.08);border-radius:14px;padding:14px;display:flex;gap:12px;align-items:flex-start;">
+          <div style="font-size:20px;flex-shrink:0;">⚠️</div>
+          <div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.85);">スポット投稿</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px;">登録から7日後に解放されます</div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border-radius:14px;padding:14px;display:flex;gap:12px;align-items:flex-start;">
+          <div style="font-size:20px;flex-shrink:0;">❌</div>
+          <div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.55);">発見者クレジット・X連携ポイント</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:2px;">X連携時のみ利用可能</div>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="startAnonymous()" style="
+        width:100%;padding:16px;background:rgba(255,255,255,0.15);
+        color:#fff;border:1.5px solid rgba(255,255,255,0.3);
+        border-radius:16px;font-size:15px;font-weight:700;
+        cursor:pointer;font-family:'Noto Sans JP',sans-serif;">
+        匿名で始める
+      </button>
+      <div style="text-align:center;margin-top:14px;">
+        <button onclick="showObPage(2)" style="background:none;border:none;color:#c9a84c;font-size:12px;cursor:pointer;font-weight:700;">X連携に切り替える →</button>
+      </div>
+    </div>
+
+  </div>
+</div>
 </body>
 </html>
