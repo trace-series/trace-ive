@@ -3684,18 +3684,14 @@ function showView(name) {
   const tabs = document.getElementById('member-tabs');
   if (tabs) {
     if (name === 'profile' || name === 'route' || name === 'pointrules') {
-      // My Page系：非表示
       tabs.style.display = 'none';
     } else if (name === 'post') {
-      // 投稿画面：メンバー選択モードとして表示
-      tabs.style.display = 'flex';
+      tabs.style.display = 'grid';
       tabs.dataset.mode = 'post-select';
-      // ラベルを一時的に変更
       const hint = document.getElementById('member-tabs-hint');
       if (hint) hint.style.display = 'block';
     } else {
-      // MAP・ランキング・タイムライン：通常表示
-      tabs.style.display = 'flex';
+      tabs.style.display = 'grid';
       tabs.dataset.mode = '';
       const hint = document.getElementById('member-tabs-hint');
       if (hint) hint.style.display = 'none';
