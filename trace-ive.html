@@ -4,6 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Trace IVE — 聖地巡礼MAP</title>
+<meta name="description" content="IVEメンバーゆかりの聖地を地図で探そう。巡礼報告・評価・ポイントが貯まるK-POP聖地巡礼アプリ。">
+
+<!-- OGP -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Trace IVE — 聖地巡礼MAP">
+<meta property="og:description" content="IVEメンバーゆかりの聖地を地図で探そう。巡礼報告・評価・ポイントが貯まるK-POP聖地巡礼アプリ。">
+<meta property="og:url" content="https://missinglink4179.github.io/trace-ive/trace-ive.html">
+<meta property="og:image" content="https://missinglink4179.github.io/trace-ive/ogp.png">
+<meta property="og:site_name" content="Trace IVE">
+<meta property="og:locale" content="ja_JP">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Trace IVE — 聖地巡礼MAP">
+<meta name="twitter:description" content="IVEメンバーゆかりの聖地を地図で探そう。巡礼報告・評価・ポイントが貯まるK-POP聖地巡礼アプリ。">
+<meta name="twitter:image" content="https://missinglink4179.github.io/trace-ive/ogp.png">
+
+
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -3135,7 +3153,7 @@
         ℹ️ 投稿された情報はTrace IVEのデータベースに登録されます。最初の投稿者には永続的な「発見者」クレジットが付与されます。
       </div>
       <div class="submit-area">
-        <button class="btn-primary" style="width:100%;padding:15px;">投稿する 🌸</button>
+        <button class="btn-primary" style="width:100%;padding:15px;" onclick="submitNewSpot()">投稿する 🌸</button>
       </div>
     </div>
   </div>
@@ -3405,6 +3423,65 @@ function shareBirthdayX(nameJa, nameEn, tag) {
 }
 
 // ── スポットデータ ──
+// ── Supabase設定 ──
+const SUPABASE_URL = 'https://aniuehncwpmwxdjrpqje.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFuaXVlaG5jd3Btd3hkanJwcWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NTM5NzgsImV4cCI6MjA5NTUyOTk3OH0.OdsG7yEOVYe1o76oGLIZLTL7vOT52CD8kjRWa6kD9rw';
+
+async function fetchSpotsFromDB() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/spots?select=*&order=created_at.asc`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      }
+    });
+    if (!res.ok) throw new Error('Supabase fetch failed');
+    const data = await res.json();
+    // DBのsnake_caseをアプリのcamelCaseに変換
+    return data.map(s => ({
+      name: s.name,
+      lat: s.lat,
+      lng: s.lng,
+      sub: s.sub || '',
+      icon: s.icon || '📍',
+      category: s.category || '',
+      address: s.address || '',
+      member: s.member || 'IVE',
+      discoverer: s.discoverer || '@missing_link',
+      likes: 0,
+      badges: [s.category || ''],
+      color: '#3d1a5e',
+      trustScore: s.trust_score || 8,
+      goodCount: s.good_count || 0,
+      badCount: s.bad_count || 0,
+      adminLevel: s.admin_level || 'reliable',
+      db_id: s.id,
+    }));
+  } catch(e) {
+    console.warn('Supabase取得失敗、ローカルデータで起動:', e);
+    return null;
+  }
+}
+
+async function saveSubmissionToDB(submission) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/submissions`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify(submission)
+    });
+    return res.ok;
+  } catch(e) {
+    console.warn('投稿保存失敗:', e);
+    return false;
+  }
+}
+
 const SPOTS = [
   {
     name: '旭川らーめん 大雪軒',
@@ -4357,7 +4434,17 @@ function applyFilters() {
 }
 
 // ── Google Maps 初期化 ──
-function initMap() {
+async function initMap() {
+  // Supabaseからスポットデータを取得（失敗時はローカルSPOTSにフォールバック）
+  const dbSpots = await fetchSpotsFromDB();
+  if (dbSpots && dbSpots.length > 0) {
+    SPOTS.length = 0;
+    dbSpots.forEach(s => SPOTS.push(s));
+    console.log(`✅ Supabaseから${SPOTS.length}件取得`);
+  } else {
+    console.log(`⚠️ ローカルデータ${SPOTS.length}件で起動`);
+  }
+
   map = new google.maps.Map(document.getElementById('google-map'), {
     center: { lat: 35.6762, lng: 139.7073 },
     zoom: 13,
@@ -4485,6 +4572,51 @@ function openCard(spot) {
   document.getElementById('card-detail').style.display = 'block';
   document.getElementById('map-card').classList.add('open');
   cardOpen = true;
+}
+
+
+// ── 新規スポット投稿（Supabase保存） ──
+async function submitNewSpot() {
+  const nameEl = document.getElementById('post-name');
+  const descEl = document.getElementById('post-desc');
+  const sourceEl = document.getElementById('post-source');
+  const name = nameEl ? nameEl.value.trim() : '';
+  const desc = descEl ? descEl.value.trim() : '';
+  const sourceUrl = sourceEl ? sourceEl.value.trim() : '';
+
+  if (!name) { alert('スポット名を入力してください'); return; }
+
+  const memberChip = document.querySelector('.member-chip.active');
+  const catChip = document.querySelector('.chip.active');
+  const member = memberChip ? memberChip.dataset.member : '';
+  const category = catChip ? catChip.dataset.cat : '';
+  const center = map ? map.getCenter() : null;
+
+  const submission = {
+    spot_name: name,
+    lat: center ? center.lat() : 35.6762,
+    lng: center ? center.lng() : 139.7073,
+    category: category,
+    member: member,
+    description: desc,
+    source_url: sourceUrl,
+    submitter: '@anonymous',
+    status: 'pending',
+  };
+
+  const btn = document.querySelector('.submit-area .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = '送信中...'; }
+
+  const ok = await saveSubmissionToDB(submission);
+
+  if (btn) { btn.disabled = false; btn.textContent = '投稿する 🌸'; }
+
+  if (ok) {
+    alert('「' + name + '」の投稿を受け付けました！\n\n管理者の確認後、マップに反映されます。\n最初の発見者クレジットが付与されます 🌸');
+    showView('map');
+  } else {
+    alert('投稿に失敗しました。通信状況を確認してください。');
+  }
 }
 
 function toggleCard() {
