@@ -4849,6 +4849,8 @@ async function submitNewSpot() {
     } else {
       const loginModal = document.getElementById('admin-login-modal');
       loginModal.style.display = 'flex';
+      loginModal.style.alignItems = 'center';
+      loginModal.style.justifyContent = 'center';
       document.getElementById('admin-pw-input').value = '';
       document.getElementById('admin-pw-error').textContent = '';
       setTimeout(() => document.getElementById('admin-pw-input').focus(), 100);
@@ -6827,7 +6829,7 @@ function applyTransferCode() {
 </div>
 
 <!-- 管理者ログインモーダル -->
-<div id="admin-login-modal" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;">
+<div id="admin-login-modal" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.85);align-items:center;justify-content:center;">
   <div style="background:#1a0a2e;border-radius:20px;padding:28px 24px;width:300px;border:1px solid rgba(255,255,255,0.1);">
     <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:4px;">🔐 管理者認証</div>
     <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:20px;">管理者専用エリアです</div>
