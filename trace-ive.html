@@ -2289,10 +2289,11 @@
         <div class="profile-avatar-img">🌸</div>
         <div class="profile-name-block">
           <div class="profile-name">yuna_dive</div>
-          <div class="profile-handle">@yuna_dive · Chiba, JP</div>
+          <div class="profile-handle">@yuna_dive</div>
         </div>
         <button class="profile-edit-btn">編集</button>
       </div>
+      <div id="profile-oshi-display" style="display:none;gap:20px;margin-bottom:10px;"></div>
       <div class="profile-badges-row">
         <span class="profile-badge pbadge-founder">🥇 創設メンバー #3</span>
         <span class="profile-badge pbadge-discoverer">🔍 発見者 ×4</span>
@@ -3353,9 +3354,25 @@ const GROUP_CONFIG = {
     { name: 'イソ',      nameEn: 'LEESEO',    birthday: { month: 2,  day: 21 }, hashtag: 'HAPPY_LEESEO_DAY'   },
   ],
 
+  // アクティブイベント（カムバ・ファッションウィーク等）
+  // type: 'comeback' | 'fashion_week' | 'fc_anniversary' | 'custom'
+  activeEvents: [
+    // 例：カムバ時はここに追加
+    // {
+    //   type: 'comeback',
+    //   name: 'After Cry',
+    //   multiplier: 1.5,
+    //   start: '2025-05-30',
+    //   end: '2025-06-13',
+    //   targetMember: 'all',
+    //   bannerText: '🎵 After Cry カムバ期間中！1.5倍ポイント',
+    //   remoteMultiplier: 1.3,
+    // },
+  ],
+
   // ポイント倍率
-  birthdayMonthMultiplier: 2,   // 誕生月：2倍
-  birthdayDayMultiplier:   3,   // 誕生当日：3倍
+  birthdayMonthMultiplier: 1.2, // 誕生月：1.2倍
+  birthdayDayMultiplier:   1.5, // 誕生当日：1.5倍
 };
 
 // ── 誕生日イベント判定 ──
@@ -5970,12 +5987,27 @@ function loadOshiSettings() {
 
 function updateOshiPreview() {
   const el = document.getElementById('oshi-setting-preview');
-  if (!el) return;
-  if (!oshi1 && !oshi2) { el.textContent = '未設定'; return; }
-  const parts = [];
-  if (oshi1) parts.push(`${MEMBER_ICONS[oshi1]||''}${oshi1}`);
-  if (oshi2) parts.push(`${MEMBER_ICONS[oshi2]||''}${oshi2}`);
-  el.textContent = parts.join(' / ');
+  if (el) {
+    if (!oshi1 && !oshi2) { el.textContent = '未設定'; }
+    else {
+      const parts = [];
+      if (oshi1) parts.push(`${MEMBER_ICONS[oshi1]||''}${oshi1}`);
+      if (oshi2) parts.push(`${MEMBER_ICONS[oshi2]||''}${oshi2}`);
+      el.textContent = parts.join(' / ');
+    }
+  }
+  const disp = document.getElementById('profile-oshi-display');
+  if (disp) {
+    if (!oshi1 && !oshi2) {
+      disp.style.display = 'none';
+    } else {
+      disp.style.display = 'flex';
+      let html = '';
+      if (oshi1) html += '<div style="display:flex;align-items:center;gap:5px;"><span style="font-size:10px;color:rgba(255,255,255,0.45);">♡ 1st</span><span style="font-size:15px;font-weight:700;color:#fff;">' + oshi1 + '</span></div>';
+      if (oshi2) html += '<div style="display:flex;align-items:center;gap:5px;"><span style="font-size:10px;color:rgba(255,255,255,0.45);">♡ 2nd</span><span style="font-size:15px;font-weight:700;color:rgba(255,255,255,0.72);">' + oshi2 + '</span></div>';
+      disp.innerHTML = html;
+    }
+  }
 }
 
 function openOshiModal() {
@@ -6659,7 +6691,7 @@ function applyTransferCode() {
 
       <div style="background:rgba(255,255,255,0.08);border-radius:16px;padding:20px;margin-bottom:24px;">
         <div style="font-size:14px;color:rgba(255,255,255,0.9);line-height:1.8;">
-          IVEメンバーゆかりの場所を地図で探し、巡礼を記録できるアプリです。<br><br>
+          IVEの軌跡を、地図に刻もう。
           コミュニティで聖地を育て、ポイントを貯めてランクアップしよう。
         </div>
       </div>
