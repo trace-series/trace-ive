@@ -1,13 +1,24 @@
 with open('trace-ive.html', 'r', encoding='utf-8') as f:
-    lines = f.readlines()
+    content = f.read()
 
-# 4705行目と4708行目を修正（0始まりなので-1）
-lines[4704] = lines[4704].replace('.chip.active', '.chip.selected')
-lines[4707] = lines[4707].replace('.chip.active', '.chip.selected')
+# 管理者パネルのリストIDをadmin-pending-listに変更
+content = content.replace(
+    'const list = document.getElementById(\'pending-list\');',
+    'const list = document.getElementById(\'admin-pending-list\');'
+)
+
+content = content.replace(
+    '<div id="pending-list">',
+    '<div id="admin-pending-list">'
+)
+
+# 承認待ちバッジも対応
+content = content.replace(
+    'document.getElementById(\'pending-count-badge\')',
+    'document.getElementById(\'pending-count-badge\')'
+)
 
 with open('trace-ive.html', 'w', encoding='utf-8') as f:
-    f.writelines(lines)
+    f.write(content)
 
 print('✅ 完了')
-print('4705:', lines[4704].strip())
-print('4708:', lines[4707].strip())
