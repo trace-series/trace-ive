@@ -1,12 +1,13 @@
 with open('trace-ive.html', 'r', encoding='utf-8') as f:
-    content = f.read()
+    lines = f.readlines()
 
-content = content.replace(
-    'missinglink4179.github.io/trace-ive',
-    'trace-series.github.io/trace-ive'
+lines[6661] = lines[6661].replace(
+    'IVEメンバーゆかりの場所を地図で探し、巡礼を記録できるアプリです。<br><br>',
+    'IVEの軌跡を、地図に刻もう。'
 )
 
 with open('trace-ive.html', 'w', encoding='utf-8') as f:
-    f.write(content)
+    f.writelines(lines)
 
 print('✅ 完了')
+print(lines[6661].strip())
