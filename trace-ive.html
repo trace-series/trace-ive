@@ -4924,7 +4924,7 @@ async function submitNewSpot() {
   const ADMIN_PW_KEY = 'traceive_admin_auth_v1';
   // パスワードはSHA-256ハッシュで保存（平文をコードに書かない）
   // 初期パスワード: traceive_admin_2025 → ハッシュ値
-  const ADMIN_PW_HASH = 'dc36b467308cfd7d654c6f05df6d2aa75be3d1322e80f06704c14bb12c3308a8';
+  const ADMIN_PW_HASH = '8498145c2076fb703904e32ff5bca29394289202960a18ac1819c918035078ab';
 
   async function sha256(message) {
     const msgBuffer = new TextEncoder().encode(message);
