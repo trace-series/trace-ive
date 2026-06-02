@@ -2118,6 +2118,7 @@
       <div class="rtab" onclick="switchRankingPeriod(this,'half')">半年</div>
       <div class="rtab" onclick="switchRankingPeriod(this,'quarter')">3ヶ月</div>
       <div class="rtab" onclick="switchRankingPeriod(this,'month')">月間</div>
+      <div id="event-ranking-tabs"></div>
     </div>
 
     <div class="ranking-list" id="ranking-list">
@@ -3474,6 +3475,12 @@ const GROUP_CONFIG = {
   // ポイント倍率
   birthdayMonthMultiplier: 2,   // 誕生月：2倍
   birthdayDayMultiplier:   3,   // 誕生当日：3倍
+
+  // ── シーズンイベント（カムバ・ライブ等に合わせて追加）──
+  // 例: { id: 'tokyodome2025', name: '🏟️ 東京ドーム公演', start: '2025-06-20', end: '2025-06-30' }
+  activeEvents: [
+    { id: 'tokyodome2025', name: '🏟️ 東京ドーム公演', start: '2025-06-20', end: '2025-06-30' },
+  ],
 };
 
 // ── 誕生日イベント判定 ──
@@ -6021,6 +6028,12 @@ function showLangComingSoon() {
     buildRankingMemberTabs();
     // 推しメン熱量ランキングを生成
     buildOshiRanking();
+    // イベントランキングタブ初期化
+    initEventRankingTabs();
+
+    // イベントランキングタブ初期化
+    initEventRankingTabs();
+
     // メンバータブ長押し初期化
     initMemberTabLongPress();
   });
@@ -6195,7 +6208,52 @@ function getDummyOshiRankingData(member) {
   })).sort((a,b) => b.pt - a.pt);
 }
 
+
+// ── メンバータブ1タップで推しランキング直接切り替え ──
+function filterMemberAndOshi(el, member) {
+  const modal = document.getElementById('oshi-ranking-modal');
+  const isOpen = modal && modal.style.display !== 'none';
+  filterMember(el, member);
+  if (isOpen) {
+    // モーダルが開いている → そのまま切り替え
+    showOshiRanking(member);
+  } else {
+    // モーダルが閉じている → 開く
+    showOshiRanking(member);
+  }
+}
+
+
+// ── メンバータブ1タップで推しランキング直接切り替え ──
+function filterMemberAndOshi(el, member) {
+  const modal = document.getElementById('oshi-ranking-modal');
+  const isOpen = modal && modal.style.display !== 'none';
+  filterMember(el, member);
+  if (isOpen) {
+    // モーダルが開いている → そのまま切り替え
+    showOshiRanking(member);
+  } else {
+    // モーダルが閉じている → 開く
+    showOshiRanking(member);
+  }
+}
+
 function showOshiRanking(member) {
+  const modal = document.getElementById('oshi-ranking-modal');
+  // モーダルが既に開いていればメンバーだけ切り替え（×不要）
+  if (modal && modal.style.display !== 'none') {
+    const isAll = member === 'all';
+    const icon = isAll ? '💜' : (MEMBER_ICONS[member] || '💜');
+    document.getElementById('oshi-ranking-icon').textContent = icon;
+    document.getElementById('oshi-ranking-title').textContent = isAll
+      ? '総合ポイントランキング'
+      : `${member} 推しランキング`;
+    modal.dataset.member = member;
+    const activeTab = modal.querySelector('.orm-tab.active');
+    const period = activeTab ? activeTab.dataset.period || 'year' : 'year';
+    renderOshiRankingList(member, period);
+    return;
+  }
   const isAll = member === 'all';
   const icon = isAll ? '💜' : (MEMBER_ICONS[member] || '💜');
   document.getElementById('oshi-ranking-icon').textContent = icon;
@@ -6204,7 +6262,6 @@ function showOshiRanking(member) {
     : `${member} 推しランキング`;
   renderOshiRankingList(member, 'year');
   document.getElementById('oshi-ranking-modal').style.display = 'block';
-  document.body.style.overflow = 'hidden';
   document.querySelectorAll('.orm-tab').forEach((t,i) => {
     t.style.color = i===0 ? 'var(--purple-deep)' : '#9b8aab';
     t.style.borderBottom = i===0 ? '2px solid var(--purple-deep)' : '2px solid transparent';
@@ -6268,12 +6325,69 @@ function switchOshiRankingPeriod(el, period) {
 function closeOshiRankingModal(e) {
   if (e.target === document.getElementById('oshi-ranking-modal')) {
     document.getElementById('oshi-ranking-modal').style.display = 'none';
-    document.body.style.overflow = '';
   }
 }
 
 // ── 期間タブ切替（スポットランキング） ──
+
+// ── シーズンイベントタブ初期化 ──
+function initEventRankingTabs() {
+  const container = document.getElementById('event-ranking-tabs');
+  if (!container) return;
+  const now = new Date();
+  const activeEvents = (GROUP_CONFIG.activeEvents || []).filter(ev => {
+    const start = new Date(ev.start);
+    const end = new Date(ev.end);
+    end.setHours(23, 59, 59);
+    return now >= start && now <= end;
+  });
+  if (activeEvents.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = activeEvents.map(ev =>
+    `<div class="rtab event-rtab" onclick="switchRankingPeriod(this,'event:${ev.id}')" data-event-id="${ev.id}" data-event-name="${ev.name}" data-event-start="${ev.start}" data-event-end="${ev.end}" style="background:linear-gradient(135deg,#3d1a5e,#7b1a3e);color:#fff;border-radius:20px;white-space:nowrap;">${ev.name}</div>`
+  ).join('');
+}
+
+
+// ── シーズンイベントタブ初期化 ──
+function initEventRankingTabs() {
+  const container = document.getElementById('event-ranking-tabs');
+  if (!container) return;
+  const now = new Date();
+  const activeEvents = (GROUP_CONFIG.activeEvents || []).filter(ev => {
+    const start = new Date(ev.start);
+    const end = new Date(ev.end);
+    end.setHours(23, 59, 59);
+    return now >= start && now <= end;
+  });
+  if (activeEvents.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = activeEvents.map(ev =>
+    `<div class="rtab event-rtab" onclick="switchRankingPeriod(this,'event:${ev.id}')" data-event-id="${ev.id}" data-event-name="${ev.name}" data-event-start="${ev.start}" data-event-end="${ev.end}" style="background:linear-gradient(135deg,#3d1a5e,#7b1a3e);color:#fff;border-radius:20px;white-space:nowrap;">${ev.name}</div>`
+  ).join('');
+}
+
 function switchRankingPeriod(el, period) {
+  // イベント期間の場合
+  if (period && period.startsWith('event:')) {
+    document.querySelectorAll('.rtab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    currentRankingPeriod = period;
+    renderSpotRanking(period);
+    return;
+  }
+  // イベント期間の場合
+  if (period && period.startsWith('event:')) {
+    document.querySelectorAll('.rtab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    currentRankingPeriod = period;
+    renderSpotRanking(period);
+    return;
+  }
   document.querySelectorAll('#ranking-period-tabs .rtab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   // バックエンド実装後にperiodに応じたデータ取得を追加
@@ -6652,11 +6766,11 @@ function applyTransferCode() {
 </div>
 
 <!-- 推しメンランキングモーダル -->
-<div id="oshi-ranking-modal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.7);overflow-y:auto;" onclick="closeOshiRankingModal(event)">
+<div id="oshi-ranking-modal" style="display:none;position:fixed;top:110px;left:0;right:0;bottom:60px;z-index:600;background:rgba(0,0,0,0.7);overflow-y:auto;" onclick="closeOshiRankingModal(event)">
   <div style="background:#fff;border-radius:20px;margin:50px 16px 40px;padding:0 0 24px;overflow:hidden;" onclick="event.stopPropagation()">
     <!-- ヘッダー -->
     <div id="oshi-ranking-header" style="padding:20px 20px 16px;background:linear-gradient(135deg,#3d1a5e,#c0392b);color:#fff;position:relative;">
-      <button onclick="document.getElementById('oshi-ranking-modal').style.display='none';document.body.style.overflow='';" style="position:absolute;top:14px;right:16px;background:none;border:none;color:rgba(255,255,255,0.7);font-size:22px;cursor:pointer;">×</button>
+      <button onclick="document.getElementById('oshi-ranking-modal').style.display='none';" style="position:absolute;top:14px;right:16px;background:none;border:none;color:rgba(255,255,255,0.7);font-size:22px;cursor:pointer;">×</button>
       <div id="oshi-ranking-icon" style="font-size:36px;margin-bottom:6px;">🐕</div>
       <div id="oshi-ranking-title" style="font-size:18px;font-weight:700;">ユジン 推しランキング</div>
       <div style="font-size:12px;opacity:0.8;margin-top:2px;">推しポイント累計ランキング</div>
