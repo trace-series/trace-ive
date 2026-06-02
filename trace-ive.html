@@ -2164,17 +2164,14 @@
   <div id="view-profile">
     <div class="profile-hero">
       <div class="profile-avatar-wrap">
-        <div class="profile-avatar-img">🌸</div>
+        <div class="profile-avatar-img" id="profile-avatar">👤</div>
         <div class="profile-name-block">
-          <div class="profile-name">yuna_dive</div>
-          <div class="profile-handle">@yuna_dive · Chiba, JP</div>
+          <div class="profile-name" id="profile-name">匿名ユーザー</div>
+          <div class="profile-handle" id="profile-handle">X未連携</div>
         </div>
-        <button class="profile-edit-btn">編集</button>
+        <button class="profile-edit-btn" onclick="openProfileEdit()">編集</button>
       </div>
-      <div class="profile-badges-row">
-        <span class="profile-badge pbadge-founder">🥇 創設メンバー #3</span>
-        <span class="profile-badge pbadge-discoverer">🔍 発見者 ×4</span>
-        <span class="profile-badge pbadge-discoverer">💜 DIVE</span>
+      <div class="profile-badges-row" id="profile-badges-row">
       </div>
     </div>
 
@@ -2183,29 +2180,29 @@
       <div class="contrib-top">
         <div class="contrib-left">
           <div class="contrib-label">貢献ポイント</div>
-          <div class="contrib-total" id="profile-contrib-total">347 pt</div>
+          <div class="contrib-total" id="profile-contrib-total">0 pt</div>
         </div>
-        <div class="contrib-rank-badge">🏆 上位 12%</div>
+        <div class="contrib-rank-badge" id="contrib-rank-badge">—</div>
       </div>
       <div class="contrib-bar-bg">
-        <div class="contrib-bar-fill" style="width:62%"></div>
+        <div class="contrib-bar-fill" id="contrib-bar-fill" style="width:0%"></div>
       </div>
-      <div class="contrib-next">次のランク「ゴールド」まで あと 153pt</div>
+      <div class="contrib-next" id="contrib-next">ポイントを貯めてランクアップしよう</div>
       <div class="contrib-breakdown">
         <div class="contrib-item">
           <span class="contrib-item-icon">🎯</span>
           <span class="contrib-item-label">正確報告</span>
-          <span class="contrib-item-val">+180pt</span>
+          <span class="contrib-item-val" id="contrib-accurate">0pt</span>
         </div>
         <div class="contrib-item">
           <span class="contrib-item-icon">🔍</span>
           <span class="contrib-item-label">早期発見</span>
-          <span class="contrib-item-val">+120pt</span>
+          <span class="contrib-item-val" id="contrib-early">0pt</span>
         </div>
         <div class="contrib-item">
           <span class="contrib-item-icon">⚡</span>
           <span class="contrib-item-label">スピード報告</span>
-          <span class="contrib-item-val">+47pt</span>
+          <span class="contrib-item-val" id="contrib-speed">0pt</span>
         </div>
       </div>
     </div>
@@ -2215,38 +2212,25 @@
       <div class="pending-title">⏳ 確定待ちポイント</div>
       <div class="pending-desc">管理者が判定すると確定されます</div>
       <div class="pending-list" id="pending-list">
-        <div class="pending-item">
-          <div class="pending-item-left">
-            <div class="pending-item-name">新大久保 コリアタウン</div>
-            <div class="pending-item-type">❌ 場所が違うと報告</div>
-          </div>
-          <div class="pending-item-pt">+40pt?</div>
-        </div>
-        <div class="pending-item">
-          <div class="pending-item-left">
-            <div class="pending-item-name">中目黒 川沿い</div>
-            <div class="pending-item-type">📸 行って確認と報告</div>
-          </div>
-          <div class="pending-item-pt">+30pt?</div>
-        </div>
+        <div style="text-align:center;padding:16px;color:var(--text-light);font-size:12px;">確定待ちのポイントはありません</div>
       </div>
     </div>
 
     <div class="stats-row">
       <div class="stat-card">
-        <div class="stat-num">7</div>
+        <div class="stat-num" id="stat-spots">0</div>
         <div class="stat-label">投稿スポット</div>
       </div>
       <div class="stat-card">
-        <div class="stat-num">23</div>
+        <div class="stat-num" id="stat-pilgrim">0</div>
         <div class="stat-label">巡礼済み</div>
       </div>
       <div class="stat-card">
-        <div class="stat-num">312</div>
+        <div class="stat-num" id="stat-likes">0</div>
         <div class="stat-label">獲得いいね</div>
       </div>
       <div class="stat-card">
-        <div class="stat-num">4</div>
+        <div class="stat-num" id="stat-discoverer">0</div>
         <div class="stat-label">発見者バッジ</div>
       </div>
     </div>
@@ -2301,36 +2285,15 @@
     </div>
 
     <div class="profile-section-title">📍 投稿したスポット</div>
-    <div class="my-spots-list">
-      <div class="my-spot-item">
-        <div class="my-spot-icon">🎵</div>
-        <div class="my-spot-info">
-          <div class="my-spot-name">渋谷スクランブル交差点</div>
-          <div class="my-spot-meta">WAVE MV · 東京</div>
-        </div>
-        <div class="my-spot-right">
-          <div class="my-spot-likes">❤️ 128</div>
-          <div class="my-spot-date">3日前</div>
-        </div>
-      </div>
-      <div class="my-spot-item">
-        <div class="my-spot-icon">📚</div>
-        <div class="my-spot-info">
-          <div class="my-spot-name">代官山 蔦屋書店</div>
-          <div class="my-spot-meta">来日スポット · 東京</div>
-        </div>
-        <div class="my-spot-right">
-          <div class="my-spot-likes">❤️ 94</div>
-          <div class="my-spot-date">1週間前</div>
-        </div>
-      </div>
+    <div class="my-spots-list" id="my-spots-list">
+      <div style="text-align:center;padding:20px;color:var(--text-light);font-size:12px;">投稿したスポットはまだありません</div>
     </div>
 
-    <div class="x-connect-card">
+    <div class="x-connect-card" onclick="startXConnect()">
       <div style="width:40px;height:40px;background:white;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;font-family:sans-serif;flex-shrink:0;">𝕏</div>
       <div class="x-connect-text">
-        <div class="x-connect-title">Xアカウント連携済み</div>
-        <div class="x-connect-sub">@yuna_dive · 1タップでシェア可能</div>
+        <div class="x-connect-title" id="x-connect-title">Xアカウントを連携する</div>
+        <div class="x-connect-sub" id="x-connect-sub">連携するとポイントや発見者クレジットが保持されます</div>
       </div>
       <div class="x-connect-arrow">›</div>
     </div>
@@ -7064,7 +7027,7 @@ function applyTransferCode() {
       </div>
     </div>
 
-  </div>c
+  </div>
 </div>
 
 <!-- 管理者ログインモーダル -->
