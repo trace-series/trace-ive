@@ -2042,6 +2042,10 @@
             <span class="icon">📍</span>
             <span id="card-address">—</span>
           </div>
+          <div class="card-detail-row" id="card-distance-row" style="display:none;">
+            <span class="icon">📡</span>
+            <span id="card-distance">現在地を取得中…</span>
+          </div>
           <div class="card-detail-row">
             <span class="icon">👤</span>
             <span>最初の発見者: <strong style="color:var(--purple-deep)" id="card-discoverer">—</strong> 🥇</span>
@@ -4579,6 +4583,51 @@ function applyFilters() {
   });
 }
 
+
+// ── 距離表示 ──
+let cachedUserLat = null;
+let cachedUserLng = null;
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function formatDistance(km) {
+  if (km < 1) return Math.round(km * 1000) + ' m';
+  return km.toFixed(1) + ' km';
+}
+
+function updateDistanceDisplay(spot) {
+  const row = document.getElementById('card-distance-row');
+  const el = document.getElementById('card-distance');
+  if (!row || !el) return;
+  if (cachedUserLat !== null) {
+    const d = haversineKm(cachedUserLat, cachedUserLng, spot.lat, spot.lng);
+    el.textContent = '現在地から ' + formatDistance(d);
+    row.style.display = 'flex';
+    return;
+  }
+  row.style.display = 'flex';
+  el.textContent = '現在地を取得中…';
+  if (!navigator.geolocation) { row.style.display = 'none'; return; }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      cachedUserLat = pos.coords.latitude;
+      cachedUserLng = pos.coords.longitude;
+      if (currentSpot) {
+        const d = haversineKm(cachedUserLat, cachedUserLng, currentSpot.lat, currentSpot.lng);
+        el.textContent = '現在地から ' + formatDistance(d);
+      }
+    },
+    () => { row.style.display = 'none'; },
+    { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+  );
+}
+
 // ── Google Maps 初期化 ──
 async function initMap() {
   // Supabaseからスポットデータを取得（失敗時はローカルSPOTSにフォールバック）
@@ -4676,6 +4725,9 @@ function openCard(spot) {
   document.getElementById('card-address').textContent = spot.address;
   document.getElementById('card-discoverer').textContent = spot.discoverer;
   document.getElementById('card-likes').textContent = spot.likes + ' 件の巡礼報告';
+
+  // 距離表示
+  updateDistanceDisplay(spot);
 
   // バッジ（XSS対策：createElement使用）
   const badgeEl = document.getElementById('card-badges');
