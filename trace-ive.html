@@ -2331,22 +2331,22 @@
         <div class="settings-item-lang-current" id="lang-current-display">日本語</div>
         <div class="settings-item-arrow">›</div>
       </div>
-      <div class="settings-item">
+      <div class="settings-item" onclick="alert('通知設定は近日公開予定です。')">
         <div class="settings-item-icon">🔔</div>
         <div class="settings-item-text">通知設定</div>
-        <div class="settings-item-arrow">›</div>
+        <div class="settings-item-arrow" style="font-size:10px;color:var(--text-light);">準備中</div>
       </div>
-      <div class="settings-item">
+      <div class="settings-item" onclick="alert('プライバシー設定は近日公開予定です。')">
         <div class="settings-item-icon">🔒</div>
         <div class="settings-item-text">プライバシー設定</div>
-        <div class="settings-item-arrow">›</div>
+        <div class="settings-item-arrow" style="font-size:10px;color:var(--text-light);">準備中</div>
       </div>
       <div class="settings-item" onclick="openTransferModal()">
         <div class="settings-item-icon">📲</div>
         <div class="settings-item-text">データ引き継ぎ</div>
         <div class="settings-item-arrow">›</div>
       </div>
-      <div class="settings-item">
+      <div class="settings-item" onclick="window.open('https://x.com/traceIVE4179','_blank')">
         <div class="settings-item-icon">❓</div>
         <div class="settings-item-text">ヘルプ・お問い合わせ</div>
         <div class="settings-item-arrow">›</div>
@@ -2384,7 +2384,7 @@
   <!-- TERMS VIEW -->
   <div id="view-terms" style="display:none;padding:20px 16px;">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-      <button onclick="history.back()" style="background:var(--purple-pale);border:none;border-radius:10px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--purple-deep);">← 戻る</button>
+      <button onclick="showView('profile')" style="background:var(--purple-pale);border:none;border-radius:10px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--purple-deep);">← 戻る</button>
       <div class="section-title" style="margin-bottom:0;">利用規約</div>
     </div>
     <div class="section-sub">TERMS OF SERVICE</div>
@@ -2442,7 +2442,7 @@
   <!-- PRIVACY VIEW -->
   <div id="view-privacy" style="display:none;padding:20px 16px;">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-      <button onclick="history.back()" style="background:var(--purple-pale);border:none;border-radius:10px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--purple-deep);">← 戻る</button>
+      <button onclick="showView('profile')" style="background:var(--purple-pale);border:none;border-radius:10px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--purple-deep);">← 戻る</button>
       <div class="section-title" style="margin-bottom:0;">プライバシーポリシー</div>
     </div>
     <div class="section-sub">PRIVACY POLICY</div>
@@ -3041,8 +3041,8 @@
         <div class="sri-left">
           <div class="sri-icon">🗺️</div>
           <div>
-            <div class="sri-name">東京IVE遠征2024春</div>
-            <div class="sri-meta">3スポット · 2024年3月</div>
+            
+            
           </div>
         </div>
         <div style="display:flex;gap:6px;">
