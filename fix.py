@@ -1,97 +1,123 @@
 with open('trace-ive.html', 'r', encoding='utf-8') as f:
-    html = f.read()
+    content = f.read()
 
-# ─────────────────────────────────────────
-# 1. event-ranking-tabs の重複を修正
-# ─────────────────────────────────────────
-html = html.replace(
-    '      <div id="event-ranking-tabs"></div>\n      <div id="event-ranking-tabs"></div>',
-    '      <div id="event-ranking-tabs"></div>'
-)
+# 1. GPS距離表示のHTML構造を修正（前回の修正確認）
+old1 = '''          <div class="card-detail-row">
+            <span class="icon">📍</span>
+            <span id="card-address">—</span>
+            <div class="card-detail-row" id="card-distance-row" style="display:none;">
+              <span class="icon">📡</span>
+              <span id="card-distance">現在地を取得中…</span>
+            </div>
 
-# ─────────────────────────────────────────
-# 2. filterMemberAndOshi関数を完全削除（重複含む）
-# ─────────────────────────────────────────
-import re
-html = re.sub(
-    r'\n*// ── メンバータブ1タップで推しランキング直接切り替え ──\nfunction filterMemberAndOshi[^}]+\}\n+',
-    '\n',
-    html,
-    flags=re.DOTALL
-)
 
-# ─────────────────────────────────────────
-# 3. 動物アイコンを元に戻す
-# ─────────────────────────────────────────
-members = ['ユジン','ガウル','レイ','ウォニョン','リズ','イソ']
-for name in members:
-    old = f'<div class="member-tab-item" onclick="filterMemberAndOshi(this, \'{name}\')">'
-    new = f'<div class="member-tab-item" onclick="filterMember(this, \'{name}\')" ondblclick="showOshiRanking(\'{name}\')">'
-    html = html.replace(old, new)
+          </div>'''
 
-# ─────────────────────────────────────────
-# 4. oshi-ranking-modalのstyleを変更
-#    inset:0 → top:120px（動物アイコンバーの下から表示）
-#    これにより動物アイコンバーは常に操作可能
-# ─────────────────────────────────────────
-old_modal = '<div id="oshi-ranking-modal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.7);overflow-y:auto;" onclick="closeOshiRankingModal(event)">'
-new_modal = '<div id="oshi-ranking-modal" style="display:none;position:fixed;top:110px;left:0;right:0;bottom:60px;z-index:600;background:rgba(0,0,0,0.7);overflow-y:auto;" onclick="closeOshiRankingModal(event)">'
-html = html.replace(old_modal, new_modal)
+new1 = '''          <div class="card-detail-row">
+            <span class="icon">📍</span>
+            <span id="card-address">—</span>
+          </div>
+          <div class="card-detail-row" id="card-distance-row" style="display:none;">
+            <span class="icon">📡</span>
+            <span id="card-distance">現在地を取得中…</span>
+          </div>'''
 
-# ─────────────────────────────────────────
-# 5. showOshiRankingからbody.overflow=hidden を削除
-#    （動物アイコンバーのスクロールを妨げないため）
-# ─────────────────────────────────────────
-html = html.replace(
-    "  document.getElementById('oshi-ranking-modal').style.display = 'block';\n  document.body.style.overflow = 'hidden';",
-    "  document.getElementById('oshi-ranking-modal').style.display = 'block';"
-)
+content = content.replace(old1, new1, 1)
 
-# ─────────────────────────────────────────
-# 6. closeOshiRankingModalからbody.overflow=''を削除
-# ─────────────────────────────────────────
-html = html.replace(
-    "document.getElementById('oshi-ranking-modal').style.display = 'none';\n    document.body.style.overflow = '';",
-    "document.getElementById('oshi-ranking-modal').style.display = 'none';"
-)
-# ×ボタンのinlineスタイルも
-html = html.replace(
-    "document.getElementById('oshi-ranking-modal').style.display='none';document.body.style.overflow='';",
-    "document.getElementById('oshi-ranking-modal').style.display='none';"
-)
+# 2. GPSボーナス処理をopenCard関数の末尾に追加
+old2 = '''  document.getElementById('card-detail').style.display = 'block';
+  document.getElementById('map-card').classList.add('open');
+  cardOpen = true;
+}'''
 
-# ─────────────────────────────────────────
-# 7. showOshiRankingを修正：開いていればメンバー切り替えのみ
-# ─────────────────────────────────────────
-old_show = '''function showOshiRanking(member) {
-  const isAll = member === 'all';'''
+new2 = '''  document.getElementById('card-detail').style.display = 'block';
+  document.getElementById('map-card').classList.add('open');
+  cardOpen = true;
 
-new_show = '''function showOshiRanking(member) {
-  const modal = document.getElementById('oshi-ranking-modal');
-  if (modal && modal.style.display !== 'none') {
-    // 既に開いている → メンバーだけ切り替え
-    const isAll2 = member === 'all';
-    const icon2 = isAll2 ? '💜' : (MEMBER_ICONS[member] || '💜');
-    document.getElementById('oshi-ranking-icon').textContent = icon2;
-    document.getElementById('oshi-ranking-title').textContent = isAll2
-      ? '総合ポイントランキング'
-      : `${member} 推しランキング`;
-    modal.dataset.member = member;
-    const activeTab = modal.querySelector('.orm-tab.active');
-    const period = activeTab ? (activeTab.getAttribute('onclick').match(/'(\w+)'\)/) || ['','year'])[1] : 'year';
-    renderOshiRankingList(member, period);
+  // GPS距離表示＆ボーナスポイント判定
+  checkGpsBonus(spot);
+}
+
+// ── GPS距離チェック＆ボーナスポイント ──
+const GPS_BONUS_KEY = 'traceive_gps_bonus_v1';
+const GPS_BONUS_DISTANCE = 200; // メートル
+const GPS_BONUS_PT = 50;
+
+function getGpsBonusHistory() {
+  try { return JSON.parse(localStorage.getItem(GPS_BONUS_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+
+function hasGpsBonusReceived(spotName) {
+  return getGpsBonusHistory().includes(spotName);
+}
+
+function recordGpsBonus(spotName) {
+  const h = getGpsBonusHistory();
+  if (!h.includes(spotName)) {
+    h.push(spotName);
+    localStorage.setItem(GPS_BONUS_KEY, JSON.stringify(h));
+  }
+}
+
+function calcDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2)
+    + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
+    * Math.sin(dLng/2) * Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function checkGpsBonus(spot) {
+  const row = document.getElementById('card-distance-row');
+  const distEl = document.getElementById('card-distance');
+  if (!row || !distEl) return;
+
+  if (!navigator.geolocation) {
+    row.style.display = 'none';
     return;
   }
-  const isAll = member === 'all';'''
 
-html = html.replace(old_show, new_show, 1)
+  row.style.display = 'flex';
+  distEl.textContent = '現在地を取得中…';
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const dist = calcDistance(pos.coords.latitude, pos.coords.longitude, spot.lat, spot.lng);
+      const distKm = (dist / 1000).toFixed(1);
+      distEl.textContent = `現在地から ${distKm} km`;
+
+      // 200m以内でボーナス付与（1スポット1回限り）
+      if (dist <= GPS_BONUS_DISTANCE && !hasGpsBonusReceived(spot.name)) {
+        recordGpsBonus(spot.name);
+        distEl.textContent = `現在地から ${distKm} km 🎉 GPS到達ボーナス +${GPS_BONUS_PT}pt！`;
+        distEl.style.color = '#15803d';
+        distEl.style.fontWeight = '700';
+        addPendingPoint(spot.name, '📡 GPS到達ボーナス（200m以内）', GPS_BONUS_PT);
+        showEvalToast(`🎉 GPS到達ボーナス +${GPS_BONUS_PT}pt 獲得！`);
+        setTimeout(() => {
+          distEl.style.color = '';
+          distEl.style.fontWeight = '';
+        }, 5000);
+      } else if (dist <= GPS_BONUS_DISTANCE && hasGpsBonusReceived(spot.name)) {
+        distEl.textContent = `現在地から ${distKm} km ✅ GPS到達済み`;
+        distEl.style.color = '#9b8aab';
+      }
+    },
+    (err) => {
+      row.style.display = 'none';
+    },
+    { timeout: 8000, maximumAge: 30000 }
+  );
+}'''
+
+content = content.replace(old2, new2, 1)
 
 with open('trace-ive.html', 'w', encoding='utf-8') as f:
-    f.write(html)
+    f.write(content)
 
-print("✅ 完了！変更内容:")
-print("  1. event-ranking-tabs重複を修正")
-print("  2. filterMemberAndOshi関数を完全削除")
-print("  3. MAPページの動物アイコン → フィルターのみ（元に戻した）")
-print("  4. 推しランキングモーダル → 動物アイコンバーの下から表示（アイコン操作可能）")
-print("  5. モーダルが開いている時に長押し → メンバーが直接切り替わる")
+print("✅ GPS ボーナスポイント実装完了")
+print("  - 200m以内で +50pt（1スポット1回限り）")
+print("  - 距離表示も同時実装")
