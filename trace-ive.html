@@ -2109,8 +2109,8 @@
     <div class="founder-banner">
       <div class="founder-banner-title">🏅 創設メンバー募集中</div>
       <div class="founder-banner-sub">最初の20名に永続の創設メンバーバッジを授与。今だけ取得可能な特別称号です。</div>
-      <div class="founder-progress"><div class="founder-progress-bar"></div></div>
-      <div class="founder-count">7 / 20 名 参加済み</div>
+      <div class="founder-progress"><div class="founder-progress-bar" id="founder-progress-bar" style="width:0%"></div></div>
+      <div class="founder-count" id="founder-count">0 / 20 名 参加済み</div>
     </div>
 
     <!-- メンバーフィルタータブ -->
@@ -2127,83 +2127,9 @@
     </div>
 
     <div class="ranking-list" id="ranking-list">
-      <div class="ranking-item" onclick="jumpToSpot('東京ドーム')" data-member="IVE">
-        <div class="rank-num rank-1">1</div>
-        <div class="rank-thumb">🎤</div>
-        <div class="rank-info">
-          <div class="rank-name">東京ドーム</div>
-          <div class="rank-meta">東京都文京区 · SHOW WHAT I HAVE</div>
-          <span style="display:inline-block;margin-top:3px;padding:2px 8px;background:var(--purple-pale);color:var(--purple-deep);border-radius:10px;font-size:11px;font-weight:700;">IVE</span>
-        </div>
-        <div class="rank-score">
-          <div class="rank-score-num">0</div>
-          <div class="rank-score-label">巡礼数</div>
-        </div>
-      </div>
-      <div class="ranking-item" onclick="jumpToSpot('MIYASHITA PARK')" data-member="レイ">
-        <div class="rank-num rank-2">2</div>
-        <div class="rank-thumb">📸</div>
-        <div class="rank-info">
-          <div class="rank-name">MIYASHITA PARK</div>
-          <div class="rank-meta">東京都渋谷区 · REBEL HEART MV</div>
-          <span style="display:inline-block;margin-top:3px;padding:2px 8px;background:var(--purple-pale);color:var(--purple-deep);border-radius:10px;font-size:11px;font-weight:700;">レイ</span>
-        </div>
-        <div class="rank-score">
-          <div class="rank-score-num">0</div>
-          <div class="rank-score-label">巡礼数</div>
-        </div>
-      </div>
-      <div class="ranking-item" onclick="jumpToSpot('渋谷駅前交差点')" data-member="レイ">
-        <div class="rank-num rank-3">3</div>
-        <div class="rank-thumb">📸</div>
-        <div class="rank-info">
-          <div class="rank-name">渋谷駅前交差点</div>
-          <div class="rank-meta">東京都渋谷区 · REBEL HEART MV</div>
-          <span style="display:inline-block;margin-top:3px;padding:2px 8px;background:var(--purple-pale);color:var(--purple-deep);border-radius:10px;font-size:11px;font-weight:700;">レイ</span>
-        </div>
-        <div class="rank-score">
-          <div class="rank-score-num">0</div>
-          <div class="rank-score-label">巡礼数</div>
-        </div>
-      </div>
-      <div class="ranking-item" onclick="jumpToSpot('東京ディズニーシー')" data-member="ガウル">
-        <div class="rank-num rank-other">4</div>
-        <div class="rank-thumb">🏯</div>
-        <div class="rank-info">
-          <div class="rank-name">東京ディズニーシー</div>
-          <div class="rank-meta">千葉県浦安市 · 来日観光</div>
-          <span style="display:inline-block;margin-top:3px;padding:2px 8px;background:var(--purple-pale);color:var(--purple-deep);border-radius:10px;font-size:11px;font-weight:700;">ガウル</span>
-        </div>
-        <div class="rank-score">
-          <div class="rank-score-num">0</div>
-          <div class="rank-score-label">巡礼数</div>
-        </div>
-      </div>
-      <div class="ranking-item" onclick="jumpToSpot('before sunset')" data-member="アン・ユジン">
-        <div class="rank-num rank-other">5</div>
-        <div class="rank-thumb">☕</div>
-        <div class="rank-info">
-          <div class="rank-name">before sunset</div>
-          <div class="rank-meta">神奈川県葉山町 · 相席食堂</div>
-          <span style="display:inline-block;margin-top:3px;padding:2px 8px;background:var(--purple-pale);color:var(--purple-deep);border-radius:10px;font-size:11px;font-weight:700;">アン・ユジン</span>
-        </div>
-        <div class="rank-score">
-          <div class="rank-score-num">0</div>
-          <div class="rank-score-label">巡礼数</div>
-        </div>
-      </div>
-      <div class="ranking-item" onclick="jumpToSpot('名古屋城')" data-member="レイ">
-        <div class="rank-num rank-other">6</div>
-        <div class="rank-thumb">🏯</div>
-        <div class="rank-info">
-          <div class="rank-name">名古屋城</div>
-          <div class="rank-meta">愛知県名古屋市 · レイYouTube</div>
-          <span style="display:inline-block;margin-top:3px;padding:2px 8px;background:var(--purple-pale);color:var(--purple-deep);border-radius:10px;font-size:11px;font-weight:700;">レイ</span>
-        </div>
-        <div class="rank-score">
-          <div class="rank-score-num">0</div>
-          <div class="rank-score-label">巡礼数</div>
-        </div>
+      <div style="text-align:center;padding:40px 20px;color:var(--text-light);">
+        <div style="font-size:32px;margin-bottom:8px;">🗺️</div>
+        <div style="font-size:14px;">巡礼報告が集まるとランキングが表示されます</div>
       </div>
     </div>
 
@@ -2226,64 +2152,10 @@
     <div class="section-title">タイムライン</div>
     <div class="section-sub">みんなの巡礼レポート</div>
 
-    <div class="feed-list">
-      <div class="feed-item" data-member="ガウル">
-        <div class="feed-header">
-          <div class="feed-avatar">🌸</div>
-          <div class="feed-user">
-            <div class="feed-username">@yuna_dive
-              <span class="feed-founder">🥇 創設メンバー #3</span>
-            </div>
-            <div class="feed-time">2時間前</div>
-          </div>
-        </div>
-        <div class="feed-img">
-          🎵
-          <div class="feed-img-overlay">📍 渋谷スクランブル交差点</div>
-        </div>
-        <div class="feed-body">
-          <div class="feed-spot-name">渋谷スクランブル交差点</div>
-          <div class="feed-comment">WAVEのMVと同じ構図で撮れました！夜がおすすめ。ガウルが立っていた場所の特定成功🎉</div>
-          <div class="card-badges" style="margin-bottom:10px;">
-            <span class="badge badge-red">WAVE MV</span>
-            <span class="badge badge-purple">東京</span>
-            <span class="badge badge-gold">ガウル</span>
-          </div>
-          <div class="feed-footer">
-            <div class="feed-action liked">❤️ 48</div>
-            <div class="feed-action">💬 12</div>
-            <div class="feed-action">🔖 保存</div>
-            <button class="feed-share">𝕏 シェア</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="feed-item" data-member="レイ">
-        <div class="feed-header">
-          <div class="feed-avatar">💜</div>
-          <div class="feed-user">
-            <div class="feed-username">@ive_rei_love</div>
-            <div class="feed-time">5時間前</div>
-          </div>
-        </div>
-        <div class="feed-img" style="background:linear-gradient(135deg,#f0e0e8,#e8d0f0);">
-          📚
-          <div class="feed-img-overlay">📍 代官山 蔦屋書店</div>
-        </div>
-        <div class="feed-body">
-          <div class="feed-spot-name">代官山 蔦屋書店</div>
-          <div class="feed-comment">来日の際にレイが訪れたとされる場所。同じ本を探したら見つかりました📖</div>
-          <div class="card-badges" style="margin-bottom:10px;">
-            <span class="badge badge-purple">来日</span>
-            <span class="badge badge-gold">レイ</span>
-          </div>
-          <div class="feed-footer">
-            <div class="feed-action liked">❤️ 31</div>
-            <div class="feed-action">💬 7</div>
-            <div class="feed-action">🔖 保存</div>
-            <button class="feed-share">𝕏 シェア</button>
-          </div>
-        </div>
+    <div class="feed-list" id="feed-list">
+      <div style="text-align:center;padding:40px 20px;color:var(--text-light);">
+        <div style="font-size:32px;margin-bottom:8px;">📸</div>
+        <div style="font-size:14px;">巡礼報告が投稿されると表示されます</div>
       </div>
     </div>
   </div>
@@ -2542,7 +2414,7 @@
       </div>
     </div>
     <div style="text-align:center;font-size:11px;color:#9b8aab;padding:8px 0 40px;">
-      © 2025 missing link / Trace IVE
+      © 2026 missing link / Trace IVE
     </div>
   </div>
 
@@ -2553,7 +2425,7 @@
       <div class="section-title" style="margin-bottom:0;">利用規約</div>
     </div>
     <div class="section-sub">TERMS OF SERVICE</div>
-    <div style="font-size:12px;color:var(--text-light);margin-bottom:20px;">最終更新日：2025年6月1日</div>
+    <div style="font-size:12px;color:var(--text-light);margin-bottom:20px;">最終更新日：2026年6月1日</div>
 
     <div style="display:flex;flex-direction:column;gap:20px;padding-bottom:40px;">
 
@@ -2598,7 +2470,7 @@
       </div>
 
       <div style="background:var(--purple-pale);border-radius:14px;padding:16px;">
-        <div style="font-size:12px;color:var(--text-mid);line-height:1.8;">お問い合わせ：<a href="https://x.com/missing_link" style="color:var(--purple-deep);">@missing_link</a>（X/Twitter）</div>
+        <div style="font-size:12px;color:var(--text-mid);line-height:1.8;">お問い合わせ：<a href="https://x.com/traceIVE4179" style="color:var(--purple-deep);">@traceIVE4179</a>（X/Twitter）</div>
       </div>
 
     </div>
@@ -2611,7 +2483,7 @@
       <div class="section-title" style="margin-bottom:0;">プライバシーポリシー</div>
     </div>
     <div class="section-sub">PRIVACY POLICY</div>
-    <div style="font-size:12px;color:var(--text-light);margin-bottom:20px;">最終更新日：2025年6月1日</div>
+    <div style="font-size:12px;color:var(--text-light);margin-bottom:20px;">最終更新日：2026年6月1日</div>
 
     <div style="display:flex;flex-direction:column;gap:20px;padding-bottom:40px;">
 
@@ -2648,7 +2520,7 @@
       </div>
 
       <div style="background:var(--purple-pale);border-radius:14px;padding:16px;">
-        <div style="font-size:12px;color:var(--text-mid);line-height:1.8;">お問い合わせ：<a href="https://x.com/missing_link" style="color:var(--purple-deep);">@missing_link</a>（X/Twitter）</div>
+        <div style="font-size:12px;color:var(--text-mid);line-height:1.8;">お問い合わせ：<a href="https://x.com/traceIVE4179" style="color:var(--purple-deep);">@traceIVE4179</a>（X/Twitter）</div>
       </div>
 
     </div>
@@ -3323,7 +3195,7 @@
       マナーある行動がK-POPファンの印象を守ります
     </div>
   </div>
-  <div style="opacity:0.4;">© 2025 missing link / Trace IVE · All rights reserved.</div>
+  <div style="opacity:0.4;">© 2026 missing link / Trace IVE · All rights reserved.</div>
 </div>
 
 <!-- BOTTOM NAV -->
@@ -3469,12 +3341,12 @@ const GROUP_CONFIG = {
   officialDisclaimer: '非公式ファンアプリです。STARSHIP ENTERTAINMENT・IVEとは一切関係ありません。',
 
   members: [
-    { name: 'ユジン',    nameEn: 'YUJIN',     birthday: { month: 9,  day: 1  }, hashtag: 'HAPPY_YUJIN_DAY'    },
-    { name: 'ガウル',    nameEn: 'GAEUL',     birthday: { month: 9,  day: 24 }, hashtag: 'HAPPY_GAEUL_DAY'    },
-    { name: 'レイ',      nameEn: 'REI',       birthday: { month: 2,  day: 3  }, hashtag: 'HAPPY_REI_DAY'      },
-    { name: 'ウォニョン', nameEn: 'WONYOUNG',  birthday: { month: 8,  day: 31 }, hashtag: 'HAPPY_WONYOUNG_DAY' },
-    { name: 'リズ',      nameEn: 'LIZ',       birthday: { month: 11, day: 21 }, hashtag: 'HAPPY_LIZ_DAY'      },
-    { name: 'イソ',      nameEn: 'LEESEO',    birthday: { month: 2,  day: 21 }, hashtag: 'HAPPY_LEESEO_DAY'   },
+    { name: 'ユジン',    nameEn: 'YUJIN',     birthday: { month: 9,  day: 1  }, hashtag: 'HAPPY_YUJIN_DAY',    tags: ['#ユジン', '#YUJIN', '#안유진'] },
+    { name: 'ガウル',    nameEn: 'GAEUL',     birthday: { month: 9,  day: 24 }, hashtag: 'HAPPY_GAEUL_DAY',    tags: ['#ガウル', '#GAEUL', '#김가을'] },
+    { name: 'レイ',      nameEn: 'REI',       birthday: { month: 2,  day: 3  }, hashtag: 'HAPPY_REI_DAY',      tags: ['#レイ', '#REI', '#나오이레이'] },
+    { name: 'ウォニョン', nameEn: 'WONYOUNG',  birthday: { month: 8,  day: 31 }, hashtag: 'HAPPY_WONYOUNG_DAY', tags: ['#ウォニョン', '#WONYOUNG', '#장원영'] },
+    { name: 'リズ',      nameEn: 'LIZ',       birthday: { month: 11, day: 21 }, hashtag: 'HAPPY_LIZ_DAY',      tags: ['#リズ', '#LIZ', '#김지원'] },
+    { name: 'イソ',      nameEn: 'LEESEO',    birthday: { month: 2,  day: 21 }, hashtag: 'HAPPY_LEESEO_DAY',   tags: ['#イソ', '#LEESEO', '#이서'] },
   ],
 
   // ポイント倍率
@@ -7033,7 +6905,7 @@ function applyTransferCode() {
           color:#1a0a2e;border:none;border-radius:16px;font-size:15px;
           font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;
           display:flex;align-items:center;justify-content:center;gap:10px;">
-          𝕏 Xアカウントで始める <span style="font-size:11px;background:rgba(0,0,0,0.15);padding:3px 8px;border-radius:20px;">おすすめ</span>
+          Xアカウントで始める <span style="font-size:11px;background:rgba(0,0,0,0.15);padding:3px 8px;border-radius:20px;">おすすめ</span>
         </button>
         <button onclick="showObPage(3)" style="
           padding:16px;background:rgba(255,255,255,0.12);
@@ -7069,13 +6941,7 @@ function applyTransferCode() {
             <div style="font-size:12px;color:rgba(255,255,255,0.65);line-height:1.6;">スマホを変えてもランクとポイントが引き継がれます</div>
           </div>
         </div>
-        <div style="background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.4);border-radius:14px;padding:16px;display:flex;gap:14px;align-items:flex-start;">
-          <div style="font-size:24px;flex-shrink:0;">🚀</div>
-          <div>
-            <div style="font-size:14px;font-weight:700;color:#c9a84c;margin-bottom:4px;">近日公開：#TraceIVEでポイント獲得</div>
-            <div style="font-size:12px;color:rgba(255,255,255,0.65);line-height:1.6;">Xのポストにタグをつけるだけでポイントがもらえるようになります</div>
-          </div>
-        </div>
+
       </div>
 
       <div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:14px;margin-bottom:24px;font-size:12px;color:rgba(255,255,255,0.5);line-height:1.7;">
