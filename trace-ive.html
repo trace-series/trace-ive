@@ -6196,37 +6196,7 @@ function getOshiMultiplier(memberName) {
 
 // ── 推しメンランキングモーダル ──
 
-// ダミーランキングデータ生成（バックエンド実装後はAPIに差し替え）
-function getDummyOshiRankingData(member) {
-  const base = [
-    { name:'@yuna_dive',       pt:1840 },
-    { name:'@ive_love_jp',     pt:1620 },
-    { name:'@pilgrim_rei',     pt:1430 },
-    { name:'@wony_hunter',     pt:1280 },
-    { name:'@liz_forever',     pt:1100 },
-    { name:'@leeseo_walk',     pt:980  },
-    { name:'@ive_gaul_fan',    pt:870  },
-    { name:'@trace_yujin',     pt:740  },
-    { name:'@k_pilgrim_2024',  pt:690  },
-    { name:'@ive_spot_jp',     pt:610  },
-    { name:'@wonyoung_jp',     pt:560  },
-    { name:'@rei_aichi_fan',   pt:490  },
-    { name:'@ive_diary',       pt:430  },
-    { name:'@sacred_ive',      pt:380  },
-    { name:'@pilgrim_tokyo',   pt:310  },
-    { name:'@liz_fan_club',    pt:270  },
-    { name:'@ive_map_hunter',  pt:230  },
-    { name:'@yujin_smile',     pt:190  },
-    { name:'@gaeul_nyan',      pt:150  },
-    { name:'@leeseo_maknae',   pt:110  },
-  ];
-  // メンバーによってランダムにシャッフルしてダミー感を出す
-  const seed = member.charCodeAt(0);
-  return base.map((u, i) => ({
-    ...u,
-    pt: Math.max(50, u.pt - (seed % 5) * i * 10)
-  })).sort((a,b) => b.pt - a.pt);
-}
+
 
 
 // ── メンバータブ1タップで推しランキング直接切り替え ──
@@ -6296,37 +6266,7 @@ function renderOshiRankingList(member, period) {
   const mult = periodMult[period] || 1;
   const medals = ['🥇','🥈','🥉'];
 
-  let data;
-  if (member === 'all') {
-    // 全メンバーのデータをマージして合算
-    const merged = {};
-    GROUP_CONFIG.members.forEach(m => {
-      getDummyOshiRankingData(m.name).forEach(u => {
-        merged[u.name] = (merged[u.name] || 0) + u.pt;
-      });
-    });
-    data = Object.entries(merged)
-      .map(([name, pt]) => ({ name, pt }))
-      .sort((a,b) => b.pt - a.pt)
-      .slice(0, 20);
-  } else {
-    data = getDummyOshiRankingData(member);
-  }
-
-  list.innerHTML = data.map((u, i) => {
-    const pt = Math.round(u.pt * mult);
-    return `
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f5f0fa;">
-      <div style="width:28px;text-align:center;font-size:${i<3?'20':'13'}px;font-weight:700;color:#9b8aab;flex-shrink:0;">
-        ${i<3 ? medals[i] : i+1}
-      </div>
-      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#3d1a5e,#c0392b);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0;">
-        ${u.name.slice(1,3).toUpperCase()}
-      </div>
-      <div style="flex:1;font-size:13px;font-weight:600;color:#3d1a5e;">${u.name}</div>
-      <div style="font-size:15px;font-weight:700;color:var(--purple-deep);">${pt.toLocaleString()}<span style="font-size:10px;font-weight:400;color:#9b8aab;">pt</span></div>
-    </div>`;
-  }).join('');
+  list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);"><div style="font-size:32px;margin-bottom:8px;">🌸</div><div style="font-size:14px;">巡礼データが集まるとランキングが表示されます</div></div>';
 }
 
 function switchOshiRankingPeriod(el, period) {
@@ -6444,22 +6384,10 @@ function buildOshiRanking() {
   const wrap = document.getElementById('oshi-ranking-list');
   if (!wrap) return;
 
-  // ダミーデータ（バックエンド接続後にリアルデータへ差し替え）
-  const dummyRankings = {
-    'ユジン':    [{ user:'@yujin_love_jp', pt:1240 },{ user:'@dive_yujin',    pt:980 },{ user:'@ive_yjfan',    pt:740 }],
-    'ガウル':    [{ user:'@gaeul_diary',   pt:1100 },{ user:'@trace_gaeul',   pt:860 },{ user:'@kimgaeul_jp', pt:530 }],
-    'レイ':      [{ user:'@rei_oshi_rei',  pt:1380 },{ user:'@naoirei_fan',   pt:990 },{ user:'@rei_pilgrm',  pt:660 }],
-    'ウォニョン': [{ user:'@wony_chaser',  pt:1560 },{ user:'@jangwony_jp',   pt:1200 },{ user:'@wonyoung1',  pt:870 }],
-    'リズ':      [{ user:'@liz_oshi_jpn',  pt:920  },{ user:'@kimliz_trace',  pt:710 },{ user:'@liz_fan_kr',  pt:480 }],
-    'イソ':      [{ user:'@leeseo_diary',  pt:840  },{ user:'@iseo_pilgrim',  pt:630 },{ user:'@ive_leeseo',  pt:410 }],
-  };
-
-  const medals = ['🥇','🥈','🥉'];
   const myOshi1 = oshi1;
   const myOshi2 = oshi2;
 
   wrap.innerHTML = GROUP_CONFIG.members.map(m => {
-    const users = dummyRankings[m.name] || [];
     const isMyOshi1 = myOshi1 === m.name;
     const isMyOshi2 = myOshi2 === m.name;
     const oshiBadge = isMyOshi1
@@ -6479,14 +6407,8 @@ function buildOshiRanking() {
           ${m.name}${oshiBadge}
         </div>
       </div>
-      <div style="padding:10px 12px;">
-        ${users.map((u,i) => `
-          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;${i < users.length-1 ? 'border-bottom:1px solid #f0e8f8;' : ''}">
-            <div style="font-size:18px;width:24px;text-align:center;">${medals[i]||''}</div>
-            <div style="flex:1;font-size:13px;color:#4a3060;font-weight:600;">${u.user}</div>
-            <div style="font-size:14px;font-weight:700;color:#3d1a5e;">${u.pt.toLocaleString()}<span style="font-size:10px;font-weight:400;color:#9b8aab;"> pt</span></div>
-          </div>
-        `).join('')}
+      <div style="padding:16px 12px;text-align:center;color:var(--text-light);font-size:12px;">
+        巡礼データが集まるとランキングが表示されます 🌸
       </div>
     </div>`;
   }).join('');
