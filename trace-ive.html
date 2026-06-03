@@ -2041,7 +2041,6 @@
           <div class="card-detail-row">
             <span class="icon">📍</span>
             <span id="card-address">—</span>
-            </div>
           </div>
           <div class="card-detail-row" id="card-distance-row" style="display:none;">
             <span class="icon">📡</span>
@@ -6372,25 +6371,37 @@ function initEventRankingTabs() {
 }
 
 
-// ── シーズンイベントタブ初期化 ──
-function initEventRankingTabs() {
-  const container = document.getElementById('event-ranking-tabs');
-  if (!container) return;
-  const now = new Date();
-  const activeEvents = (GROUP_CONFIG.activeEvents || []).filter(ev => {
-    const start = new Date(ev.start);
-    const end = new Date(ev.end);
-    end.setHours(23, 59, 59);
-    return now >= start && now <= end;
-  });
-  if (activeEvents.length === 0) {
-    container.innerHTML = '';
+
+
+function renderSpotRanking(period) {
+  var list = document.getElementById('ranking-list');
+  if (!list) return;
+  var spots = SPOTS.slice().sort(function(a,b){ return (b.goodCount||0)-(a.goodCount||0); }).slice(0,20);
+  if (!spots.length) {
+    list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);"><div style="font-size:32px;margin-bottom:8px;">🗺️</div><div style="font-size:14px;">巡礼報告が集まるとランキングが表示されます</div></div>';
     return;
   }
-  container.innerHTML = activeEvents.map(ev =>
-    `<div class="rtab event-rtab" onclick="switchRankingPeriod(this,'event:${ev.id}')" data-event-id="${ev.id}" data-event-name="${ev.name}" data-event-start="${ev.start}" data-event-end="${ev.end}" style="background:linear-gradient(135deg,#3d1a5e,#7b1a3e);color:#fff;border-radius:20px;white-space:nowrap;">${ev.name}</div>`
-  ).join('');
+  var html = '';
+  for (var i = 0; i < spots.length; i++) {
+    var spot = spots[i];
+    var rankClass = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other';
+    var safeName = spot.name.replace(/'/g,"\\'");
+    html += '<div class="ranking-item" data-member="' + (spot.member||'') + '" onclick="jumpToSpot(\'' + safeName + '\')">';
+    html += '<div class="rank-num ' + rankClass + '">' + (i+1) + '</div>';
+    html += '<div class="rank-thumb">' + (spot.icon||'📍') + '</div>';
+    html += '<div class="rank-info">';
+    html += '<div class="rank-name">' + spot.name + '</div>';
+    html += '<div class="rank-meta">' + (spot.member||'') + ' · ' + (spot.category||'') + '</div>';
+    html += '</div>';
+    html += '<div class="rank-score">';
+    html += '<div class="rank-score-num">' + (spot.goodCount||0) + '</div>';
+    html += '<div class="rank-score-label">報告数</div>';
+    html += '</div></div>';
+  }
+  list.innerHTML = html;
 }
+
+var currentRankingPeriod = 'year';
 
 function switchRankingPeriod(el, period) {
   // イベント期間の場合
