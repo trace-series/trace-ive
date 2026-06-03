@@ -4927,15 +4927,62 @@ async function submitNewSpot() {
     });
   }
 
-  function startWithX() {
-    // X連携（将来実装）→ 現在は匿名と同じ扱いでフラグを立てる
-    localStorage.setItem(OB_KEY, JSON.stringify({
-      method: 'x',
-      date: new Date().toISOString(),
-    }));
-    closeOnboarding();
-    // 将来：Supabase OAuth X連携へリダイレクト
-    alert('X連携は近日公開予定です。\n現在は匿名モードで起動します。連携機能が公開されたらお知らせします！');
+  // ── Supabase クライアント ──
+  var _supabaseClient = null;
+  function getSupabaseClient() {
+    if (!_supabaseClient) {
+      _supabaseClient = window.supabase.createClient('https://aniuehncwpmwxdjrpqje.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFuaXVlaG5jd3Btd3hkanJwcWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NTM5NzgsImV4cCI6MjA5NTUyOTk3OH0.OdsG7yEOVYe1o76oGLIZLTL7vOT52CD8kjRWa6kD9rw');
+    }
+    return _supabaseClient;
+  }
+
+  async function startWithX() {
+    try {
+      var client = getSupabaseClient();
+      var result = await client.auth.signInWithOAuth({
+        provider: 'twitter',
+        options: { redirectTo: window.location.href }
+      });
+      if (result.error) throw result.error;
+    } catch(e) {
+      console.error('X連携エラー:', e);
+      alert('X連携に失敗しました。匿名モードで続けます。');
+      startAnonymous();
+    }
+  }
+
+  async function handleAuthCallback() {
+    try {
+      var client = getSupabaseClient();
+      var result = await client.auth.getSession();
+      var session = result.data && result.data.session;
+      if (session && session.user) {
+        var user = session.user;
+        var meta = user.user_metadata || {};
+        var xName = meta.full_name || meta.user_name || 'Xユーザー';
+        var xHandle = '@' + (meta.user_name || 'unknown');
+        var xAvatar = meta.avatar_url || '';
+        localStorage.setItem(OB_KEY, JSON.stringify({
+          method: 'x', date: new Date().toISOString(),
+          xHandle: xHandle, xName: xName, xAvatar: xAvatar,
+        }));
+        var nameEl = document.getElementById('profile-name');
+        if (nameEl) nameEl.textContent = xName;
+        var handleEl = document.getElementById('profile-handle');
+        if (handleEl) handleEl.textContent = xHandle;
+        if (xAvatar) {
+          var avatarEl = document.getElementById('profile-avatar');
+          if (avatarEl) avatarEl.innerHTML = '<img src="' + xAvatar + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">';
+          var headerAvatar = document.querySelector('.avatar');
+          if (headerAvatar) headerAvatar.innerHTML = '<img src="' + xAvatar + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover;">';
+        }
+        var xTitle = document.getElementById('x-connect-title');
+        var xSub = document.getElementById('x-connect-sub');
+        if (xTitle) xTitle.textContent = xHandle + ' で連携中';
+        if (xSub) xSub.textContent = 'ポイント・発見者クレジットが永続保持されます';
+        closeOnboarding();
+      }
+    } catch(e) { console.warn('handleAuthCallback error:', e); }
   }
 
   function startAnonymous() {
@@ -6045,6 +6092,7 @@ function showLangComingSoon() {
     // 推し設定を読み込む
     loadOshiSettings();
     loadProfileData();
+    handleAuthCallback();
     // ランキング メンバータブを生成
     buildRankingMemberTabs();
     // 推しメン熱量ランキングを生成
@@ -6759,6 +6807,9 @@ function applyTransferCode() {
   }
 }
 </script>
+
+<!-- Supabase JS SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
 <!-- Google Maps API 読み込み -->
 <script async defer
