@@ -6044,6 +6044,7 @@ function showLangComingSoon() {
     }, 500);
     // 推し設定を読み込む
     loadOshiSettings();
+    loadProfileData();
     // ランキング メンバータブを生成
     buildRankingMemberTabs();
     // 推しメン熱量ランキングを生成
@@ -6106,6 +6107,85 @@ const OSHI_MULTIPLIER_2 = 1.2;
 
 let oshi1 = null; // 1推しメンバー名
 let oshi2 = null; // 2推しメンバー名
+
+
+// ── プロフィール編集 ──
+const PROFILE_KEY = 'traceive_profile_v1';
+
+function loadProfileData() {
+  try {
+    const d = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+    if (d.name) {
+      document.getElementById('profile-name').textContent = d.name;
+    }
+    if (d.icon) {
+      document.getElementById('profile-avatar').textContent = d.icon;
+      // ヘッダーのアバターも更新
+      const headerAvatar = document.querySelector('.avatar');
+      if (headerAvatar) headerAvatar.textContent = d.icon;
+    }
+  } catch(e) {}
+}
+
+function openProfileEdit() {
+  const d = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+  document.getElementById('profile-edit-name').value = d.name || '';
+  // 現在のアイコンを選択状態に
+  const currentIcon = d.icon || '🌸';
+  document.querySelectorAll('.icon-btn').forEach(btn => {
+    const isSelected = btn.textContent === currentIcon;
+    btn.style.borderColor = isSelected ? '#3d1a5e' : '#e8d8f0';
+    btn.style.background = isSelected ? '#f0e0ff' : '#fff';
+  });
+  // 最初のボタン（🌸）は常にデフォルト背景
+  document.querySelector('.icon-btn').style.background = currentIcon === '🌸' ? '#f0e8f8' : '#fff';
+
+  document.getElementById('profile-edit-modal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+  document.getElementById('profile-edit-msg').textContent = '';
+}
+
+function closeProfileEditModal(e) {
+  if (e.target === document.getElementById('profile-edit-modal')) {
+    document.getElementById('profile-edit-modal').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+}
+
+function selectProfileIcon(icon) {
+  document.querySelectorAll('.icon-btn').forEach(btn => {
+    const isSelected = btn.textContent === icon;
+    btn.style.borderColor = isSelected ? '#3d1a5e' : '#e8d8f0';
+    btn.style.background = isSelected ? '#f0e0ff' : '#fff';
+  });
+}
+
+function saveProfileEdit() {
+  const name = document.getElementById('profile-edit-name').value.trim();
+  // 選択中のアイコンを取得
+  let icon = '🌸';
+  document.querySelectorAll('.icon-btn').forEach(btn => {
+    if (btn.style.background.includes('f0e0ff') || btn.style.borderColor === 'rgb(61, 26, 94)') {
+      icon = btn.textContent;
+    }
+  });
+
+  const data = { name: name || '匿名ユーザー', icon };
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(data));
+
+  // 画面に反映
+  document.getElementById('profile-name').textContent = data.name;
+  document.getElementById('profile-avatar').textContent = data.icon;
+  const headerAvatar = document.querySelector('.avatar');
+  if (headerAvatar) headerAvatar.textContent = data.icon;
+
+  document.getElementById('profile-edit-msg').textContent = '✅ 保存しました！';
+  setTimeout(() => {
+    document.getElementById('profile-edit-modal').style.display = 'none';
+    document.body.style.overflow = '';
+  }, 800);
+}
+
 
 function loadOshiSettings() {
   try {
@@ -7031,5 +7111,47 @@ function applyTransferCode() {
     <button onclick="document.getElementById('admin-login-modal').style.display='none';" style="width:100%;padding:10px;background:none;border:none;color:rgba(255,255,255,0.3);font-size:12px;cursor:pointer;margin-top:8px;">キャンセル</button>
   </div>
 </div>
+
+<!-- プロフィール編集モーダル -->
+<div id="profile-edit-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.6);overflow-y:auto;" onclick="closeProfileEditModal(event)">
+  <div style="background:#fff;border-radius:20px;margin:60px 16px 40px;padding:24px 20px;" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div style="font-size:17px;font-weight:700;color:#3d1a5e;">✏️ プロフィール編集</div>
+      <button onclick="document.getElementById('profile-edit-modal').style.display='none';document.body.style.overflow='';" style="background:none;border:none;font-size:22px;cursor:pointer;color:#9b8aab;">×</button>
+    </div>
+
+    <!-- アイコン選択 -->
+    <div style="margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:700;color:#3d1a5e;margin-bottom:10px;">アイコン</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button onclick="selectProfileIcon('🌸')" class="icon-btn" style="font-size:28px;width:52px;height:52px;border-radius:50%;border:2px solid #c9a8e8;background:#f0e8f8;cursor:pointer;">🌸</button>
+        <button onclick="selectProfileIcon('💜')" class="icon-btn" style="font-size:28px;width:52px;height:52px;border-radius:50%;border:2px solid #e8d8f0;background:#fff;cursor:pointer;">💜</button>
+        <button onclick="selectProfileIcon('⭐')" class="icon-btn" style="font-size:28px;width:52px;height:52px;border-radius:50%;border:2px solid #e8d8f0;background:#fff;cursor:pointer;">⭐</button>
+        <button onclick="selectProfileIcon('🎵')" class="icon-btn" style="font-size:28px;width:52px;height:52px;border-radius:50%;border:2px solid #e8d8f0;background:#fff;cursor:pointer;">🎵</button>
+        <button onclick="selectProfileIcon('🗺️')" class="icon-btn" style="font-size:28px;width:52px;height:52px;border-radius:50%;border:2px solid #e8d8f0;background:#fff;cursor:pointer;">🗺️</button>
+        <button onclick="selectProfileIcon('🐕')" class="icon-btn" style="font-size:28px;width:52px;height:52px;border-radius:50%;border:2px solid #e8d8f0;background:#fff;cursor:pointer;">🐕</button>
+        <button onclick="selectProfileIcon('🐿️')" class="icon-btn" style="font-size:28px;width:52px;height:52px;border-radius:50%;border:2px solid #e8d8f0;background:#fff;cursor:pointer;">🐿️</button>
+        <button onclick="selectProfileIcon('🐥')" class="icon-btn" style="font-size:28px;width:52px;height:52px;border-radius:50%;border:2px solid #e8d8f0;background:#fff;cursor:pointer;">🐥</button>
+        <button onclick="selectProfileIcon('🐰')" class="icon-btn" style="font-size:28px;width:52px;height:52px;border-radius:50%;border:2px solid #e8d8f0;background:#fff;cursor:pointer;">🐰</button>
+        <button onclick="selectProfileIcon('🐱')" class="icon-btn" style="font-size:28px;width:52px;height:52px;border-radius:50%;border:2px solid #e8d8f0;background:#fff;cursor:pointer;">🐱</button>
+        <button onclick="selectProfileIcon('🐯')" class="icon-btn" style="font-size:28px;width:52px;height:52px;border-radius:50%;border:2px solid #e8d8f0;background:#fff;cursor:pointer;">🐯</button>
+      </div>
+    </div>
+
+    <!-- 名前入力 -->
+    <div style="margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:700;color:#3d1a5e;margin-bottom:8px;">表示名</div>
+      <input id="profile-edit-name" type="text" maxlength="20" placeholder="例：IVEファン太郎"
+        style="width:100%;padding:12px 14px;border:2px solid #c9a8e8;border-radius:12px;font-size:14px;font-family:'Noto Sans JP',sans-serif;outline:none;box-sizing:border-box;">
+      <div style="font-size:11px;color:#9b8aab;margin-top:4px;">20文字以内</div>
+    </div>
+
+    <button onclick="saveProfileEdit()" style="width:100%;padding:13px;background:linear-gradient(135deg,#3d1a5e,#c0392b);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">
+      保存する
+    </button>
+    <div id="profile-edit-msg" style="text-align:center;font-size:12px;color:#15803d;margin-top:8px;min-height:18px;"></div>
+  </div>
+</div>
+
 </body>
 </html>
