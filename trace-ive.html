@@ -48,6 +48,7 @@
     color: var(--text);
     min-height: 100vh;
     overflow-x: hidden;
+    overscroll-behavior: none;
   }
 
   /* ── HEADER ── */
@@ -197,12 +198,14 @@
     position: relative;
     height: calc(100vh - 120px);
     overflow: hidden;
+    touch-action: none;
   }
 
   /* Google Maps本体 */
   #google-map {
     width: 100%;
     height: 100%;
+    touch-action: none;
   }
 
   /* MAP右上フィルター */
