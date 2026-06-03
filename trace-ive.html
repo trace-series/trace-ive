@@ -2235,28 +2235,28 @@
     </div>
 
     <div class="profile-section-title">🏅 バッジコレクション</div>
-    <div class="badge-grid">
-      <div class="badge-card" locked>
+    <div class="badge-grid" id="badge-grid">
+      <div class="badge-card locked">
         <div class="badge-icon">🥇</div>
-        <div class="badge-name">創設メンバー #3</div>
+        <div class="badge-name">創設メンバー</div>
         <div class="badge-desc">最初の20名</div>
       </div>
-      <div class="badge-card" locked>
+      <div class="badge-card locked">
         <div class="badge-icon">🔍</div>
         <div class="badge-name">最初の発見者</div>
-        <div class="badge-desc">渋谷スクランブル</div>
+        <div class="badge-desc">スポットを最初に投稿</div>
       </div>
-      <div class="badge-card" locked>
+      <div class="badge-card locked">
         <div class="badge-icon">🗺️</div>
         <div class="badge-name">マッパー</div>
         <div class="badge-desc">5スポット投稿</div>
       </div>
-      <div class="badge-card" locked>
+      <div class="badge-card locked">
         <div class="badge-icon">🔥</div>
         <div class="badge-name">バズ投稿</div>
         <div class="badge-desc">いいね100超え</div>
       </div>
-      <div class="badge-card" locked>
+      <div class="badge-card locked">
         <div class="badge-icon">🎯</div>
         <div class="badge-name">正確レポーター</div>
         <div class="badge-desc">正確報告100pt超え</div>
@@ -4336,7 +4336,7 @@ const SPOTS = [
   {
     name: '横浜アンパンマンこどもミュージアム',
     lat: 35.4589, lng: 139.6345,
-    sub: 'THE STAR NEXTAGEのため来日中に立ち寄った',
+    sub: 'THE STAR NEXTAGEのため来日中に立ち寄った（リズ・イソ）',
     icon: '🏯',
     category: '観光・名所',
     address: '神奈川県横浜市西区みなとみらい6丁目2-9',
@@ -4345,6 +4345,21 @@ const SPOTS = [
     badges: ['観光・名所'],
     member: 'リズ',
     color: '#3d1a5e',
+    trustScore: 8, goodCount: 10, badCount: 1,
+    adminLevel: 'reliable'
+  },
+  {
+    name: '横浜アンパンマンこどもミュージアム',
+    lat: 35.4590, lng: 139.6346,
+    sub: 'THE STAR NEXTAGEのため来日中に立ち寄った（リズ・イソ）',
+    icon: '🏯',
+    category: '観光・名所',
+    address: '神奈川県横浜市西区みなとみらい6丁目2-9',
+    discoverer: '@missing_link',
+    likes: 0,
+    badges: ['観光・名所'],
+    member: 'イソ',
+    color: '#15803d',
     trustScore: 8, goodCount: 10, badCount: 1,
     adminLevel: 'reliable'
   },
