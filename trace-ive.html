@@ -1476,9 +1476,10 @@
     line-height: 1.5;
   }
 
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
   .ranking-item, .feed-item {
     animation: fadeUp 0.3s ease both;
@@ -4918,7 +4919,7 @@ async function submitNewSpot() {
     document.getElementById('post-address').value = '';
     document.getElementById('post-desc').value = '';
     document.getElementById('post-source-url').value = '';
-    document.querySelectorAll('#post-cat-chips .chip, #post-member-chips .chip').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('#post-cat-chips .chip, #post-member-chips .chip').forEach(c => c.classList.remove('selected'));
     showView('map');
   } else {
     showPostError('通信エラーが発生しました。接続状況を確認してください。');
@@ -5108,7 +5109,7 @@ async function submitNewSpot() {
   }
 
   async function loadPendingSubmissions() {
-    const list = document.getElementById('admin-pending-list');
+    const list = document.getElementById('pending-list');
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/submissions?status=eq.pending&order=created_at.desc`, {
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
@@ -5413,7 +5414,7 @@ function filterMember(el, member) {
     el.classList.add('active');
     // フォームのメンバーchipsを連動
     document.querySelectorAll('#view-post .chip[data-member]').forEach(c => {
-      c.classList.toggle('active', c.dataset.member === member);
+      c.classList.toggle('selected', c.dataset.member === member);
     });
     // メンバー名テキストchipsも連動（data-member未設定の場合テキスト一致）
     document.querySelectorAll('#view-post .scene-chips .chip').forEach(c => {
@@ -5886,7 +5887,7 @@ function showLangComingSoon() {
   }
 
   function addPendingPoint(spotName, typeLabel, pt) {
-    const list = document.getElementById('admin-pending-list');
+    const list = document.getElementById('pending-list');
     if (!list) return;
     const item = document.createElement('div');
     item.className = 'pending-item';
@@ -6682,7 +6683,7 @@ function loadUserData(data) {
 
   // 確定待ちポイント復元
   if (Array.isArray(data.pending) && data.pending.length > 0) {
-    const list = document.getElementById('admin-pending-list');
+    const list = document.getElementById('pending-list');
     if (list) {
       list.innerHTML = '';
       data.pending.forEach(p => {
