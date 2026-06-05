@@ -1,33 +1,41 @@
-with open('trace-ive.html', 'r', encoding='utf-8') as f:
-    content = f.read()
-
-changes = []
-
-# 保存済みルートのダミーを削除
-old = '''    <div id="saved-routes-list">
-      <div class="saved-route-item">
-        <div class="sri-left">
-          <div class="sri-icon">🗺️</div>
-          <div>
-            <div class="sri-name">東京IVE遠征2024春</div>
-            <div class="sri-meta">3スポット · 2024年3月</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:6px;">
-          <button class="btn-secondary" style="padding:6px 10px;font-size:11px;" onclick="printRoute()">🖨️</button>
-          <button class="btn-secondary" style="padding:6px 10px;font-size:11px;">𝕏</button>
-        </div>
-      </div>
-    </div>'''
-new = '    <div id="saved-routes-list"></div>'
-if old in content:
-    content = content.replace(old, new, 1)
-    changes.append('保存済みルートダミー削除')
-
-# ヘルプ・お問い合わせをX公式へ
-old = '''      <div class="settings-item">
-        <div class="settings-item-icon">❓</div>
-        <div class="settings-item-text">ヘルプ・お問い合わせ</div>
-        <div class="settings-item-arrow">›</div>
-      </div>'''
-new = '''      <div class="settings-item" onclick="window.open('https://x.com/traceI
+import sys, os
+if len(sys.argv) < 2:
+    print("使い方: python3 fix.py trace-ive.html")
+    sys.exit(1)
+fp = sys.argv[1]
+if not os.path.exists(fp):
+    print(f"見つかりません: {fp}")
+    sys.exit(1)
+with open(fp, 'r', encoding='utf-8') as f:
+    html = f.read()
+fixes = []
+o = "    from { opacity: 0; transform: translateY(12px); }\n    to { opacity: 1; transform: translateY(0); }\n  }"
+n = "@keyframes fadeUp {\n  from { opacity: 0; transform: translateY(12px); }\n  to { opacity: 1; transform: translateY(0); }\n}"
+if o in html:
+    html = html.replace(o, n); fixes.append("OK1 CSS fadeUp")
+else:
+    fixes.append("NG1 CSS fadeUp")
+o = "c.classList.remove('active'));"
+n = "c.classList.remove('selected'));"
+if o in html:
+    html = html.replace(o, n); fixes.append("OK2 remove active->selected")
+else:
+    fixes.append("NG2 remove active->selected")
+o = "c.classList.toggle('active', c.dataset.member === member);"
+n = "c.classList.toggle('selected', c.dataset.member === member);"
+if o in html:
+    html = html.replace(o, n); fixes.append("OK3 toggle active->selected")
+else:
+    fixes.append("NG3 toggle active->selected")
+o = "document.getElementById('admin-pending-list');"
+n = "document.getElementById('pending-list');"
+if o in html:
+    html = html.replace(o, n); fixes.append("OK4 pending-list")
+else:
+    fixes.append("NG4 pending-list")
+out = fp.replace('.html', '_fixed.html')
+with open(out, 'w', encoding='utf-8') as f:
+    f.write(html)
+for x in fixes:
+    print(x)
+print(f"完了: {out}")
