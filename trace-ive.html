@@ -3379,7 +3379,24 @@ const GROUP_CONFIG = {
   activeEvents: [
     { id: 'tokyodome2025', name: '🏟️ 東京ドーム公演', start: '2025-06-20', end: '2025-06-30' },
   ],
+
+  // — バージョン管理 —
+  appVersion: '1.1.0',
+  updateNotes: [
+    '📍 スポット74件収録',
+    '🎂 誕生日・誕生月ボーナスポイント追加',
+    '🏅 シーズンランキング機能追加',
+  ],
 };
+
+// — バージョンアップ通知モーダル —
+function showUpdateModal() {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  const notes = GROUP_CONFIG.updateNotes.map(n => `<li style="margin-bottom:6px">${n}</li>`).join('');
+  overlay.innerHTML = `<div style="background:#fff;border-radius:20px;padding:28px 24px;max-width:300px;width:88%;text-align:center;"><div style="font-size:22px;margin-bottom:8px;">🎉 アップデート</div><div style="font-size:13px;color:#666;margin-bottom:12px;">v${GROUP_CONFIG.appVersion}</div><ul style="text-align:left;font-size:13px;color:#333;padding-left:18px;margin-bottom:20px;">${notes}</ul><button onclick="this.closest('div').parentElement.remove()" style="background:linear-gradient(135deg,#3d1a5e,#7b1a3e);color:#fff;border:none;border-radius:12px;padding:10px 32px;font-size:14px;cursor:pointer;">OK</button></div>`;
+  document.body.appendChild(overlay);
+}
 
 // ── 誕生日イベント判定 ──
 function getBirthdayEvent() {
@@ -6104,6 +6121,14 @@ function showLangComingSoon() {
     } catch(e) {
       console.warn('loadUserData error:', e);
     }
+    // バージョンアップ通知
+    const savedVer = localStorage.getItem('traceive_version');
+    const currentVer = GROUP_CONFIG.appVersion;
+    if (savedVer && savedVer !== currentVer) {
+      setTimeout(() => showUpdateModal(), 800);
+    }
+    localStorage.setItem('traceive_version', currentVer);
+
     // 誕生日ポップアップ（500ms遅延でページ表示後に出す）
     setTimeout(() => {
       const bdEvent = getBirthdayEvent();
