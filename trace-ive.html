@@ -349,6 +349,7 @@
     display: flex;
     gap: 8px;
     margin-top: 16px;
+    padding-bottom: 16px;
   }
 
   .btn-primary {
@@ -4726,6 +4727,8 @@ function openCard(spot) {
   document.getElementById('card-detail').style.display = 'block';
   document.getElementById('map-card').classList.add('open');
   cardOpen = true;
+  const nearBtn2 = document.getElementById('nearest-spot-btn');
+  if (nearBtn2) nearBtn2.style.display = 'none';
 
   // GPS距離表示＆ボーナスポイント判定
   checkGpsBonus(spot);
