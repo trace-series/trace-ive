@@ -5464,6 +5464,7 @@ function showView(name) {
   const target = document.getElementById('view-'+name);
   if (target) target.style.display = 'block';
   if (name === 'post') setTimeout(initPostForm, 50);
+  if (name === 'route') renderRouteSpotList();
   const nav = document.getElementById('nav-'+name);
   if (nav) nav.classList.add('active');
   activeView = name;
