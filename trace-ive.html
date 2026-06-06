@@ -5406,7 +5406,13 @@ function renderRouteSpotList() {
   filtered.forEach(function(s) {
     var icon = catIcon[s.category] || s.icon || '📍';
     var meta = (s.category || '') + (s.address ? ' · ' + s.address.substring(0, 10) : '');
-    html += '<div class="route-spot-check" data-spot="' + s.name + '" data-meta="' + meta + '" data-icon="' + icon + '" data-lat="' + s.lat + '" data-lng="' + s.lng + '">'
+    var koreaKeys2 = ['韓国', 'ソウル', '釜山', '済州', '仁川', '大邱', '光州', '大田'];
+        var tokyoKeys2 = ['東京都', '渋谷区', '新宿区', '港区', '中央区', '千代田区', '豊島区', '品川区'];
+        var addr2 = s.address || '';
+        var isKorea2 = koreaKeys2.some(function(k){ return addr2.indexOf(k) !== -1; });
+        var isTokyo2 = tokyoKeys2.some(function(k){ return addr2.indexOf(k) !== -1; });
+        var spotRegion2 = isKorea2 ? 'korea' : (isTokyo2 ? 'tokyo' : 'japan_other');
+        html += '<div class="route-spot-check" data-spot="' + s.name + '" data-region="' + spotRegion2 + '" data-meta="' + meta + '" data-icon="' + icon + '" data-lat="' + s.lat + '" data-lng="' + s.lng + '">'
       + '<div class="rsc-left">'
       + '<div class="rsc-check" onclick="toggleRouteSpot(this)">□</div>'
       + '<div class="rsc-icon">' + icon + '</div>'
