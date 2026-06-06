@@ -5331,10 +5331,7 @@ function renderRouteSpotList() {
   var currentRegion = container.dataset.region || 'all';
   var filtered = SPOTS.filter(function(s) {
     if (currentRegion === 'all') return true;
-    if (currentRegion === 'tokyo') return s.address && s.address.indexOf('東京') !== -1;
-    if (currentRegion === 'korea') return s.address && (s.address.indexOf('韓国') !== -1 || s.address.indexOf('ソウル') !== -1 || s.address.indexOf('済州') !== -1);
-    if (currentRegion === 'japan_other') return s.address && s.address.indexOf('東京') === -1 && s.address.indexOf('韓国') === -1 && s.address.indexOf('ソウル') === -1;
-    return true;
+    return s.region === currentRegion;
   });
   var html = '';
   filtered.forEach(function(s) {
