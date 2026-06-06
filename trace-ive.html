@@ -6064,7 +6064,7 @@ function showLangComingSoon() {
     document.querySelectorAll('.region-tab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
     document.querySelectorAll('.route-spot-check').forEach(item => {
-      const r = item.getAttribute('data-region') || 'tokyo';
+      const r = item.getAttribute('data-region') || 'japan_other';
       item.style.display = (region === 'all' || r === region) ? 'block' : 'none';
     });
   }
