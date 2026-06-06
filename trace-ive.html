@@ -5604,7 +5604,7 @@ function filterMember(el, member) {
 
   // マップフィルター（ANDフィルター）
   if (map) applyFilters();
-  if (listViewOpen) renderSpotList();
+  if (document.getElementById("spot-list-container").style.display === "block") renderSpotList();
 }
 
 // ── チップ切り替え ──
