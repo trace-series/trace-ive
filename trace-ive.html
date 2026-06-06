@@ -5444,7 +5444,7 @@ function renderSpotList() {
   var container = document.getElementById('spot-list-container');
   var filtered = SPOTS.filter(function(s) {
     if (activeCategory !== 'all' && s.category !== activeCategory) return false;
-    if (activeMember !== 'all' && !s.members.includes(activeMember)) return false;
+    if (activeMember !== 'all' && !(s.members || []).includes(activeMember)) return false;
     return true;
   });
   if (filtered.length === 0) {
