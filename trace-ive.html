@@ -1982,6 +1982,25 @@
     z-index: 100;
     padding: 8px 12px 80px;
   }
+  #origin-bar {
+    display: none;
+    background: linear-gradient(135deg,#6b21a8,#9333ea);
+    color: white;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    align-items: center;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  #origin-bar span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #origin-bar button { background: rgba(255,255,255,0.25); border: none; border-radius: 8px; color: white; font-size: 11px; padding: 4px 10px; cursor: pointer; white-space: nowrap; }
+  .radius-btns { display: flex; gap: 6px; padding: 8px 12px 4px; flex-wrap: wrap; }
+  .radius-btn { background: white; border: 2px solid #c084fc; border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 700; color: #7c3aed; cursor: pointer; }
+  .radius-btn.active { background: #7c3aed; color: white; }
+  .spot-list-dist { font-size: 11px; font-weight: 700; color: #9333ea; flex-shrink: 0; text-align: right; }
   .spot-list-item {
     background: white;
     border-radius: 14px;
@@ -2086,7 +2105,19 @@
     <div class="map-container">
 
       <button id="list-view-toggle" onclick="toggleListView()">リスト</button>
-      <div id="spot-list-container"></div>
+      <div id="spot-list-container">
+        <div id="origin-bar">
+          <span id="origin-bar-name">📍 起点：</span>
+          <button onclick="clearOrigin()">✕ 解除</button>
+        </div>
+        <div class="radius-btns" id="radius-btns" style="display:none;">
+          <span style="font-size:11px;color:#888;align-self:center;">半径：</span>
+          <button class="radius-btn active" onclick="setRadius(0)" data-r="0">全て</button>
+          <button class="radius-btn" onclick="setRadius(1)" data-r="1">1km</button>
+          <button class="radius-btn" onclick="setRadius(3)" data-r="3">3km</button>
+          <button class="radius-btn" onclick="setRadius(5)" data-r="5">5km</button>
+        </div>
+      </div>
 
       <!-- ローディング -->
       <div id="map-loading">
@@ -2179,6 +2210,9 @@
             <button class="btn-primary" onclick="reportVisit()">📸 巡礼した！</button>
             <button class="btn-secondary" id="btn-navi" onclick="openNavi()">🗺️ ナビ</button>
             <button class="btn-secondary" onclick="shareX()">𝕏 シェア</button>
+          </div>
+          <div style="padding:0 16px 12px;">
+            <button id="btn-set-origin" onclick="setOriginSpot()" style="width:100%;background:linear-gradient(135deg,#f3e8ff,#e8d5ff);border:2px solid #c084fc;border-radius:12px;padding:9px;font-size:13px;font-weight:700;color:#6b21a8;cursor:pointer;">📍 ここを起点に周辺スポットを探す</button>
           </div>
         </div>
       </div>
