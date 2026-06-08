@@ -3056,6 +3056,15 @@
     <div class="profile-section-title">📍 スポットを選択</div>
 
     <!-- 地域フィルタータブ -->
+		<div id="route-member-tabs" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:4px;-webkit-overflow-scrolling:touch;">
+			<div class="region-tab active" onclick="filterRouteMember(this,'all')">💜 全員</div>
+			<div class="region-tab" onclick="filterRouteMember(this,'ユジン')">🐕 ユジン</div>
+			<div class="region-tab" onclick="filterRouteMember(this,'ガウル')">🐿️ ガウル</div>
+			<div class="region-tab" onclick="filterRouteMember(this,'レイ')">🐥 レイ</div>
+			<div class="region-tab" onclick="filterRouteMember(this,'ウォニョン')">🐰 ウォニョン</div>
+			<div class="region-tab" onclick="filterRouteMember(this,'リズ')">🐱 リズ</div>
+			<div class="region-tab" onclick="filterRouteMember(this,'イソ')">🐯 イソ</div>
+		</div>
     <div class="region-tabs" id="region-tabs">
       <div class="region-tab active" onclick="filterRouteRegion(this,'all')">🗾 全国</div>
       <div class="region-tab" onclick="filterRouteRegion(this,'tokyo')">🗼 東京</div>
@@ -6170,7 +6179,14 @@ function showLangComingSoon() {
   }
 
   // ── ルート地域フィルター ──
-  function filterRouteRegion(el, region) {
+  function filterRouteMember(el, member) {
+  document.querySelectorAll('#route-member-tabs .region-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  activeMember = member;
+  renderRouteSpotList();
+}
+
+function filterRouteRegion(el, region) {
     document.querySelectorAll('.region-tab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
     document.querySelectorAll('.route-spot-check').forEach(item => {
