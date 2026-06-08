@@ -5510,34 +5510,58 @@ function toggleListView() {
     btn.textContent = 'リスト';
   }
 }
-
 function renderSpotList() {
   var container = document.getElementById('spot-list-container');
+  var catIcon = {'カフェ・飲食店':'🍜','撮影スポット':'📸','ライブ・イベント会場':'🎤','観光・名所':'🏯','ショップ':'🛍️'};
   var filtered = SPOTS.filter(function(s) {
     if (activeCategory !== 'all' && s.category !== activeCategory) return false;
     if (activeMember !== 'all' && !(s.member || []).includes(activeMember)) return false;
+    if (originSpot) {
+      if (s.name === originSpot.name) return false;
+      if (activeRadius > 0) {
+        var d = haversineKm(originSpot.lat, originSpot.lng, s.lat, s.lng);
+        if (d > activeRadius) return false;
+      }
+    }
     return true;
   });
+  if (originSpot) {
+    filtered.sort(function(a, b) {
+      return haversineKm(originSpot.lat, originSpot.lng, a.lat, a.lng)
+           - haversineKm(originSpot.lat, originSpot.lng, b.lat, b.lng);
+    });
+  }
+  var kids = Array.from(container.children);
+  kids.forEach(function(k) {
+    if (k.id !== 'origin-bar' && k.id !== 'radius-btns') k.remove();
+  });
   if (filtered.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:40px;color:#aaa;">スポットが見つかりません</div>';
+    var msg = document.createElement('div');
+    msg.style = 'text-align:center;padding:40px;color:#aaa;';
+    msg.textContent = 'スポットが見つかりません';
+    container.appendChild(msg);
     return;
   }
-  var catIcon = {'カフェ・飲食店':'🍜','撮影スポット':'📸','ライブ・イベント会場':'🎤','観光・名所':'🏯','ショップ':'🛍️'};
-  container.innerHTML = filtered.map(function(s) {
+  var frag = document.createDocumentFragment();
+  filtered.forEach(function(s) {
     var icon = catIcon[s.category] || '📍';
-    var score = (s.good_count || 0) - (s.bad_count || 0);
-    var safeName = s.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-    return '<div class="spot-list-item" onclick="selectSpotFromList(\'' + safeName + '\')">'
-      + '<div class="spot-list-icon">' + icon + '</div>'
+    var distHtml = '';
+    if (originSpot) {
+      var d = haversineKm(originSpot.lat, originSpot.lng, s.lat, s.lng);
+      distHtml = '<div class="spot-list-dist">' + (d < 1 ? Math.round(d*1000) + 'm' : d.toFixed(1) + 'km') + '</div>';
+    }
+    var div = document.createElement('div');
+    div.className = 'spot-list-item';
+    div.innerHTML = '<div class="spot-list-icon">' + icon + '</div>'
       + '<div class="spot-list-info">'
       + '<div class="spot-list-name">' + s.name + '</div>'
       + '<div class="spot-list-addr">' + (s.address || '') + '</div>'
-      + '</div>'
-      + '<div class="spot-list-score">★' + score + '</div>'
-      + '</div>';
-  }).join('');
+      + '</div>' + distHtml;
+    div.onclick = (function(spot) { return function() { selectSpotFromList(spot.name); }; })(s);
+    frag.appendChild(div);
+  });
+  container.appendChild(frag);
 }
-
 function selectSpotFromList(name) {
   var spot = SPOTS.find(function(s) { return s.name === name; });
   if (!spot) return;
