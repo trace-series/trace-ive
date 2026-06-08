@@ -5460,6 +5460,43 @@ function renderRouteSpotList() {
 
 // リストビュー
 var listViewOpen = false;
+var originSpot = null;
+var activeRadius = 0;
+
+function setOriginSpot() {
+  if (!currentSpot) return;
+  originSpot = currentSpot;
+  activeRadius = 0;
+  document.getElementById('map-card').classList.remove('open');
+  listViewOpen = true;
+  var container = document.getElementById('spot-list-container');
+  container.style.display = 'block';
+  document.getElementById('list-view-toggle').textContent = '地図';
+  document.getElementById('origin-bar').style.display = 'flex';
+  document.getElementById('origin-bar-name').textContent = '📍 起点：' + originSpot.name;
+  document.getElementById('radius-btns').style.display = 'flex';
+  document.querySelectorAll('.radius-btn').forEach(function(b) {
+    b.classList.toggle('active', parseInt(b.dataset.r) === 0);
+  });
+  renderSpotList();
+}
+
+function clearOrigin() {
+  originSpot = null;
+  activeRadius = 0;
+  document.getElementById('origin-bar').style.display = 'none';
+  document.getElementById('radius-btns').style.display = 'none';
+  renderSpotList();
+}
+
+function setRadius(r) {
+  activeRadius = r;
+  document.querySelectorAll('.radius-btn').forEach(function(b) {
+    b.classList.toggle('active', parseInt(b.dataset.r) === r);
+  });
+  renderSpotList();
+}
+
 function toggleListView() {
   listViewOpen = !listViewOpen;
   var container = document.getElementById('spot-list-container');
