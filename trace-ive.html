@@ -5456,7 +5456,7 @@ function renderRouteSpotList() {
         var isKorea2 = koreaKeys2.some(function(k){ return addr2.indexOf(k) !== -1; });
         var isTokyo2 = tokyoKeys2.some(function(k){ return addr2.indexOf(k) !== -1; });
         var spotRegion2 = isKorea2 ? 'korea' : (isTokyo2 ? 'tokyo' : 'japan_other');
-        html += '<div class="route-spot-check" data-spot="' + s.name + '" data-region="' + spotRegion2 + '" data-meta="' + meta + '" data-icon="' + icon + '" data-lat="' + s.lat + '" data-lng="' + s.lng + '">'
+        html += '<div class="route-spot-check" data-spot="' + s.name + '" data-region="' + spotRegion2 + '" data-meta="' + meta + '" data-icon="' + icon + '" data-lat="' + s.lat + '" data-lng="' + s.lng + '" data-member="' + (s.member || []).join(',') + '">'
       + '<div class="rsc-left">'
       + '<div class="rsc-check" onclick="toggleRouteSpot(this)">□</div>'
       + '<div class="rsc-icon">' + icon + '</div>'
