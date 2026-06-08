@@ -5425,6 +5425,7 @@ function renderRouteSpotList() {
   var catIcon = {'カフェ・飲食店':'🍜','撮影スポット':'📸','ライブ・イベント会場':'🎤','観光・名所':'🏯','ショップ':'🛍️'};
   var currentRegion = container.dataset.region || 'all';
   var filtered = SPOTS.filter(function(s) {
+    if (activeMember !== 'all' && !(s.member || []).includes(activeMember)) return false;
     if (currentRegion === 'all') return true;
     var addr = s.address || '';
     var koreaKeys = ['韓国', 'ソウル', '済州', '釜山', '弘大', 'COEX', '江南', '梨泰院', '明洞'];
