@@ -4570,7 +4570,7 @@ function applyFilters() {
   };
 
   markers.forEach(marker => {
-    const memberMatch = activeMember === 'all' || marker.spotData.member === activeMember || (marker.spotData.member && marker.spotData.member.split(',').map(m=>m.trim()).includes(activeMember));
+    const memberMatch = activeMember === 'all' || marker.spotData.member === '全員' || marker.spotData.member === activeMember || (marker.spotData.member && marker.spotData.member.split(',').map(m=>m.trim()).includes(activeMember));
     const categoryMatch = activeCategory === 'all' || marker.spotData.category === activeCategory;
     const show = memberMatch && categoryMatch;
     marker.setVisible(show);
