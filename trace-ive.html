@@ -5682,7 +5682,7 @@ function filterMember(el, member) {
     el.classList.add('active');
     // フォームのメンバーchipsを連動
     document.querySelectorAll('#view-post .chip[data-member]').forEach(c => {
-      c.classList.toggle('selected', c.dataset.member === member);
+      c.classList.toggle('selected', c.dataset.member === member || c.dataset.member.split(',').includes(member));
     });
     // メンバー名テキストchipsも連動（data-member未設定の場合テキスト一致）
     document.querySelectorAll('#view-post .scene-chips .chip').forEach(c => {
