@@ -5110,20 +5110,6 @@ async function submitNewSpot() {
         if (xSub) xSub.textContent = 'ポイント・発見者クレジットが永続保持されます';
         closeOnboarding();
       }
-        } else {
-        // X未連携の場合は匿名ログイン（非同期・ノンブロッキング）
-        var client = getSupabaseClient();
-        client.auth.signInAnonymously().then(function(anonResult) {
-          if (anonResult.data && anonResult.data.user) {
-            var anonUser = anonResult.data.user;
-            client.from('profiles').upsert({
-              id: anonUser.id,
-              display_name: '巡礼者',
-              points: 0
-            }, { onConflict: 'id', ignoreDuplicates: true });
-          }
-        }).catch(function(e) { console.warn('anon login error:', e); });
-      }
     } catch(e) { console.warn('handleAuthCallback error:', e); }
   }
 
