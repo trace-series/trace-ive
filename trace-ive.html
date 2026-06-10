@@ -6522,8 +6522,8 @@ function loadProfileData() {
       .then(function(r) {
         if (!r.data) return;
         var pts = r.data.points || 0;
-        var el = document.getElementById("profile-points");
-        if (el) el.textContent = pts;
+        var el = document.getElementById("profile-contrib-total");
+        if (el) el.textContent = pts + " pt";
         var visited = (r.data.visited_spots || []).length;
         var vel = document.getElementById("profile-visited");
         if (vel) vel.textContent = visited;
