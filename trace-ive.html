@@ -5605,10 +5605,27 @@ function jumpToSpot(name) {
 }
 
 // ── 巡礼報告 ──
-function reportVisit() {
-  if (!currentSpot) return;
-  alert(`「${currentSpot.name}」の巡礼を報告しました！\n\n🌸 ありがとうございます！`);
-}
+  function reportVisit() {
+    if (!currentSpot) return;
+    const session = supabase.auth.session ? supabase.auth.session() : null;
+    if (!session) {
+      alert(`「${currentSpot.name}」の巡礼を報告しました！\n\n🌸 ありがとうございます！`);
+      return;
+    }
+    const userId = session.user.id;
+    supabase.from('profiles').select('points').eq('id', userId).single()
+      .then(({ data, error }) => {
+        if (error || !data) {
+          alert(`「${currentSpot.name}」の巡礼を報告しました！\n\n🌸 ありがとうございます！`);
+          return;
+        }
+        const newPoints = (data.points || 0) + 100;
+        supabase.from('profiles').update({ points: newPoints }).eq('id', userId)
+          .then(() => {
+            alert(`「${currentSpot.name}」の巡礼を報告しました！\n\n🌸 +100pt 獲得！（合計: ${newPoints}pt）`);
+          });
+      });
+  }
 
 // ── ナビ ──
 function openNavi() {
