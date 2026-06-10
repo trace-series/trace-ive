@@ -5621,9 +5621,6 @@ function jumpToSpot(name) {
           });
       });
   }
-      alert(`「${currentSpot.name}」の巡礼を報告しました！\n\n🌸 ありがとうございます！`);
-      return;
-    }
     const userId = session.user.id;
     supabase.from('profiles').select('points').eq('id', userId).single()
       .then(({ data, error }) => {
