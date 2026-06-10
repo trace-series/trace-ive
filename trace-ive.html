@@ -5110,19 +5110,6 @@ async function submitNewSpot() {
         if (xSub) xSub.textContent = 'ポイント・発見者クレジットが永続保持されます';
         closeOnboarding();
       }
-        } else {
-        // X未連携の場合は匿名ログイン
-        var client = getSupabaseClient();
-        var anonResult = await client.auth.signInAnonymously();
-        if (anonResult.data && anonResult.data.user) {
-          var anonUser = anonResult.data.user;
-          await client.from('profiles').upsert({
-            id: anonUser.id,
-            display_name: '巡礼者',
-            points: 0
-          }, { onConflict: 'id', ignoreDuplicates: true });
-        }
-      }
     } catch(e) { console.warn('handleAuthCallback error:', e); }
   }
 
