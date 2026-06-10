@@ -6396,6 +6396,25 @@ function filterRouteRegion(el, region) {
     loadOshiSettings();
     loadProfileData();
     handleAuthCallback();
+    // 匿名ログイン（独立実行・マップに影響しない）
+    setTimeout(function() {
+      try {
+        var client = getSupabaseClient();
+        client.auth.getSession().then(function(r) {
+          if (!r.data || !r.data.session) {
+            client.auth.signInAnonymously().then(function(res) {
+              if (res.data && res.data.user) {
+                client.from('profiles').upsert({
+                  id: res.data.user.id,
+                  display_name: '巡礼者',
+                  points: 0
+                }, { onConflict: 'id', ignoreDuplicates: true });
+              }
+            });
+          }
+        });
+      } catch(e) { console.warn('anon error:', e); }
+    }, 2000);
     // ランキング メンバータブを生成
     buildRankingMemberTabs();
     // 推しメン熱量ランキングを生成
