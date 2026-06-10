@@ -5607,20 +5607,11 @@ function jumpToSpot(name) {
 // ── 巡礼報告 ──
   function reportVisit() {
     if (!currentSpot) return;
-    var sb = _supabaseClient;
-    if (!sb) { alert("巡礼を報告しました！"); return; }
-    var session = sb.auth.session();
-    if (!session) { alert("巡礼を報告しました！"); return; }
-    var userId = session.user.id;
-    sb.from("profiles").select("points").eq("id", userId).single()
-      .then(function(res) {
-        var newPoints = ((res.data && res.data.points) || 0) + 100;
-        sb.from("profiles").update({points: newPoints}).eq("id", userId)
-          .then(function() {
-            alert("+100pt獲得！合計" + newPoints + "pt");
-          });
-      });
-  }
+    const session = supabase.auth.session ? supabase.auth.session() : null;
+    if (!session) {
+      alert(`「${currentSpot.name}」の巡礼を報告しました！\n\n🌸 ありがとうございます！`);
+      return;
+    }
     const userId = session.user.id;
     supabase.from('profiles').select('points').eq('id', userId).single()
       .then(({ data, error }) => {
