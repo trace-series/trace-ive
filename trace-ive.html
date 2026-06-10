@@ -6505,17 +6505,30 @@ const PROFILE_KEY = 'traceive_profile_v1';
 
 function loadProfileData() {
   try {
-    const d = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
-    if (d.name) {
-      document.getElementById('profile-name').textContent = d.name;
-    }
+    const d = JSON.parse(localStorage.getItem(PROFILE_KEY) || "{}");
+    if (d.name) document.getElementById("profile-name").textContent = d.name;
     if (d.icon) {
-      document.getElementById('profile-avatar').textContent = d.icon;
-      // ヘッダーのアバターも更新
-      const headerAvatar = document.querySelector('.avatar');
+      document.getElementById("profile-avatar").textContent = d.icon;
+      const headerAvatar = document.querySelector(".avatar");
       if (headerAvatar) headerAvatar.textContent = d.icon;
     }
   } catch(e) {}
+  var sb = _supabaseClient;
+  if (!sb) return;
+  sb.auth.getSession().then(function(res) {
+    var session = res.data && res.data.session;
+    if (!session) return;
+    sb.from("profiles").select("points, visited_spots").eq("id", session.user.id).single()
+      .then(function(r) {
+        if (!r.data) return;
+        var pts = r.data.points || 0;
+        var el = document.getElementById("profile-points");
+        if (el) el.textContent = pts;
+        var visited = (r.data.visited_spots || []).length;
+        var vel = document.getElementById("profile-visited");
+        if (vel) vel.textContent = visited;
+      });
+  });
 }
 
 function openProfileEdit() {
