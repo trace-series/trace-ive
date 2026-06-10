@@ -5654,6 +5654,7 @@ function showView(name) {
   if (name === 'post') setTimeout(initPostForm, 50);
   if (name === 'route') renderRouteSpotList();
   const nav = document.getElementById('nav-'+name);
+  if (name === 'profile') setTimeout(loadProfileData, 50);
   if (nav) nav.classList.add('active');
   activeView = name;
 
