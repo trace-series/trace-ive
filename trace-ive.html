@@ -6427,6 +6427,7 @@ function filterRouteRegion(el, region) {
         var client = getSupabaseClient();
         client.auth.getSession().then(function(r) {
           var existingUser = r.data && r.data.session && r.data.session.user;
+        if (existingUser) { localStorage.setItem("trace_uid", existingUser.id); }
           if (existingUser) {
             client.from('profiles').upsert({
               id: existingUser.id,
