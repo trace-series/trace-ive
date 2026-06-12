@@ -6417,6 +6417,18 @@ function filterRouteRegion(el, region) {
       setTimeout(() => showUpdateModal(), 800);
     }
     localStorage.setItem('traceive_version', currentVer);
+    // image_urlをSupabaseからSPOTSにマージ
+    (async () => {
+      try {
+        const { data } = await _supabaseClient.from('spots').select('name, image_url');
+        if (data) {
+          data.forEach(row => {
+            const spot = SPOTS.find(s => s.name === row.name);
+            if (spot && row.image_url) spot.image_url = row.image_url;
+          });
+        }
+      } catch(e) { console.warn('image_url merge error:', e); }
+    })();
 
     // 誕生日ポップアップ（500ms遅延でページ表示後に出す）
     setTimeout(() => {
