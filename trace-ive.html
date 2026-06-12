@@ -5613,12 +5613,21 @@ function jumpToSpot(name) {
       var session = res.data && res.data.session;
       if (!session) { alert("巡礼を報告しました！"); return; }
       var userId = session.user.id;
-      sb.from("profiles").select("points").eq("id", userId).single()
+      var spotName = currentSpot.name;
+      sb.from("profiles").select("points, visited_spots").eq("id", userId).single()
         .then(function(r) {
-          var newPoints = ((r.data && r.data.points) || 0) + 100;
-          sb.from("profiles").update({points: newPoints}).eq("id", userId)
+          var pts = (r.data && r.data.points) || 0;
+          var visited = (r.data && r.data.visited_spots) || [];
+          if (visited.includes(spotName)) {
+            alert("このスポットは既に巡礼済みです！");
+            return;
+          }
+          visited.push(spotName);
+          var newPoints = pts + 100;
+          sb.from("profiles").update({points: newPoints, visited_spots: visited}).eq("id", userId)
             .then(function() {
               alert("+100pt獲得！合計" + newPoints + "pt");
+              loadProfileData();
             });
         });
     });
