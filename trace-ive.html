@@ -6420,7 +6420,7 @@ function filterRouteRegion(el, region) {
     // image_urlをSupabaseからSPOTSにマージ
     (async () => {
       try {
-        const { data } = await _supabaseClient.from('spots').select('name, image_url');
+        const { data } = await getSupabaseClient().from('spots').select('name, image_url');
         if (data) {
           data.forEach(row => {
             const spot = SPOTS.find(s => s.name === row.name);
