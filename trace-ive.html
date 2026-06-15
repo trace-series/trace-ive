@@ -5085,6 +5085,19 @@ async function submitNewSpot() {
     }
   }
 
+
+  async function startWithGoogle() {
+    try {
+      var client = getSupabaseClient();
+      await client.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.href }
+      });
+    } catch(e) {
+      alert('Googleログインに失敗しました。匿名モードで続けます。');
+      startAnonymous();
+    }
+  }
   async function handleAuthCallback() {
     try {
       var client = getSupabaseClient();
@@ -7416,7 +7429,9 @@ function applyTransferCode() {
         ℹ️ X連携はXのOAuth認証を使用します。パスワードはTrace IVEには送信されません。フォロワー情報・DM等へのアクセスは行いません。
       </div>
 
-      <button onclick="startWithX()" style="
+        <button onclick="startWithGoogle()" style="width:100%;padding:16px;background:white;border:2px solid #ddd;border-radius:16px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;color:#444;display:flex;align-items:center;justify-content:center;gap:8px;">
+          <img src="https://www.google.com/favicon.ico" style="width:18px;height:18px;">Googleアカウントで始める
+        </button>
         width:100%;padding:16px;background:linear-gradient(135deg,#c9a84c,#e8c96b);
         color:#1a0a2e;border:none;border-radius:16px;font-size:15px;
         font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">
