@@ -2410,8 +2410,16 @@
 
     <div class="x-connect-card" onclick="startXConnect()">
       <div style="width:40px;height:40px;background:white;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;font-family:sans-serif;flex-shrink:0;">𝕏</div>
+        <div class="x-connect-bar" id="google-connect-bar" style="background:linear-gradient(135deg,#4285f4,#34a853);margin-bottom:8px;">
+          <div class="x-connect-icon">G</div>
+          <div>
+            <div class="x-connect-title">Googleアカウント連携中</div>
+            <div class="x-connect-sub" id="google-connect-sub">ポイント・発見者クレジットが永続保持されます</div>
+          </div>
+          <div class="x-connect-arrow">✓</div>
+        </div>
       <div class="x-connect-text">
-        <div class="x-connect-title" id="x-connect-title">Xアカウントを連携する</div>
+        <div class="x-connect-title" id="x-connect-title">𝕏 X連携（実装予定）</div>
         <div class="x-connect-sub" id="x-connect-sub">連携するとポイントや発見者クレジットが保持されます</div>
       </div>
       <div class="x-connect-arrow">›</div>
@@ -5106,8 +5114,8 @@ async function submitNewSpot() {
       if (session && session.user) {
         var user = session.user;
         var meta = user.user_metadata || {};
-        var xName = meta.full_name || meta.user_name || 'Xユーザー';
-        var xHandle = '@' + (meta.user_name || 'unknown');
+        var xName = meta.full_name || meta.name || meta.user_name || 'ユーザー';
+        var xHandle = meta.user_name ? '@' + meta.user_name : (meta.email || 'Googleユーザー');
         var xAvatar = meta.avatar_url || '';
         localStorage.setItem(OB_KEY, JSON.stringify({
           method: 'x', date: new Date().toISOString(),
