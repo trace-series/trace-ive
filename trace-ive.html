@@ -5114,8 +5114,10 @@ async function submitNewSpot() {
       if (session && session.user) {
         var user = session.user;
         var meta = user.user_metadata || {};
-        var xName = meta.full_name || meta.name || meta.user_name || 'ユーザー';
-        var xHandle = meta.user_name ? '@' + meta.user_name : (meta.email || 'Googleユーザー');
+        var provider = (user.app_metadata && user.app_metadata.provider) || 'unknown';
+        var isGoogle = provider === 'google';
+        var xName = isGoogle ? (meta.full_name || meta.name || meta.email || 'Googleユーザー') : (meta.full_name || meta.name || meta.user_name || 'ユーザー');
+        var xHandle = isGoogle ? null : (meta.user_name ? '@' + meta.user_name : meta.email);
         var xAvatar = meta.avatar_url || '';
         localStorage.setItem(OB_KEY, JSON.stringify({
           method: 'x', date: new Date().toISOString(),
@@ -5133,7 +5135,7 @@ async function submitNewSpot() {
         }
         var xTitle = document.getElementById('x-connect-title');
         var xSub = document.getElementById('x-connect-sub');
-        if (xTitle) xTitle.textContent = xHandle + ' で連携中';
+        if (xTitle && xHandle) xTitle.textContent = xHandle + ' で連携中';
         if (xSub) xSub.textContent = 'ポイント・発見者クレジットが永続保持されます';
         closeOnboarding();
       }
@@ -7447,6 +7449,10 @@ function applyTransferCode() {
       </button>
       <div style="text-align:center;margin-top:14px;">
         <button onclick="showObPage(3)" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer;">まず覗いてみる（匿名）（機能制限あり）</button>
+        <div style="margin-top:16px;padding:10px 16px;background:rgba(255,255,255,0.07);border-radius:12px;border:1px solid rgba(255,255,255,0.12);text-align:center;">
+          <div style="font-size:11px;color:rgba(255,255,255,0.45);">𝕏 X連携は近日実装予定</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.28);margin-top:3px;">発見者クレジット・投稿連動ポイントが解放されます</div>
+        </div>
       </div>
     </div>
 
@@ -7492,7 +7498,7 @@ function applyTransferCode() {
         まず覗いてみる（匿名）
       </button>
       <div style="text-align:center;margin-top:14px;">
-        <button onclick="showObPage(2)" style="background:none;border:none;color:#c9a84c;font-size:12px;cursor:pointer;font-weight:700;">X連携に切り替える →</button>
+        <button onclick="startWithGoogle()" style="background:none;border:none;color:#c9a84c;font-size:12px;cursor:pointer;font-weight:700;">Googleアカウントで始める →</button>
       </div>
     </div>
 
