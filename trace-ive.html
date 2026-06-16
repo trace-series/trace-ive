@@ -5662,7 +5662,7 @@ function jumpToSpot(name) {
       const newVisited = [...visited, spotId];
       await client.from('profiles').update({ points: newPoints, visited_spots: newVisited }).eq('id', userId);
       alert('巡礼を記録しました！ +' + earned + 'pt獲得');
-      closeSpotCard();
+      toggleCard();
     });
     if (!currentSpot) return;
     var sb = _supabaseClient;
