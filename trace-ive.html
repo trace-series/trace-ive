@@ -5635,11 +5635,6 @@ function jumpToSpot(name) {
 
 // ── 巡礼報告 ──
   function reportVisit() {
-    const ob = JSON.parse(localStorage.getItem(OB_KEY) || 'null');
-    if (!ob || ob.method === 'anonymous') {
-      alert('ポイントを獲得するにはGoogleアカウントでログインしてください。');
-      return;
-    }
     const spotId = currentSpot && currentSpot.id;
     if (!spotId) return;
     const client = getSupabaseClient();
