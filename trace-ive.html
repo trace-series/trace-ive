@@ -5635,7 +5635,7 @@ function jumpToSpot(name) {
 
 // ── 巡礼報告 ──
   function reportVisit() {
-    const spotId = currentSpot && currentSpot.id;
+    const spotId = currentSpot && currentSpot.name;
     if (!spotId) return;
     const client = getSupabaseClient();
     client.auth.getSession().then(async ({ data }) => {
