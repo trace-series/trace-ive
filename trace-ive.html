@@ -5635,6 +5635,35 @@ function jumpToSpot(name) {
 
 // ── 巡礼報告 ──
   function reportVisit() {
+    const ob = JSON.parse(localStorage.getItem(OB_KEY) || 'null');
+    if (!ob || ob.method === 'anonymous') {
+      alert('ポイントを獲得するにはGoogleアカウントでログインしてください。');
+      return;
+    }
+    const spotId = currentSpot && currentSpot.id;
+    if (!spotId) return;
+    const client = getSupabaseClient();
+    client.auth.getSession().then(async ({ data }) => {
+      const session = data && data.session;
+      if (!session) return;
+      const userId = session.user.id;
+      const { data: profile } = await client.from('profiles').select('points, visited_spots').eq('id', userId).single();
+      if (!profile) return;
+      const visited = profile.visited_spots || [];
+      if (visited.includes(spotId)) {
+        alert('このスポットはすでに巡礼済みです。');
+        return;
+      }
+      const multiplier = getBirthdayMultiplier ? getBirthdayMultiplier() : 1;
+      const eventMultiplier = getEventMultiplier ? getEventMultiplier() : 1;
+      const basePoints = 100;
+      const earned = Math.round(basePoints * multiplier * eventMultiplier);
+      const newPoints = (profile.points || 0) + earned;
+      const newVisited = [...visited, spotId];
+      await client.from('profiles').update({ points: newPoints, visited_spots: newVisited }).eq('id', userId);
+      alert('巡礼を記録しました！ +' + earned + 'pt獲得');
+      closeSpotCard();
+    });
     if (!currentSpot) return;
     var sb = _supabaseClient;
     if (!sb) { alert("巡礼を報告しました！"); return; }
