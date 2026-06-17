@@ -5635,6 +5635,8 @@ function jumpToSpot(name) {
 
 // ── 巡礼報告 ──
   function reportVisit() {
+      if (window._reportVisitInProgress) return;
+      window._reportVisitInProgress = true;
     const spotId = currentSpot && currentSpot.name;
     if (!spotId) return;
     const client = getSupabaseClient();
@@ -5655,35 +5657,12 @@ function jumpToSpot(name) {
       const earned = Math.round(basePoints * multiplier * eventMultiplier);
       const newPoints = (profile.points || 0) + earned;
       const newVisited = [...visited, spotId];
-      await client.from('profiles').update({ points: newPoints, visited_spots: newVisited }).eq('id', userId);
+      const { error: updateError } = await client.from('profiles').update({ points: newPoints, visited_spots: newVisited }).eq('id', userId);
+      if (updateError) { alert('保存エラー: ' + updateError.message); window._reportVisitInProgress = false; return; }
       alert('巡礼を記録しました！ +' + earned + 'pt獲得');
       toggleCard();
       loadProfileData();
-    });
-    if (!currentSpot) return;
-    var sb = _supabaseClient;
-    if (!sb) { alert("巡礼を報告しました！"); return; }
-    sb.auth.getSession().then(function(res) {
-      var session = res.data && res.data.session;
-      if (!session) { alert("巡礼を報告しました！"); return; }
-      var userId = session.user.id;
-      var spotName = currentSpot.name;
-      sb.from("profiles").select("points, visited_spots").eq("id", userId).single()
-        .then(function(r) {
-          var pts = (r.data && r.data.points) || 0;
-          var visited = (r.data && r.data.visited_spots) || [];
-          if (visited.includes(spotName)) {
-            alert("このスポットは既に巡礼済みです！");
-            return;
-          }
-          visited.push(spotName);
-          var newPoints = pts + 100;
-          sb.from("profiles").update({points: newPoints, visited_spots: visited}).eq("id", userId)
-            .then(function() {
-              alert("+100pt獲得！合計" + newPoints + "pt");
-              loadProfileData();
-            });
-        });
+        window._reportVisitInProgress = false;
     });
   }
 
@@ -6591,7 +6570,7 @@ function loadProfileData() {
       if (headerAvatar) headerAvatar.textContent = d.icon;
     }
   } catch(e) {}
-  var sb = _supabaseClient;
+  var sb = getSupabaseClient();
   if (!sb) return;
   sb.auth.getSession().then(function(res) {
     var session = res.data && res.data.session;
