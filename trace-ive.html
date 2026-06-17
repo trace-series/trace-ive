@@ -5651,7 +5651,7 @@ function jumpToSpot(name) {
         alert('このスポットはすでに巡礼済みです。');
         return;
       }
-      const multiplier = getBirthdayMultiplier ? getBirthdayMultiplier() : 1;
+      const multiplier = (typeof getBirthdayMultiplier === 'function') ? getBirthdayMultiplier() : 1;
       const eventMultiplier = getEventMultiplier ? getEventMultiplier() : 1;
       const basePoints = 100;
       const earned = Math.round(basePoints * multiplier * eventMultiplier);
@@ -6478,7 +6478,7 @@ function filterRouteRegion(el, region) {
               id: existingUser.id,
               display_name: '巡礼者',
               points: 0
-            }, { onConflict: 'id' });
+            }, { onConflict: 'id' }).then(function(r2){console.log('profile upsert ok:', r2);}).catch(function(e2){console.warn('profile upsert error:', e2);});
           } else {
             client.auth.signInAnonymously().then(function(res) {
               if (res.data && res.data.user) {
@@ -6486,7 +6486,7 @@ function filterRouteRegion(el, region) {
                   id: res.data.user.id,
                   display_name: '巡礼者',
                   points: 0
-                }, { onConflict: 'id' });
+                }, { onConflict: 'id' }).then(function(r2){console.log('profile upsert ok:', r2);}).catch(function(e2){console.warn('profile upsert error:', e2);});
               }
             });
           }
