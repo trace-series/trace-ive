@@ -5638,7 +5638,7 @@ function jumpToSpot(name) {
       if (window._reportVisitInProgress) return;
       window._reportVisitInProgress = true;
     const spotId = currentSpot && currentSpot.name;
-    if (!spotId) return;
+    if (!spotId) { window._reportVisitInProgress = false; return; }
     const client = getSupabaseClient();
     client.auth.getSession().then(async ({ data }) => {
       const session = data && data.session;
@@ -5649,6 +5649,7 @@ function jumpToSpot(name) {
       const visited = profile.visited_spots || [];
       if (visited.includes(spotId)) {
         alert('このスポットはすでに巡礼済みです。');
+        window._reportVisitInProgress = false;
         return;
       }
       const multiplier = (typeof getBirthdayMultiplier === 'function') ? getBirthdayMultiplier() : 1;
