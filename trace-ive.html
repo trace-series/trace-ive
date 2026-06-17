@@ -5082,7 +5082,7 @@ async function submitNewSpot() {
     try {
       var client = getSupabaseClient();
       var result = await client.auth.signInWithOAuth({
-        provider: 'twitter',
+        provider: 'x',
         options: { redirectTo: window.location.href }
       });
       if (result.error) throw result.error;
