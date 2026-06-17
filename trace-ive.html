@@ -5652,7 +5652,7 @@ function jumpToSpot(name) {
         return;
       }
       const multiplier = (typeof getBirthdayMultiplier === 'function') ? getBirthdayMultiplier() : 1;
-      const eventMultiplier = getEventMultiplier ? getEventMultiplier() : 1;
+      const eventMultiplier = (typeof getEventMultiplier === 'function') ? getEventMultiplier() : 1;
       const basePoints = 100;
       const earned = Math.round(basePoints * multiplier * eventMultiplier);
       const newPoints = (profile.points || 0) + earned;
