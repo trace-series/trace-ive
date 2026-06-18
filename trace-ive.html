@@ -2633,50 +2633,64 @@
       ⚙️ 数値は運営により随時調整されます
     </div>
 
+    <!-- 巡礼ポイント -->
+    <div class="pr-section-title">🚶 巡礼でもらえるポイント</div>
+    <div class="pr-card">
+      <div class="pr-row">
+        <span class="pr-label">巡礼報告（1スポットにつき初回のみ）</span>
+        <span class="pr-pt pr-pt-good">+100 pt</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label" style="color:var(--text-light);font-size:11px;">誕生日/誕生月・推し設定・イベント期間中は倍率がかかります</span>
+      </div>
+    </div>
+
     <!-- ランク一覧 -->
     <div class="pr-section-title">🏆 ランク一覧</div>
     <div class="pr-card">
-      <div class="pr-rank-item">
+      <div class="pr-rank-item" data-rank="bronze">
         <div class="pr-rank-icon">🥉</div>
         <div class="pr-rank-info">
-          <div class="pr-rank-name">ブロンズ</div>
+          <div class="pr-rank-name">ブロンズ <span class="pr-current-badge" style="display:none;">現在</span></div>
           <div class="pr-rank-range">0〜199 pt</div>
         </div>
         <div class="pr-rank-desc">新規参加者</div>
       </div>
-      <div class="pr-rank-item">
+      <div class="pr-rank-item" data-rank="silver">
         <div class="pr-rank-icon">🥈</div>
         <div class="pr-rank-info">
-          <div class="pr-rank-name">シルバー</div>
-          <div class="pr-rank-range">200〜499 pt</div>
+          <div class="pr-rank-name">シルバー <span class="pr-current-badge" style="display:none;">現在</span></div>
+          <div class="pr-rank-range">200〜799 pt</div>
         </div>
         <div class="pr-rank-desc">アクティブ巡礼者</div>
       </div>
-      <div class="pr-rank-item pr-rank-current">
+      <div class="pr-rank-item" data-rank="gold">
         <div class="pr-rank-icon">🥇</div>
         <div class="pr-rank-info">
-          <div class="pr-rank-name">ゴールド <span class="pr-current-badge">現在</span></div>
-          <div class="pr-rank-range">500〜999 pt</div>
+          <div class="pr-rank-name">ゴールド <span class="pr-current-badge" style="display:none;">現在</span></div>
+          <div class="pr-rank-range">800〜2499 pt</div>
         </div>
         <div class="pr-rank-desc">熟練レポーター</div>
       </div>
-      <div class="pr-rank-item">
+      <div class="pr-rank-item" data-rank="platinum">
         <div class="pr-rank-icon">💎</div>
         <div class="pr-rank-info">
-          <div class="pr-rank-name">プラチナ</div>
-          <div class="pr-rank-range">1000〜2999 pt</div>
+          <div class="pr-rank-name">プラチナ <span class="pr-current-badge" style="display:none;">現在</span></div>
+          <div class="pr-rank-range">2500〜5999 pt</div>
         </div>
         <div class="pr-rank-desc">信頼された貢献者</div>
       </div>
-      <div class="pr-rank-item">
+      <div class="pr-rank-item" data-rank="diamond">
         <div class="pr-rank-icon">👑</div>
         <div class="pr-rank-info">
-          <div class="pr-rank-name">ダイヤモンド</div>
-          <div class="pr-rank-range">3000 pt〜</div>
+          <div class="pr-rank-name">ダイヤモンド <span class="pr-current-badge" style="display:none;">現在</span></div>
+          <div class="pr-rank-range">6000 pt〜</div>
+          <div style="font-size:10px;color:#c0392b;margin-top:2px;">🔒 友達紹介5人（称号「Scout」）以上が必要</div>
         </div>
         <div class="pr-rank-desc">準管理者候補</div>
       </div>
     </div>
+    <div class="pr-desc" style="margin-top:6px;">※ダイヤモンドだけはポイントに加えて友達紹介5人達成（称号「Scout」）が条件です。巡礼だけでなく、コミュニティを広げてくれた人だけが到達できる特別ランクです。</div>
 
     <!-- 投稿ポイント -->
     <div class="pr-section-title">📍 投稿でもらえるポイント</div>
@@ -2898,28 +2912,28 @@
         <div class="pr-route-col">最適化</div>
         <div class="pr-route-col">保存上限</div>
       </div>
-      <div class="pr-route-row">
+      <div class="pr-route-row" data-rank="bronze">
         <div class="pr-route-cell">🥉 ブロンズ<br><span class="pr-route-pt">0〜199pt</span></div>
         <div class="pr-route-cell pr-route-lock">🔒 不可</div>
         <div class="pr-route-cell">3件</div>
       </div>
-      <div class="pr-route-row">
-        <div class="pr-route-cell">🥈 シルバー<br><span class="pr-route-pt">200〜499pt</span></div>
+      <div class="pr-route-row" data-rank="silver">
+        <div class="pr-route-cell">🥈 シルバー<br><span class="pr-route-pt">200〜799pt</span></div>
         <div class="pr-route-cell pr-route-lock">🔒 不可</div>
         <div class="pr-route-cell">3件</div>
       </div>
-      <div class="pr-route-row pr-route-current">
-        <div class="pr-route-cell">🥇 ゴールド<br><span class="pr-route-pt">500〜999pt</span></div>
+      <div class="pr-route-row" data-rank="gold">
+        <div class="pr-route-cell">🥇 ゴールド<br><span class="pr-route-pt">800〜2499pt</span></div>
         <div class="pr-route-cell pr-route-ok">✅ 月1回</div>
         <div class="pr-route-cell">5件</div>
       </div>
-      <div class="pr-route-row">
-        <div class="pr-route-cell">💎 プラチナ<br><span class="pr-route-pt">1000〜2999pt</span></div>
+      <div class="pr-route-row" data-rank="platinum">
+        <div class="pr-route-cell">💎 プラチナ<br><span class="pr-route-pt">2500〜5999pt</span></div>
         <div class="pr-route-cell pr-route-ok">✅ 月1回</div>
         <div class="pr-route-cell">10件</div>
       </div>
-      <div class="pr-route-row">
-        <div class="pr-route-cell">👑 ダイヤモンド<br><span class="pr-route-pt">3000pt〜</span></div>
+      <div class="pr-route-row" data-rank="diamond">
+        <div class="pr-route-cell">👑 ダイヤモンド<br><span class="pr-route-pt">6000pt〜+紹介5人</span></div>
         <div class="pr-route-cell pr-route-ok">✅ 月2回</div>
         <div class="pr-route-cell">15件</div>
       </div>
@@ -5658,8 +5672,9 @@ function jumpToSpot(name) {
       }
       const multiplier = (typeof getBirthdayMultiplier === 'function') ? getBirthdayMultiplier() : 1;
       const eventMultiplier = (typeof getEventMultiplier === 'function') ? getEventMultiplier() : 1;
+      const oshiMultiplier = (typeof getOshiMultiplier === 'function') ? getOshiMultiplier(currentSpot.member) : 1;
       const basePoints = 100;
-      const earned = Math.round(basePoints * multiplier * eventMultiplier);
+      const earned = Math.round(basePoints * multiplier * eventMultiplier * oshiMultiplier);
       const newPoints = (profile.points || 0) + earned;
       const newVisited = [...visited, spotId];
       const { error: updateError } = await client.from('profiles').update({ points: newPoints, visited_spots: newVisited }).eq('id', userId);
@@ -6285,11 +6300,50 @@ function filterRouteRegion(el, region) {
     premium:  { optimizePerMonth: 999, saveMax: 999 },
   };
 
-  let currentUserRank = 'gold';
+  // ランクしきい値（6/18バランス調整）。ダイヤモンドのみポイントに加えて
+  // 友達紹介5人（称号「Scout」）以上が必須。紹介機能実装までreferralCountは常に0として扱う。
+  const RANK_TIERS = [
+    { key: 'bronze',   minPt: 0,    name: 'ブロンズ',     requiresScout: false },
+    { key: 'silver',   minPt: 200,  name: 'シルバー',     requiresScout: false },
+    { key: 'gold',     minPt: 800,  name: 'ゴールド',     requiresScout: false },
+    { key: 'platinum', minPt: 2500, name: 'プラチナ',     requiresScout: false },
+    { key: 'diamond',  minPt: 6000, name: 'ダイヤモンド', requiresScout: true  },
+  ];
+
+  function getRankKey(points, referralCount) {
+    const pt = points || 0;
+    const refCount = referralCount || 0;
+    let result = 'bronze';
+    for (const tier of RANK_TIERS) {
+      if (pt < tier.minPt) break;
+      if (tier.requiresScout && refCount < 5) continue;
+      result = tier.key;
+    }
+    return result;
+  }
+
+  let currentUserRank = 'bronze';
   let optimizeUsedThisMonth = 0;
 
   function getRouteLimit() {
     return ROUTE_LIMITS[currentUserRank] || ROUTE_LIMITS.bronze;
+  }
+
+  function updateUserRank(points, referralCount) {
+    currentUserRank = getRankKey(points, referralCount);
+    const tier = RANK_TIERS.find(t => t.key === currentUserRank);
+    const badgeEl = document.getElementById('contrib-rank-badge');
+    if (badgeEl && tier) badgeEl.textContent = tier.name;
+    document.querySelectorAll('.pr-rank-item').forEach(function(el) {
+      const isCurrent = el.dataset.rank === currentUserRank;
+      el.classList.toggle('pr-rank-current', isCurrent);
+      const badge = el.querySelector('.pr-current-badge');
+      if (badge) badge.style.display = isCurrent ? 'inline' : 'none';
+    });
+    document.querySelectorAll('.pr-route-row[data-rank]').forEach(function(el) {
+      el.classList.toggle('pr-route-current', el.dataset.rank === currentUserRank);
+    });
+    if (typeof updateOptimizeBtn === 'function') updateOptimizeBtn();
   }
 
   function updateOptimizeBtn() {
@@ -6317,7 +6371,7 @@ function filterRouteRegion(el, region) {
     const limit = getRouteLimit();
     const remaining = limit.optimizePerMonth - optimizeUsedThisMonth;
     if (limit.optimizePerMonth === 0) {
-      alert('🔒 ルート最適化はゴールドランク（500pt）以上で使用できます。');
+      alert('🔒 ルート最適化はゴールドランク（800pt）以上で使用できます。');
       showView('pointrules');
       return;
     }
@@ -6601,6 +6655,7 @@ function loadProfileData() {
         var pts = r.data.points || 0;
         var el = document.getElementById("profile-contrib-total");
         if (el) el.textContent = pts + " pt";
+        if (typeof updateUserRank === 'function') updateUserRank(pts, 0);
         var visited = (r.data.visited_spots || []).length;
         var vel = document.getElementById("profile-visited");
         if (vel) vel.textContent = visited;
