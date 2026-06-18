@@ -6585,6 +6585,8 @@ function loadProfileData() {
         var visited = (r.data.visited_spots || []).length;
         var vel = document.getElementById("profile-visited");
         if (vel) vel.textContent = visited;
+        var pel = document.getElementById("stat-pilgrim");
+        if (pel) pel.textContent = visited;
       });
   });
 }
