@@ -5662,10 +5662,10 @@ function jumpToSpot(name) {
     const client = getSupabaseClient();
     client.auth.getSession().then(async ({ data }) => {
       const session = data && data.session;
-      if (!session) return;
+      if (!session) { window._reportVisitInProgress = false; return; }
       const userId = session.user.id;
       const { data: profile } = await client.from('profiles').select('points, visited_spots').eq('id', userId).single();
-      if (!profile) return;
+      if (!profile) { window._reportVisitInProgress = false; return; }
       const visited = profile.visited_spots || [];
       if (visited.includes(spotId)) {
         alert('このスポットはすでに巡礼済みです。');
