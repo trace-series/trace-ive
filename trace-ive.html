@@ -5125,6 +5125,7 @@ async function submitNewSpot() {
         localStorage.setItem(OB_KEY, JSON.stringify({
           method: 'x', date: new Date().toISOString(),
           xHandle: xHandle, xName: xName, xAvatar: xAvatar,
+          provider: isGoogle ? 'google' : 'x',
         }));
         var nameEl = document.getElementById('profile-name');
         if (nameEl) nameEl.textContent = xName;
@@ -6572,6 +6573,21 @@ function loadProfileData() {
       document.getElementById("profile-avatar").textContent = d.icon;
       const headerAvatar = document.querySelector(".avatar");
       if (headerAvatar) headerAvatar.textContent = d.icon;
+    }
+  } catch(e) {}
+  try {
+    const ob = JSON.parse(localStorage.getItem(OB_KEY) || 'null');
+    const handleEl = document.getElementById('profile-handle');
+    if (handleEl) {
+      if (!ob || ob.method === 'anonymous') {
+        handleEl.textContent = '未連携';
+      } else if (ob.provider === 'google' || (!ob.provider && !ob.xHandle)) {
+        handleEl.textContent = 'Google連携済み';
+      } else if (ob.xHandle) {
+        handleEl.textContent = ob.xHandle + ' で連携中';
+      } else {
+        handleEl.textContent = '未連携';
+      }
     }
   } catch(e) {}
   var sb = getSupabaseClient();
