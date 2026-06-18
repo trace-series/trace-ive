@@ -6543,7 +6543,7 @@ function filterRouteRegion(el, region) {
               id: existingUser.id,
               display_name: '巡礼者',
               points: 0
-            }, { onConflict: 'id' }).then(function(r2){console.log('profile upsert ok:', r2);}).catch(function(e2){console.warn('profile upsert error:', e2);});
+            }, { onConflict: 'id', ignoreDuplicates: true }).then(function(r2){console.log('profile upsert ok:', r2);}).catch(function(e2){console.warn('profile upsert error:', e2);});
           } else {
             client.auth.signInAnonymously().then(function(res) {
               if (res.data && res.data.user) {
@@ -6551,7 +6551,7 @@ function filterRouteRegion(el, region) {
                   id: res.data.user.id,
                   display_name: '巡礼者',
                   points: 0
-                }, { onConflict: 'id' }).then(function(r2){console.log('profile upsert ok:', r2);}).catch(function(e2){console.warn('profile upsert error:', e2);});
+                }, { onConflict: 'id', ignoreDuplicates: true }).then(function(r2){console.log('profile upsert ok:', r2);}).catch(function(e2){console.warn('profile upsert error:', e2);});
               }
             });
           }
