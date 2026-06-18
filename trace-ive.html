@@ -7473,16 +7473,16 @@ function applyTransferCode() {
         ℹ️ X連携はXのOAuth認証を使用します。パスワードはTrace IVEには送信されません。フォロワー情報・DM等へのアクセスは行いません。
       </div>
 
-        <button onclick="startWithGoogle()" style="width:100%;padding:16px;background:linear-gradient(135deg,#c9a84c,#e8c96b);
-      color:#1a0a2e;border:none;border-radius:16px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;
-      display:flex;align-items:center;justify-content:center;gap:8px;">
-      <img src="https://www.google.com/favicon.ico" style="width:18px;height:18px;">Googleアカウントで始める
-      </button>
-      <button onclick="startWithX()" style="width:100%;padding:16px;background:#000000;
+        <button onclick="startWithX()" style="width:100%;padding:16px;background:#000000;
       color:#ffffff;border:1.5px solid rgba(255,255,255,0.25);border-radius:16px;font-size:15px;
       font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;
       display:flex;align-items:center;justify-content:center;gap:8px;">
       <span style="font-size:18px;font-weight:900;">𝕏</span>Xアカウントで始める
+      </button>
+      <button onclick="startWithGoogle()" style="width:100%;padding:16px;background:linear-gradient(135deg,#c9a84c,#e8c96b);
+      color:#1a0a2e;border:none;border-radius:16px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;
+      display:flex;align-items:center;justify-content:center;gap:8px;">
+      <img src="https://www.google.com/favicon.ico" style="width:18px;height:18px;">Googleアカウントで始める
       </button>
       <div style="text-align:center;margin-top:14px;">
         <button onclick="showObPage(3)" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer;">まず覗いてみる（匿名）（機能制限あり）</button>
@@ -7535,7 +7535,10 @@ function applyTransferCode() {
         まず覗いてみる（匿名）
       </button>
       <div style="text-align:center;margin-top:14px;">
-        <button onclick="startWithGoogle()" style="background:none;border:none;color:#c9a84c;font-size:12px;cursor:pointer;font-weight:700;">Googleアカウントで始める →</button>
+        <button onclick="startWithX()" style="background:none;border:none;color:#fff;font-size:12px;cursor:pointer;font-weight:700;">Xアカウントで始める →</button>
+        <div style="margin-top:8px;">
+          <button onclick="startWithGoogle()" style="background:none;border:none;color:#c9a84c;font-size:12px;cursor:pointer;font-weight:700;">Googleアカウントで始める →</button>
+        </div>
       </div>
     </div>
 
