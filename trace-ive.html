@@ -2411,7 +2411,7 @@
       <div style="text-align:center;padding:20px;color:var(--text-light);font-size:12px;">投稿したスポットはまだありません</div>
     </div>
 
-    <div class="x-connect-card" onclick="startXConnect()">
+    <div class="x-connect-card" onclick="startWithX()">
       <div style="width:40px;height:40px;background:white;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;font-family:sans-serif;flex-shrink:0;">𝕏</div>
       <div class="x-connect-text">
         <div class="x-connect-title" id="x-connect-title">𝕏 X連携（実装予定）</div>
@@ -5703,7 +5703,9 @@ function openNavi() {
 function shareX() {
   if (!currentSpot) return;
   const tags = GROUP_CONFIG.hashtags.join(' ');
-  const text = encodeURIComponent(`【聖地巡礼】${currentSpot.name}\n${currentSpot.sub}\n\n${tags}`);
+  const memberInfo = GROUP_CONFIG.members.find(m => m.name === currentSpot.member);
+  const memberTags = memberInfo ? memberInfo.tags.join(' ') + ' ' : '';
+  const text = encodeURIComponent(`【聖地巡礼】${currentSpot.name}\n${currentSpot.sub}\n\n${memberTags}${tags}`);
   window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
 }
 
@@ -6239,7 +6241,7 @@ function showLangComingSoon() {
     setTimeout(() => { scoreEl.style.color = ''; }, 1500);
   }
 
-  function addPendingPoint(spotName, typeLabel, pt) {
+  function _origAddPendingPoint(spotName, typeLabel, pt) {
     const list = document.getElementById('pending-list');
     if (!list) return;
     const item = document.createElement('div');
@@ -6256,7 +6258,7 @@ function showLangComingSoon() {
     left.appendChild(type);
     const ptEl = document.createElement('div');
     ptEl.className = 'pending-item-pt';
-    ptEl.textContent = `+${pt}pt?`;
+    ptEl.textContent = `+${pt}pt`;
     item.appendChild(left);
     item.appendChild(ptEl);
     list.prepend(item);
@@ -6537,7 +6539,7 @@ function filterRouteRegion(el, region) {
         var client = getSupabaseClient();
         client.auth.getSession().then(function(r) {
           var existingUser = r.data && r.data.session && r.data.session.user;
-        if (existingUser) { localStorage.setItem("trace_uid", existingUser.id); }
+        if (existingUser) { localStorage.setItem("traceive_uid", existingUser.id); }
           if (existingUser) {
             client.from('profiles').upsert({
               id: existingUser.id,
@@ -6824,20 +6826,6 @@ function getOshiMultiplier(memberName) {
 
 
 // ── メンバータブ1タップで推しランキング直接切り替え ──
-function filterMemberAndOshi(el, member) {
-  const modal = document.getElementById('oshi-ranking-modal');
-  const isOpen = modal && modal.style.display !== 'none';
-  filterMember(el, member);
-  if (isOpen) {
-    // モーダルが開いている → そのまま切り替え
-    showOshiRanking(member);
-  } else {
-    // モーダルが閉じている → 開く
-    showOshiRanking(member);
-  }
-}
-
-
 // ── メンバータブ1タップで推しランキング直接切り替え ──
 function filterMemberAndOshi(el, member) {
   const modal = document.getElementById('oshi-ranking-modal');
@@ -7179,7 +7167,6 @@ function loadUserData(data) {
 // evalSpot 後に自動保存（既存関数をラップ）
 const _origEvalSpot = evalSpot;
 // evalSpot は既に定義済みなので、保存フックを追加
-const _origAddPendingPoint = addPendingPoint;
 function addPendingPoint(spotName, typeLabel, pt) {
   _origAddPendingPoint(spotName, typeLabel, pt);
   setTimeout(saveUserData, 100);
@@ -7533,7 +7520,7 @@ function applyTransferCode() {
       <div style="font-size:24px;flex-shrink:0;">📝</div>
       <div>
         <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">巡礼報告をワンタップでX投稿</div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.65);line-height:1.6;">発見スポット名とハッシュタグ入りの投稿文を自動生成。ボタン一つでシェアできます（実装予定）</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.65);line-height:1.6;">発見スポット名とハッシュタグ入りの投稿文を自動生成。ボタン一つでシェアできます</div>
       </div>
     </div>
     <div style="background:rgba(255,255,255,0.08);border-radius:14px;padding:16px;display:flex;gap:14px;align-items:flex-start;">
