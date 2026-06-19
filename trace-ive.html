@@ -2445,6 +2445,11 @@
         <div class="settings-item-text">推し設定</div>
         <div class="settings-item-arrow" id="oshi-setting-preview" style="font-size:12px;color:var(--purple-deep);font-weight:700;">未設定</div>
       </div>
+      <div class="settings-item" onclick="shareReferralLink()">
+        <div class="settings-item-icon">🔗</div>
+        <div class="settings-item-text">友達を紹介</div>
+        <div class="settings-item-arrow" style="font-size:12px;color:var(--purple-deep);font-weight:700;">+50pt</div>
+      </div>
       <div class="settings-item" onclick="showView('route')">
         <div class="settings-item-icon">📂</div>
         <div class="settings-item-text">ルート保存・印刷</div>
@@ -5664,9 +5669,10 @@ function jumpToSpot(name) {
       const session = data && data.session;
       if (!session) { window._reportVisitInProgress = false; return; }
       const userId = session.user.id;
-      const { data: profile } = await client.from('profiles').select('points, visited_spots').eq('id', userId).single();
+      const { data: profile } = await client.from('profiles').select('points, visited_spots, referred_by').eq('id', userId).single();
       if (!profile) { window._reportVisitInProgress = false; return; }
       const visited = profile.visited_spots || [];
+      const isFirstEverReport = visited.length === 0;
       if (visited.includes(spotId)) {
         alert('このスポットはすでに巡礼済みです。');
         window._reportVisitInProgress = false;
@@ -5685,6 +5691,10 @@ function jumpToSpot(name) {
       client.from('visit_log').insert({ user_id: userId, spot_name: spotId }).then().catch(function(e) {
         console.warn('visit_log insert error:', e);
       });
+      // 友達紹介：初回の巡礼報告完了時のみ、紹介者に+50pt
+      if (isFirstEverReport && profile.referred_by) {
+        awardReferralBonus(profile.referred_by);
+      }
       alert('巡礼を記録しました！ +' + earned + 'pt獲得');
       toggleCard();
       loadProfileData();
@@ -5707,6 +5717,48 @@ function shareX() {
   const memberTags = memberInfo ? memberInfo.tags.join(' ') + ' ' : '';
   const text = encodeURIComponent(`【聖地巡礼】${currentSpot.name}\n${currentSpot.sub}\n\n${memberTags}${tags}`);
   window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+}
+
+// ── 友達紹介（土台部分・6/19実装） ──
+function getReferrerIdFromUrl() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('ref') || null;
+  } catch(e) { return null; }
+}
+
+function getMyReferralLink() {
+  const uid = localStorage.getItem('traceive_uid');
+  if (!uid) return null;
+  return 'https://trace-series.github.io/trace-ive/trace-ive.html?ref=' + uid;
+}
+
+function shareReferralLink() {
+  const link = getMyReferralLink();
+  if (!link) { alert('まずログイン（連携）してください。'); return; }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(function() {
+      alert('紹介リンクをコピーしました！\n友達に送って、初めての巡礼報告で+50pt獲得します。');
+    }).catch(function() {
+      prompt('このリンクをコピーしてください:', link);
+    });
+  } else {
+    prompt('このリンクをコピーしてください:', link);
+  }
+}
+
+function awardReferralBonus(referrerId) {
+  if (!referrerId) return;
+  const client = getSupabaseClient();
+  client.from('profiles').select('points').eq('id', referrerId).single().then(function(r) {
+    if (!r.data) return;
+    const newPts = (r.data.points || 0) + 50;
+    client.from('profiles').update({ points: newPts }).eq('id', referrerId).then().catch(function(e) {
+      console.warn('referral bonus update error:', e);
+    });
+  }).catch(function(e) {
+    console.warn('referral bonus fetch error:', e);
+  });
 }
 
 // ── ビュー切り替え ──
@@ -6544,15 +6596,18 @@ function filterRouteRegion(el, region) {
             client.from('profiles').upsert({
               id: existingUser.id,
               display_name: '巡礼者',
-              points: 0
+              points: 0,
+              referred_by: getReferrerIdFromUrl()
             }, { onConflict: 'id', ignoreDuplicates: true }).then(function(r2){console.log('profile upsert ok:', r2);}).catch(function(e2){console.warn('profile upsert error:', e2);});
           } else {
             client.auth.signInAnonymously().then(function(res) {
               if (res.data && res.data.user) {
+                localStorage.setItem("traceive_uid", res.data.user.id);
                 client.from('profiles').upsert({
                   id: res.data.user.id,
                   display_name: '巡礼者',
-                  points: 0
+                  points: 0,
+                  referred_by: getReferrerIdFromUrl()
                 }, { onConflict: 'id', ignoreDuplicates: true }).then(function(r2){console.log('profile upsert ok:', r2);}).catch(function(e2){console.warn('profile upsert error:', e2);});
               }
             });
