@@ -5750,10 +5750,20 @@ function shareReferralLink() {
 function awardReferralBonus(referrerId) {
   if (!referrerId) return;
   const client = getSupabaseClient();
-  client.from('profiles').select('points').eq('id', referrerId).single().then(function(r) {
+  client.from('profiles').select('points, referral_count, visited_spots').eq('id', referrerId).single().then(function(r) {
     if (!r.data) return;
-    const newPts = (r.data.points || 0) + 50;
-    client.from('profiles').update({ points: newPts }).eq('id', referrerId).then().catch(function(e) {
+    // 不正対策：紹介者自身が未活動（巡礼ゼロ）の場合はボーナスを見送る
+    const referrerVisited = r.data.visited_spots || [];
+    if (referrerVisited.length === 0) {
+      console.log('referral bonus skipped: referrer inactive');
+      return;
+    }
+    const newCount = (r.data.referral_count || 0) + 1;
+    let bonus = newCount <= 10 ? 50 : 30;
+    if (newCount === 5) bonus += 150;   // 称号「Scout」
+    if (newCount === 10) bonus += 400;  // 称号「Evangelist」
+    const newPts = (r.data.points || 0) + bonus;
+    client.from('profiles').update({ points: newPts, referral_count: newCount }).eq('id', referrerId).then().catch(function(e) {
       console.warn('referral bonus update error:', e);
     });
   }).catch(function(e) {
@@ -6712,13 +6722,13 @@ function loadProfileData() {
   sb.auth.getSession().then(function(res) {
     var session = res.data && res.data.session;
     if (!session) return;
-    sb.from("profiles").select("points, visited_spots").eq("id", session.user.id).single()
+    sb.from("profiles").select("points, visited_spots, referral_count").eq("id", session.user.id).single()
       .then(function(r) {
         if (!r.data) return;
         var pts = r.data.points || 0;
         var el = document.getElementById("profile-contrib-total");
         if (el) el.textContent = pts + " pt";
-        if (typeof updateUserRank === 'function') updateUserRank(pts, 0);
+        if (typeof updateUserRank === 'function') updateUserRank(pts, r.data.referral_count || 0);
         var visited = (r.data.visited_spots || []).length;
         var vel = document.getElementById("profile-visited");
         if (vel) vel.textContent = visited;
