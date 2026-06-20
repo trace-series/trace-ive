@@ -2154,6 +2154,11 @@
             </div>
           </div>
         </div>
+        <div class="card-actions" style="margin-top:14px;">
+          <button class="btn-primary" onclick="reportVisit()">📸 巡礼した！</button>
+          <button class="btn-secondary" id="btn-navi" onclick="openNavi()">🗺️ ナビ</button>
+          <button class="btn-secondary" onclick="shareX()">𝕏 シェア</button>
+        </div>
         <div class="card-detail" id="card-detail" style="display:none;">
           <div class="card-detail-row">
             <span class="icon">📍</span>
@@ -2209,11 +2214,6 @@
 
           <div style="padding:12px 0 10px;">
             <button id="btn-set-origin" onclick="setOriginSpot()" style="width:100%;background:linear-gradient(135deg,#f3e8ff,#e8d5ff);border:2px solid #c084fc;border-radius:12px;padding:9px;font-size:13px;font-weight:700;color:#6b21a8;cursor:pointer;">📍 ここを起点に周辺スポットを探す</button>
-          </div>
-          <div class="card-actions">
-            <button class="btn-primary" onclick="reportVisit()">📸 巡礼した！</button>
-            <button class="btn-secondary" id="btn-navi" onclick="openNavi()">🗺️ ナビ</button>
-            <button class="btn-secondary" onclick="shareX()">𝕏 シェア</button>
           </div>
         </div>
       </div>
@@ -3127,7 +3127,7 @@
     <div class="route-rank-banner">
       <div class="route-rank-left">
         <div class="route-rank-label">現在のランク</div>
-        <div class="route-rank-name">🥇 ゴールド</div>
+        <div class="route-rank-name" id="route-rank-name">🥉 ブロンズ</div>
       </div>
       <div class="route-rank-right">
         <div class="route-opt-label">最適化 残り</div>
@@ -4832,7 +4832,14 @@ function openCard(spot) {
   document.getElementById('card-sub').textContent = spot.sub;
         if (spot.image_url) {
           const thumb = document.getElementById('card-thumb');
-          thumb.innerHTML = `<img src="${spot.image_url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`;
+          thumb.innerHTML = '';
+          const img = document.createElement('img');
+          img.src = spot.image_url;
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.objectFit = 'cover';
+          img.style.borderRadius = '8px';
+          thumb.appendChild(img);
         } else {
           document.getElementById('card-thumb').textContent = spot.icon;
         }
@@ -5307,8 +5314,26 @@ async function submitNewSpot() {
     document.getElementById('admin-modal').style.display = 'block';
     document.body.style.overflow = 'hidden';
     document.getElementById('admin-role-label').textContent = 'super_admin: @missing_link';
+    loadAdminUserCount();
     await loadPendingSubmissions();
     switchAdminTab('pending');
+  }
+
+  function loadAdminUserCount() {
+    const el = document.getElementById('admin-user-count');
+    if (!el) return;
+    el.textContent = '総ユーザー数: 読み込み中...';
+    const client = getSupabaseClient();
+    client.from('profiles').select('*', { count: 'exact', head: true }).then(function(r) {
+      if (typeof r.count === 'number') {
+        el.textContent = '総ユーザー数: ' + r.count + '人';
+      } else {
+        el.textContent = '総ユーザー数: 取得失敗';
+      }
+    }).catch(function(e) {
+      console.warn('user count error:', e);
+      el.textContent = '総ユーザー数: 取得失敗';
+    });
   }
 
   function closeAdminPanel() {
@@ -6476,12 +6501,22 @@ function filterRouteRegion(el, region) {
     if (typeof updateOptimizeBtn === 'function') updateOptimizeBtn();
   }
 
+  const RANK_DISPLAY = {
+    bronze:   '🥉 ブロンズ',
+    silver:   '🥈 シルバー',
+    gold:     '🥇 ゴールド',
+    platinum: '💎 プラチナ',
+    diamond:  '👑 ダイヤモンド'
+  };
+
   function updateOptimizeBtn() {
     const limit = getRouteLimit();
     const btn = document.getElementById('btn-optimize');
     const remaining = limit.optimizePerMonth - optimizeUsedThisMonth;
     const remEl = document.getElementById('route-opt-remaining');
     if (remEl) remEl.textContent = `${Math.max(0, remaining)} / ${limit.optimizePerMonth}回`;
+    const rankNameEl = document.getElementById('route-rank-name');
+    if (rankNameEl) rankNameEl.textContent = RANK_DISPLAY[currentUserRank] || RANK_DISPLAY.bronze;
     if (!btn) return;
     if (limit.optimizePerMonth === 0) {
       btn.className = 'btn-optimize locked';
@@ -7743,6 +7778,7 @@ function applyTransferCode() {
       <div>
         <div style="font-size:18px;font-weight:700;color:#fff;">🛡️ 管理者パネル</div>
         <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;" id="admin-role-label"></div>
+        <div style="font-size:12px;color:#c9a8ef;margin-top:4px;font-weight:700;" id="admin-user-count">総ユーザー数: 読み込み中...</div>
       </div>
       <button onclick="closeAdminPanel()" style="background:rgba(255,255,255,0.1);border:none;color:#fff;padding:8px 14px;border-radius:10px;font-size:13px;cursor:pointer;">閉じる</button>
     </div>
