@@ -7053,24 +7053,42 @@ function renderOshiRankingList(member, period) {
   const list = document.getElementById('oshi-ranking-modal-list');
   if (!list) return;
   const medals = ['🥇','🥈','🥉'];
-  const emptyHtml = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);"><div style="font-size:32px;margin-bottom:8px;">🌸</div><div style="font-size:14px;">巡礼データが集まるとランキングが表示されます</div></div>';
+  const emptyHtml = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);"><div style="font-size:32px;margin-bottom:8px;">🌸</div><div style="font-size:14px;">この期間の巡礼データはまだありません</div></div>';
   list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light);">読み込み中...</div>';
+  const cutoff = getPeriodCutoffISO(period);
   const client = getSupabaseClient();
-  client.from('profiles').select('display_name, points, oshi1, oshi2').order('points', { ascending: false }).limit(100).then(function(r) {
-    let rows = r.data || [];
-    if (member !== 'all') {
-      rows = rows.filter(function(row) { return row.oshi1 === member || row.oshi2 === member; });
-    }
-    rows = rows.filter(function(row) { return (row.points || 0) > 0; }).slice(0, 20);
-    if (rows.length === 0) { list.innerHTML = emptyHtml; return; }
+  let visitQuery = client.from('visit_log').select('user_id, spot_name, created_at');
+  if (cutoff) visitQuery = visitQuery.gte('created_at', cutoff);
+  Promise.all([
+    visitQuery,
+    client.from('profiles').select('id, display_name, oshi1, oshi2')
+  ]).then(function(results) {
+    const visits = (results[0] && results[0].data) || [];
+    const profiles = (results[1] && results[1].data) || [];
+    const profileMap = {};
+    profiles.forEach(function(p) { profileMap[p.id] = p; });
+    const userCounts = {};
+    visits.forEach(function(v) {
+      const p = profileMap[v.user_id];
+      if (member !== 'all') {
+        if (!p || (p.oshi1 !== member && p.oshi2 !== member)) return;
+      }
+      userCounts[v.user_id] = (userCounts[v.user_id] || 0) + 1;
+    });
+    let rows = Object.keys(userCounts).map(function(uid) {
+      const p = profileMap[uid];
+      return { name: (p && p.display_name) || '巡礼者', count: userCounts[uid] };
+    });
+    rows = rows.sort(function(a, b) { return b.count - a.count; }).slice(0, 20);
+    if (!rows.length) { list.innerHTML = emptyHtml; return; }
     let html = '';
     rows.forEach(function(row, i) {
       const rankDisplay = medals[i] || (i + 1) + '位';
-      const name = escapeText(row.display_name || '巡礼者');
+      const name = escapeText(row.name);
       html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid rgba(0,0,0,0.06);">';
       html += '<div style="font-size:16px;min-width:32px;">' + rankDisplay + '</div>';
       html += '<div style="flex:1;font-size:14px;font-weight:700;">' + name + '</div>';
-      html += '<div style="font-size:13px;color:var(--purple-deep);font-weight:700;">' + (row.points || 0) + 'pt</div>';
+      html += '<div style="font-size:13px;color:var(--purple-deep);font-weight:700;">' + row.count + '件</div>';
       html += '</div>';
     });
     list.innerHTML = html;
@@ -7127,41 +7145,65 @@ function initEventRankingTabs() {
 function renderSpotRanking(period) {
   var list = document.getElementById('ranking-list');
   if (!list) return;
-  var spots = SPOTS.slice().sort(function(a,b){ return (b.goodCount||0)-(a.goodCount||0); }).slice(0,20);
-  if (!spots.length) {
-    list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);"><div style="font-size:32px;margin-bottom:8px;">🗺️</div><div style="font-size:14px;">巡礼報告が集まるとランキングが表示されます</div></div>';
-    return;
-  }
-  var html = '';
-  for (var i = 0; i < spots.length; i++) {
-    var spot = spots[i];
-    var rankClass = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other';
-    var safeName = spot.name.replace(/'/g,"\\'");
-    html += '<div class="ranking-item" data-member="' + (spot.member||'') + '" onclick="jumpToSpot(\'' + safeName + '\')">';
-    html += '<div class="rank-num ' + rankClass + '">' + (i+1) + '</div>';
-    html += '<div class="rank-thumb">' + (spot.icon||'📍') + '</div>';
-    html += '<div class="rank-info">';
-    html += '<div class="rank-name">' + spot.name + '</div>';
-    html += '<div class="rank-meta">' + (spot.member||'') + ' · ' + (spot.category||'') + '</div>';
-    html += '</div>';
-    html += '<div class="rank-score">';
-    html += '<div class="rank-score-num">' + (spot.goodCount||0) + '</div>';
-    html += '<div class="rank-score-label">報告数</div>';
-    html += '</div></div>';
-  }
-  list.innerHTML = html;
+  list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light);">読み込み中...</div>';
+  var isEvent = period && period.startsWith('event:');
+  var cutoff = isEvent ? null : getPeriodCutoffISO(period);
+  var client = getSupabaseClient();
+  var query = client.from('visit_log').select('spot_name, created_at');
+  if (cutoff) query = query.gte('created_at', cutoff);
+  query.then(function(r) {
+    var rows = r.data || [];
+    var counts = {};
+    rows.forEach(function(row) { counts[row.spot_name] = (counts[row.spot_name] || 0) + 1; });
+    var ranked = SPOTS.map(function(s) { return { spot: s, count: counts[s.name] || 0 }; })
+      .filter(function(x) { return x.count > 0; })
+      .sort(function(a, b) { return b.count - a.count; })
+      .slice(0, 20);
+    if (!ranked.length) {
+      list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);"><div style="font-size:32px;margin-bottom:8px;">🗺️</div><div style="font-size:14px;">この期間の巡礼報告はまだありません</div></div>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < ranked.length; i++) {
+      var spot = ranked[i].spot;
+      var rankClass = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other';
+      var safeName = spot.name.replace(/'/g,"\\'");
+      html += '<div class="ranking-item" data-member="' + (spot.member||'') + '" onclick="jumpToSpot(\'' + safeName + '\')">';
+      html += '<div class="rank-num ' + rankClass + '">' + (i+1) + '</div>';
+      html += '<div class="rank-thumb">' + (spot.icon||'📍') + '</div>';
+      html += '<div class="rank-info">';
+      html += '<div class="rank-name">' + spot.name + '</div>';
+      html += '<div class="rank-meta">' + (spot.member||'') + ' · ' + (spot.category||'') + '</div>';
+      html += '</div>';
+      html += '<div class="rank-score">';
+      html += '<div class="rank-score-num">' + ranked[i].count + '</div>';
+      html += '<div class="rank-score-label">報告数</div>';
+      html += '</div></div>';
+    }
+    list.innerHTML = html;
+  }).catch(function(e) {
+    console.warn('spot ranking error:', e);
+    list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#f87171;">読み込みエラー</div>';
+  });
 }
 
 var currentRankingPeriod = 'year';
+
+function getPeriodCutoffISO(period) {
+  const days = { month: 30, quarter: 90, half: 182, year: 365 }[period];
+  if (!days) return null;
+  return new Date(Date.now() - days * 86400000).toISOString();
+}
 
 function loadFounderCount() {
   const countEl = document.getElementById('founder-count');
   const barEl = document.getElementById('founder-progress-bar');
   if (!countEl) return;
   const client = getSupabaseClient();
-  client.from('profiles').select('*', { count: 'exact', head: true }).then(function(r) {
-    const total = (typeof r.count === 'number') ? r.count : 0;
-    const filled = Math.min(total, 20);
+  client.from('profiles').select('id, visited_spots').then(function(r) {
+    const rows = r.data || [];
+    const activeCount = rows.filter(function(row) { return (row.visited_spots || []).length > 0; }).length;
+    const filled = Math.min(activeCount, 20);
     countEl.textContent = filled + ' / 20 名 参加済み';
     if (barEl) barEl.style.width = (filled / 20 * 100) + '%';
   }).catch(function(e) {
@@ -7178,17 +7220,10 @@ function switchRankingPeriod(el, period) {
     renderSpotRanking(period);
     return;
   }
-  // イベント期間の場合
-  if (period && period.startsWith('event:')) {
-    document.querySelectorAll('.rtab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-    currentRankingPeriod = period;
-    renderSpotRanking(period);
-    return;
-  }
   document.querySelectorAll('#ranking-period-tabs .rtab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  // バックエンド実装後にperiodに応じたデータ取得を追加
+  currentRankingPeriod = period;
+  renderSpotRanking(period);
 }
 
 // ── メンバータブ長押しで推しランキングへ ──
