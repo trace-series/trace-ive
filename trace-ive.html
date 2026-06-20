@@ -5229,6 +5229,11 @@ async function submitNewSpot() {
         var xSub = document.getElementById('x-connect-sub');
         if (xTitle && xHandle) xTitle.textContent = xHandle + ' で連携中';
         if (xSub) xSub.textContent = 'ポイント・発見者クレジットが永続保持されます';
+        if (xName) {
+          client.from('profiles').update({ display_name: xName }).eq('id', user.id).then().catch(function(e) {
+            console.warn('display_name update error:', e);
+          });
+        }
         closeOnboarding();
       }
     } catch(e) { console.warn('handleAuthCallback error:', e); }
@@ -5870,8 +5875,11 @@ function showView(name) {
   if (target) target.style.display = 'block';
   if (name === 'post') setTimeout(initPostForm, 50);
   if (name === 'route') renderRouteSpotList();
+  if (name === 'ranking') {
+    loadFounderCount();
+    renderSpotRanking(currentRankingPeriod);
+  }
   const nav = document.getElementById('nav-'+name);
-  if (name === 'profile') setTimeout(loadProfileData, 50);
   if (name === 'profile') setTimeout(loadProfileData, 50);
   if (nav) nav.classList.add('active');
   activeView = name;
@@ -6963,6 +6971,15 @@ function saveOshiSettings() {
   localStorage.setItem('traceive_oshi_v1', JSON.stringify({ oshi1, oshi2 }));
   updateOshiPreview();
   buildOshiRanking();
+  const _oshiClient = getSupabaseClient();
+  _oshiClient.auth.getSession().then(function(r) {
+    const session = r.data && r.data.session;
+    if (session) {
+      _oshiClient.from('profiles').update({ oshi1: oshi1, oshi2: oshi2 }).eq('id', session.user.id).then().catch(function(e) {
+        console.warn('oshi save (server) error:', e);
+      });
+    }
+  });
   const msg = document.getElementById('oshi-save-msg');
   msg.textContent = '✅ 保存しました！';
   setTimeout(() => {
@@ -7034,11 +7051,33 @@ function showOshiRanking(member) {
 
 function renderOshiRankingList(member, period) {
   const list = document.getElementById('oshi-ranking-modal-list');
-  const periodMult = {year:1, half:0.55, quarter:0.28, month:0.1};
-  const mult = periodMult[period] || 1;
+  if (!list) return;
   const medals = ['🥇','🥈','🥉'];
-
-  list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);"><div style="font-size:32px;margin-bottom:8px;">🌸</div><div style="font-size:14px;">巡礼データが集まるとランキングが表示されます</div></div>';
+  const emptyHtml = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);"><div style="font-size:32px;margin-bottom:8px;">🌸</div><div style="font-size:14px;">巡礼データが集まるとランキングが表示されます</div></div>';
+  list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light);">読み込み中...</div>';
+  const client = getSupabaseClient();
+  client.from('profiles').select('display_name, points, oshi1, oshi2').order('points', { ascending: false }).limit(100).then(function(r) {
+    let rows = r.data || [];
+    if (member !== 'all') {
+      rows = rows.filter(function(row) { return row.oshi1 === member || row.oshi2 === member; });
+    }
+    rows = rows.filter(function(row) { return (row.points || 0) > 0; }).slice(0, 20);
+    if (rows.length === 0) { list.innerHTML = emptyHtml; return; }
+    let html = '';
+    rows.forEach(function(row, i) {
+      const rankDisplay = medals[i] || (i + 1) + '位';
+      const name = escapeText(row.display_name || '巡礼者');
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid rgba(0,0,0,0.06);">';
+      html += '<div style="font-size:16px;min-width:32px;">' + rankDisplay + '</div>';
+      html += '<div style="flex:1;font-size:14px;font-weight:700;">' + name + '</div>';
+      html += '<div style="font-size:13px;color:var(--purple-deep);font-weight:700;">' + (row.points || 0) + 'pt</div>';
+      html += '</div>';
+    });
+    list.innerHTML = html;
+  }).catch(function(e) {
+    console.warn('oshi ranking error:', e);
+    list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#f87171;">読み込みエラー</div>';
+  });
 }
 
 function switchOshiRankingPeriod(el, period) {
@@ -7114,6 +7153,21 @@ function renderSpotRanking(period) {
 }
 
 var currentRankingPeriod = 'year';
+
+function loadFounderCount() {
+  const countEl = document.getElementById('founder-count');
+  const barEl = document.getElementById('founder-progress-bar');
+  if (!countEl) return;
+  const client = getSupabaseClient();
+  client.from('profiles').select('*', { count: 'exact', head: true }).then(function(r) {
+    const total = (typeof r.count === 'number') ? r.count : 0;
+    const filled = Math.min(total, 20);
+    countEl.textContent = filled + ' / 20 名 参加済み';
+    if (barEl) barEl.style.width = (filled / 20 * 100) + '%';
+  }).catch(function(e) {
+    console.warn('founder count error:', e);
+  });
+}
 
 function switchRankingPeriod(el, period) {
   // イベント期間の場合
