@@ -3471,9 +3471,9 @@ const GROUP_CONFIG = {
     birthdayDayMultiplier: 1.5,    // 誕生当日：1.5倍
 
   // ── シーズンイベント（カムバ・ライブ等に合わせて追加）──
-  // 例: { id: 'tokyodome2025', name: '🏟️ 東京ドーム公演', start: '2025-06-20', end: '2025-06-30' }
+  // 例: { id: 'tokyodome2026', name: '🏟️ 東京ドーム公演記念', start: '2026-06-21', end: '2026-06-27', multiplier: 1.5 }
   activeEvents: [
-    { id: 'tokyodome2025', name: '🏟️ 東京ドーム公演', start: '2025-06-20', end: '2025-06-30' },
+    { id: 'tokyodome2026', name: '🏟️ 東京ドーム公演記念', start: '2026-06-21', end: '2026-06-27', multiplier: 1.5 },
   ],
 
   // — バージョン管理 —
@@ -3536,6 +3536,80 @@ function getBirthdayEvent() {
   return null;
 }
 
+// ── ポップアップの「今日は表示しない」管理 ──
+function hasDismissedPopupToday(key) {
+  const today = new Date().toISOString().slice(0, 10);
+  return localStorage.getItem('traceive_popup_dismissed_' + key) === today;
+}
+function dismissPopupToday(key) {
+  const today = new Date().toISOString().slice(0, 10);
+  localStorage.setItem('traceive_popup_dismissed_' + key, today);
+}
+
+// ── シーズンイベント判定（東京ドーム公演など）──
+function getActiveEvent() {
+  const now = new Date();
+  const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+  for (const ev of (GROUP_CONFIG.activeEvents || [])) {
+    if (todayStr >= ev.start && todayStr <= ev.end) return ev;
+  }
+  return null;
+}
+
+function getEventMultiplier() {
+  const ev = getActiveEvent();
+  return (ev && ev.multiplier) ? ev.multiplier : 1;
+}
+
+// ── シーズンイベントポップアップ表示 ──
+function showEventPopup(ev) {
+  const overlay = document.createElement('div');
+  overlay.id = 'event-overlay';
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:9999;
+    background:rgba(61,26,94,0.85);
+    display:flex;align-items:center;justify-content:center;
+    animation:fadeInBd 0.4s ease;
+  `;
+  overlay.innerHTML = `
+    <div style="
+      background:linear-gradient(135deg,#3d1a5e,#7b1a3e);
+      border-radius:24px;padding:32px 28px;max-width:320px;width:90%;
+      text-align:center;color:#fff;position:relative;
+      box-shadow:0 20px 60px rgba(0,0,0,0.5);
+    ">
+      <button onclick="document.getElementById('event-overlay').remove()" style="
+        position:absolute;top:14px;right:16px;background:none;border:none;
+        color:rgba(255,255,255,0.6);font-size:22px;cursor:pointer;
+      ">×</button>
+      <div style="font-size:40px;margin-bottom:8px;">🏟️</div>
+      <div style="font-size:20px;font-weight:700;margin-bottom:4px;">${ev.name}</div>
+      <div style="font-size:14px;opacity:0.85;margin:10px 0 16px;">✨ リリース記念 ✨</div>
+      <div style="
+        background:rgba(255,255,255,0.15);border-radius:12px;
+        padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:1.6;
+      ">
+        期間中の巡礼報告は<br>
+        <span style="font-size:20px;font-weight:700;color:#ffd700;">${ev.multiplier}倍</span>
+        ポイント！
+      </div>
+      <div style="
+        background:rgba(255,255,255,0.1);border-radius:10px;
+        padding:8px 12px;font-size:12px;color:#e8d0f8;
+      ">${ev.start} 〜 ${ev.end}</div>
+      <div onclick="dismissPopupToday('event_${ev.id}');document.getElementById('event-overlay').remove();" style="
+        margin-top:14px;font-size:12px;color:rgba(255,255,255,0.5);
+        cursor:pointer;text-decoration:underline;
+      ">今日は表示しない</div>
+    </div>
+    <style>
+      @keyframes fadeInBd { from{opacity:0;transform:scale(0.92)} to{opacity:1;transform:scale(1)} }
+    </style>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
 // ── 誕生日ポップアップ表示 ──
 function showBirthdayPopup(event) {
   const overlay = document.createElement('div');
@@ -3586,6 +3660,10 @@ function showBirthdayPopup(event) {
         border:none;border-radius:14px;padding:10px 20px;
         color:#fff;font-size:13px;font-weight:700;cursor:pointer;width:100%;
       ">𝕏 お祝いポストを送る</button>
+      <div onclick="dismissPopupToday('birthday');document.getElementById('birthday-overlay').remove();" style="
+        margin-top:14px;font-size:12px;color:rgba(255,255,255,0.5);
+        cursor:pointer;text-decoration:underline;
+      ">今日は表示しない</div>
     </div>
     <style>
       @keyframes fadeInBd { from{opacity:0;transform:scale(0.92)} to{opacity:1;transform:scale(1)} }
@@ -6718,7 +6796,12 @@ function filterRouteRegion(el, region) {
     // 誕生日ポップアップ（500ms遅延でページ表示後に出す）
     setTimeout(() => {
       const bdEvent = getBirthdayEvent();
-      if (bdEvent) showBirthdayPopup(bdEvent);
+      if (bdEvent && !hasDismissedPopupToday('birthday')) {
+        showBirthdayPopup(bdEvent);
+      } else if (!bdEvent) {
+        const ev = getActiveEvent();
+        if (ev && !hasDismissedPopupToday('event_' + ev.id)) showEventPopup(ev);
+      }
     }, 500);
     // 推し設定を読み込む
     loadOshiSettings();
