@@ -5749,11 +5749,37 @@ function jumpToSpot(name) {
 }
 
 // ── 巡礼報告 ──
+  const REPORT_VISIT_MAX_DISTANCE = 300; // メートル
+
   function reportVisit() {
       if (window._reportVisitInProgress) return;
       window._reportVisitInProgress = true;
     const spotId = currentSpot && currentSpot.name;
     if (!spotId) { window._reportVisitInProgress = false; return; }
+    if (!navigator.geolocation) {
+      alert('お使いの環境では位置情報を取得できません。巡礼報告には位置情報の利用が必要です。');
+      window._reportVisitInProgress = false;
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      function(pos) {
+        const dist = calcDistance(pos.coords.latitude, pos.coords.longitude, currentSpot.lat, currentSpot.lng);
+        if (dist > REPORT_VISIT_MAX_DISTANCE) {
+          alert('現在地がスポットから離れすぎています（約' + Math.round(dist) + 'm）。現地で改めて報告してください。');
+          window._reportVisitInProgress = false;
+          return;
+        }
+        doReportVisit(spotId);
+      },
+      function(err) {
+        alert('位置情報を取得できませんでした。設定で位置情報の利用を許可してから、もう一度お試しください。');
+        window._reportVisitInProgress = false;
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  function doReportVisit(spotId) {
     const client = getSupabaseClient();
     client.auth.getSession().then(async ({ data }) => {
       const session = data && data.session;
