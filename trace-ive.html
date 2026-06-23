@@ -5510,7 +5510,7 @@ async function submitNewSpot() {
         var dt = new Date(n.created_at).toLocaleDateString('ja-JP');
         return '<div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:12px 14px;margin-bottom:10px">'
           + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">'
-          + '<div style="font-size:13px;font-weight:700;color:#fff">' + escapeHtml(n.title) + '</div>'
+          + '<div style="font-size:13px;font-weight:700;color:#fff"><span style="color:rgba(255,255,255,0.4);font-size:11px;margin-right:6px">' + (idx+1) + '.</span>' + escapeHtml(n.title) + '</div>'
           + '<div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px">'
           + '<button onclick="toggleNoticeActive(' + JSON.stringify(n.id) + ',' + n.is_active + ')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:' + bg + ';color:' + col + '">' + label + '</button>'
           + '<button onclick="moveNotice(' + JSON.stringify(n.id) + ',' + (n.sort_order || 0) + ',-1)" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:rgba(255,255,255,0.15);color:#fff">↑</button>'
