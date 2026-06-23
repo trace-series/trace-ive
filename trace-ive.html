@@ -5471,7 +5471,7 @@ async function submitNewSpot() {
   async function loadNotices() {
     try {
       const sb = getSupabaseClient();
-      const { data, error } = await sb.from('notices').select('*').eq('is_active', true).order('created_at', { ascending: false });
+      const { data, error } = await sb.from('notices').select('*').eq('is_active', true).order('sort_order', { ascending: true });
       const wrap = document.getElementById('notice-banner-wrap');
       const list = document.getElementById('notice-list-items');
       const badge = document.getElementById('notice-count-badge');
@@ -5496,7 +5496,7 @@ async function submitNewSpot() {
   async function loadAdminNotices() {
     try {
       const sb = getSupabaseClient();
-      const { data, error } = await sb.from('notices').select('*').order('created_at', { ascending: false });
+      const { data, error } = await sb.from('notices').select('*').order('sort_order', { ascending: true });
       const el = document.getElementById('admin-notices-list');
       if (!el) return;
       if (error || !data || data.length === 0) {
@@ -5513,6 +5513,8 @@ async function submitNewSpot() {
           + '<div style="font-size:13px;font-weight:700;color:#fff">' + escapeHtml(n.title) + '</div>'
           + '<div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px">'
           + '<button onclick="toggleNoticeActive(' + JSON.stringify(n.id) + ',' + n.is_active + ')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:' + bg + ';color:' + col + '">' + label + '</button>'
+          + '<button onclick="moveNotice(' + JSON.stringify(n.id) + ',' + n.sort_order + ',-1)" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:rgba(255,255,255,0.15);color:#fff">↑</button>'
+          + '<button onclick="moveNotice(' + JSON.stringify(n.id) + ',' + n.sort_order + ',1)" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:rgba(255,255,255,0.15);color:#fff">↓</button>'
           + '<button onclick="deleteNotice(' + JSON.stringify(n.id) + ')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:#f87171;color:#fff">削除</button>'
           + '</div></div>'
           + (n.body ? '<div style="font-size:12px;color:rgba(255,255,255,0.5)">' + escapeHtml(n.body) + '</div>' : '')
@@ -5520,6 +5522,23 @@ async function submitNewSpot() {
           + '</div>';
       }).join('');
     } catch(e) { console.warn('loadAdminNotices error:', e); }
+  }
+
+
+  async function moveNotice(id, currentOrder, direction) {
+    try {
+      const sb = getSupabaseClient();
+      const { data } = await sb.from('notices').select('id,sort_order').order('sort_order', { ascending: true });
+      if (!data) return;
+      const idx = data.findIndex(function(n) { return n.id === id; });
+      const swapIdx = idx + direction;
+      if (swapIdx < 0 || swapIdx >= data.length) return;
+      const swapItem = data[swapIdx];
+      await sb.from('notices').update({ sort_order: swapItem.sort_order }).eq('id', id);
+      await sb.from('notices').update({ sort_order: currentOrder }).eq('id', swapItem.id);
+      loadAdminNotices();
+      loadNotices();
+    } catch(e) { console.warn('moveNotice error:', e); }
   }
 
   async function postNotice() {
