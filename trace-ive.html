@@ -2103,6 +2103,17 @@
 
   <!-- MAP VIEW -->
   <div id="view-map">
+  <!-- ── お知らせバナー ── -->
+  <div id="notice-banner-wrap" style="display:none;margin:8px 8px 0;border-radius:12px;overflow:hidden;background:#1a0a2e;border:1px solid rgba(201,168,239,0.3);">
+    <div id="notice-banner-header" onclick="toggleNoticeBanner()" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;">
+      <span style="font-size:13px;font-weight:700;color:#c9a8ef;">📢 お知らせ <span id="notice-count-badge" style="background:rgba(201,168,239,0.2);color:#c9a8ef;padding:1px 8px;border-radius:20px;font-size:11px;"></span></span>
+      <span id="notice-banner-arrow" style="color:#c9a8ef;font-size:12px;">▼</span>
+    </div>
+    <div id="notice-banner-body" style="display:none;padding:0 14px 12px;">
+      <div id="notice-list-items"></div>
+    </div>
+  </div>
+
     <div class="map-container">
 
       <button id="list-view-toggle" onclick="toggleListView()">リスト</button>
@@ -5425,7 +5436,7 @@ async function submitNewSpot() {
   }
 
   function switchAdminTab(tab) {
-    ['pending','spots','admins'].forEach(t => {
+    ['pending','spots','admins','notices'].forEach(t => {
       document.getElementById('admin-tab-' + t).style.display = t === tab ? 'block' : 'none';
       const btn = document.getElementById('atab-' + t);
       if (btn) {
@@ -5436,6 +5447,73 @@ async function submitNewSpot() {
     });
     if (tab === 'spots') loadAdminSpots();
     if (tab === 'admins') loadAdminList();
+    if (tab === 'notices') loadAdminNotices();
+  }
+
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── お知らせ機能 ──
+
+  async function loadNotices() {
+    const sb = getSupabaseClient();
+    const { data, error } = await sb.from('notices').select('*').eq('is_active', true).order('created_at', { ascending: false });
+    const wrap = document.getElementById('notice-banner-wrap');
+    const list = document.getElementById('notice-list-items');
+    const badge = document.getElementById('notice-count-badge');
+    if (error || !data || data.length === 0) { if (wrap) wrap.style.display = 'none'; return; }
+    if (wrap) wrap.style.display = 'block';
+    if (badge) badge.textContent = data.length + '件';
+    if (list) list.innerHTML = data.map(n => '<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08);"><div style="font-size:13px;font-weight:700;color:#e9d5ff;margin-bottom:2px;">' + escapeHtml(n.title) + '</div>' + (n.body ? '<div style="font-size:12px;color:rgba(255,255,255,0.6);line-height:1.5;">' + escapeHtml(n.body) + '</div>' : '') + '</div>').join('');
+  }
+
+  function toggleNoticeBanner() {
+    const body = document.getElementById('notice-banner-body');
+    const arrow = document.getElementById('notice-banner-arrow');
+    if (!body) return;
+    const isOpen = body.style.display !== 'none';
+    body.style.display = isOpen ? 'none' : 'block';
+    if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
+  }
+
+  async function loadAdminNotices() {
+    const sb = getSupabaseClient();
+    const { data, error } = await sb.from('notices').select('*').order('created_at', { ascending: false });
+    const el = document.getElementById('admin-notices-list');
+    if (!el) return;
+    if (error || !data || data.length === 0) { el.innerHTML = '<div style="color:rgba(255,255,255,0.4);font-size:13px;text-align:center;padding:20px;">投稿はありません</div>'; return; }
+    el.innerHTML = data.map(n => '<div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:12px 14px;margin-bottom:10px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;"><div style="font-size:13px;font-weight:700;color:#fff;">' + escapeHtml(n.title) + '</div><div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px;"><button onclick="toggleNoticeActive('' + n.id + '',' + n.is_active + ')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:' + (n.is_active ? '#4ade80' : 'rgba(255,255,255,0.15)') + ';color:' + (n.is_active ? '#14532d' : 'rgba(255,255,255,0.6)') + ';">' + (n.is_active ? '公開中' : '非公開') + '</button><button onclick="deleteNotice('' + n.id + '')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:#f87171;color:#fff;">削除</button></div></div>' + (n.body ? '<div style="font-size:12px;color:rgba(255,255,255,0.5);">' + escapeHtml(n.body) + '</div>' : '') + '<div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:4px;">' + new Date(n.created_at).toLocaleDateString('ja-JP') + '</div></div>').join('');
+  }
+
+  async function postNotice() {
+    const title = (document.getElementById('notice-title-input').value || '').trim();
+    const body = (document.getElementById('notice-body-input').value || '').trim();
+    const msg = document.getElementById('notice-post-msg');
+    if (!title) { if (msg) msg.textContent = 'タイトルを入力してください'; return; }
+    const sb = getSupabaseClient();
+    const { error } = await sb.from('notices').insert({ title, body: body || null });
+    if (error) { if (msg) msg.textContent = 'エラー: ' + error.message; }
+    else {
+      if (msg) msg.textContent = '投稿しました！';
+      document.getElementById('notice-title-input').value = '';
+      document.getElementById('notice-body-input').value = '';
+      loadAdminNotices(); loadNotices();
+      setTimeout(() => { if (msg) msg.textContent = ''; }, 3000);
+    }
+  }
+
+  async function toggleNoticeActive(id, current) {
+    const sb = getSupabaseClient();
+    await sb.from('notices').update({ is_active: !current }).eq('id', id).then(() => { loadAdminNotices(); loadNotices(); }).catch(e => alert('エラー: ' + e.message));
+  }
+
+  async function deleteNotice(id) {
+    if (!confirm('このお知らせを削除しますか？')) return;
+    const sb = getSupabaseClient();
+    await sb.from('notices').delete().eq('id', id).then(() => { loadAdminNotices(); loadNotices(); }).catch(e => alert('エラー: ' + e.message));
   }
 
   async function loadPendingSubmissions() {
@@ -6807,6 +6885,7 @@ function filterRouteRegion(el, region) {
     loadOshiSettings();
     loadProfileData();
     handleAuthCallback();
+    loadNotices();
     // 匿名ログイン（独立実行・マップに影響しない）
     setTimeout(function() {
       try {
@@ -7992,6 +8071,9 @@ function applyTransferCode() {
       <button onclick="switchAdminTab('admins')" id="atab-admins" style="flex:1;padding:10px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border:none;border-radius:10px;font-size:13px;cursor:pointer;">
         管理者
       </button>
+      <button onclick="switchAdminTab('notices')" id="atab-notices" style="flex:1;padding:10px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border:none;border-radius:10px;font-size:13px;cursor:pointer;">
+        お知らせ
+      </button>
     </div>
 
     <!-- 承認待ちタブ -->
@@ -8026,6 +8108,22 @@ function applyTransferCode() {
 
   </div>
 </div>
+
+    <!-- お知らせタブ -->
+    <div id="admin-tab-notices" style="display:none;">
+      <div style="margin-bottom:16px;">
+        <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:12px;">📢 お知らせ管理</div>
+        <div style="background:rgba(255,255,255,0.06);border-radius:14px;padding:16px;margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:10px;">新規投稿</div>
+          <input id="notice-title-input" type="text" placeholder="タイトル" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#fff;font-size:13px;margin-bottom:8px;box-sizing:border-box;">
+          <textarea id="notice-body-input" placeholder="本文" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#fff;font-size:13px;margin-bottom:8px;box-sizing:border-box;min-height:80px;resize:vertical;font-family:inherit;"></textarea>
+          <button onclick="postNotice()" style="width:100%;padding:10px;background:linear-gradient(135deg,#3d1a5e,#6b2d8b);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">📢 投稿する</button>
+          <div id="notice-post-msg" style="font-size:12px;color:#4ade80;margin-top:6px;min-height:16px;"></div>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:8px;">投稿済み一覧</div>
+        <div id="admin-notices-list"><div style="text-align:center;color:rgba(255,255,255,0.4);padding:20px;">読み込み中...</div></div>
+      </div>
+    </div>
 
 <!-- 管理者ログインモーダル -->
 <div id="admin-login-modal" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.85);align-items:center;justify-content:center;">
