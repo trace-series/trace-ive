@@ -6885,7 +6885,7 @@ function filterRouteRegion(el, region) {
     loadOshiSettings();
     loadProfileData();
     handleAuthCallback();
-    loadNotices();
+    setTimeout(loadNotices, 2000);
     // 匿名ログイン（独立実行・マップに影響しない）
     setTimeout(function() {
       try {
