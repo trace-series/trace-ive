@@ -5439,7 +5439,7 @@ async function submitNewSpot() {
   }
 
   async function loadPendingSubmissions() {
-    const list = document.getElementById('pending-list');
+    const list = document.getElementById('admin-pending-list');
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/submissions?status=eq.pending&order=created_at.desc`, {
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
@@ -6501,7 +6501,7 @@ function showLangComingSoon() {
   }
 
   function _origAddPendingPoint(spotName, typeLabel, pt) {
-    const list = document.getElementById('pending-list');
+    const list = document.getElementById('admin-pending-list');
     if (!list) return;
     const item = document.createElement('div');
     item.className = 'pending-item';
@@ -7506,7 +7506,7 @@ function loadUserData(data) {
 
   // 確定待ちポイント復元
   if (Array.isArray(data.pending) && data.pending.length > 0) {
-    const list = document.getElementById('pending-list');
+    const list = document.getElementById('admin-pending-list');
     if (list) {
       list.innerHTML = '';
       data.pending.forEach(p => {
