@@ -5513,8 +5513,8 @@ async function submitNewSpot() {
           + '<div style="font-size:13px;font-weight:700;color:#fff"><span style="color:rgba(255,255,255,0.4);font-size:11px;margin-right:6px">' + (idx+1) + '.</span>' + escapeHtml(n.title) + '</div>'
           + '<div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px">'
           + '<button onclick="toggleNoticeActive(' + JSON.stringify(n.id) + ',' + n.is_active + ')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:' + bg + ';color:' + col + '">' + label + '</button>'
-          + '<button onclick="moveNotice(' + JSON.stringify(n.id) + ',' + (n.sort_order || 0) + ',-1)" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:rgba(255,255,255,0.15);color:#fff">↑</button>'
-          + '<button onclick="moveNotice(' + JSON.stringify(n.id) + ',' + (n.sort_order || 0) + ',1)" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:rgba(255,255,255,0.15);color:#fff">↓</button>'
+          + '<button data-id="' + n.id + '" data-order="' + (n.sort_order || 0) + '" data-dir="-1" onclick="moveNoticeBtn(this)" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:rgba(255,255,255,0.15);color:#fff">↑</button>'
+          + '<button data-id="' + n.id + '" data-order="' + (n.sort_order || 0) + '" data-dir="1" onclick="moveNoticeBtn(this)" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:rgba(255,255,255,0.15);color:#fff">↓</button>'
           + '<button onclick="deleteNotice(' + JSON.stringify(n.id) + ')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:#f87171;color:#fff">削除</button>'
           + '</div></div>'
           + (n.body ? '<div style="font-size:12px;color:rgba(255,255,255,0.5)">' + escapeHtml(n.body) + '</div>' : '')
@@ -5524,6 +5524,14 @@ async function submitNewSpot() {
     } catch(e) { console.warn('loadAdminNotices error:', e); }
   }
 
+
+
+  function moveNoticeBtn(btn) {
+    var id = btn.getAttribute('data-id');
+    var order = parseInt(btn.getAttribute('data-order')) || 0;
+    var dir = parseInt(btn.getAttribute('data-dir'));
+    moveNotice(id, order, dir);
+  }
 
   async function moveNotice(id, currentOrder, direction) {
     try {
