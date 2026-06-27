@@ -7096,6 +7096,7 @@ function loadProfileData() {
         var pel = document.getElementById("stat-pilgrim");
         if (pel) pel.textContent = visited;
       });
+        getSupabaseClient().from('point_log').select('category').eq('user_id', r.data.id).then(function(res){ var plData = res.data; if(!plData) return; var accEl = document.getElementById('contrib-accurate'); var earEl = document.getElementById('contrib-early'); if(accEl) accEl.textContent = plData.filter(function(p){return p.category==='正確報告';}).length; if(earEl) earEl.textContent = plData.filter(function(p){return p.category==='早期発見';}).length; });
   });
 }
 
