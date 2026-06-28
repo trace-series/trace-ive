@@ -2321,19 +2321,6 @@
       <div class="contrib-breakdown">
         <div class="contrib-item">
           <span class="contrib-item-icon">🎯</span>
-          <span class="contrib-item-label">正確報告</span>
-          <span class="contrib-item-val" id="contrib-accurate">0pt</span>
-        </div>
-        <div class="contrib-item">
-          <span class="contrib-item-icon">🔍</span>
-          <span class="contrib-item-label">早期発見</span>
-          <span class="contrib-item-val" id="contrib-early">0pt</span>
-        </div>
-        <div class="contrib-item">
-          <span class="contrib-item-icon">⚡</span>
-          <span class="contrib-item-label">スピード報告</span>
-          <span class="contrib-item-val" id="contrib-speed">0pt</span>
-        </div>
       </div>
     </div>
 
@@ -2393,7 +2380,7 @@
       <div class="badge-card locked">
         <div class="badge-icon">🎯</div>
         <div class="badge-name">正確レポーター</div>
-        <div class="badge-desc">正確報告100pt超え</div>
+        <div class="badge-desc">登録スポットへのGOOD評価累計50pt以上</div>
       </div>
       <div class="badge-card locked">
         <div class="badge-icon">👑</div>
@@ -2937,14 +2924,14 @@
         <span class="pr-badge-icon">🎯</span>
         <div class="pr-badge-info">
           <div class="pr-badge-name">正確レポーター</div>
-          <div class="pr-badge-cond">正確報告ポイント累計100pt以上</div>
+          <div class="pr-badge-cond">登録スポットへのGOOD評価累計50pt以上</div>
         </div>
       </div>
       <div class="pr-badge-row">
         <span class="pr-badge-icon">⚡</span>
         <div class="pr-badge-info">
           <div class="pr-badge-name">スピードレポーター</div>
-          <div class="pr-badge-cond">24時間以内のスピード報告×10件確定</div>
+          
         </div>
       </div>
       <div class="pr-badge-row">
@@ -7096,7 +7083,6 @@ function loadProfileData() {
         var pel = document.getElementById("stat-pilgrim");
         if (pel) pel.textContent = visited;
       });
-        getSupabaseClient().from('point_log').select('category').eq('user_id', r.data.id).then(function(res){ var plData = res.data; if(!plData) return; var accEl = document.getElementById('contrib-accurate'); var earEl = document.getElementById('contrib-early'); if(accEl) accEl.textContent = plData.filter(function(p){return p.category==='正確報告';}).length; if(earEl) earEl.textContent = plData.filter(function(p){return p.category==='早期発見';}).length; });
   });
 }
 
