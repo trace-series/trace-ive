@@ -7676,8 +7676,18 @@ function loadUserData(data) {
 const _origEvalSpot = evalSpot;
 // evalSpot は既に定義済みなので、保存フックを追加
 function addPendingPoint(spotName, typeLabel, pt) {
-  _origAddPendingPoint(spotName, typeLabel, pt);
-  setTimeout(saveUserData, 100);
+  getSupabaseClient().auth.getUser().then(({ data }) => {
+    if (!data.user) return;
+    getSupabaseClient().from('point_log').insert({
+      user_id: data.user.id,
+      category: typeLabel,
+      amount: pt,
+      spot_name: spotName,
+      created_at: new Date().toISOString()
+    }).then(({ error }) => {
+      if (error) console.error('point_log insert error:', error);
+    });
+  });
 }
 
 // ════════════════════════════════════════

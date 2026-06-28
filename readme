@@ -1,0 +1,39 @@
+cat > /tmp/make_readme.py << 'PYEOF'
+readme = """# Trace IVE 🗺️
+
+**IVEメンバーゆかりの聖地を地図で探そう。巡礼報告・評価・ポイント・バッジ。K-POP聖地巡礼アプリ。**
+
+🔗 [アプリを開く](https://trace-series.github.io/trace-ive/trace-ive.html)
+
+---
+
+## 機能
+
+- 📍 IVE聖地スポットのマップ表示
+- 🚶 巡礼報告でポイント獲得
+- ⭐ スポット評価システム
+- 🏆 ランキング・バッジ
+- 🔗 紹介リンクで友達を招待
+- 📢 お知らせ機能
+- 𝕏 #TraceIVE シェアでポイント獲得
+
+## Trace シリーズ
+
+| アプリ | グループ | 状態 |
+|--------|----------|------|
+| Trace IVE | IVE | ✅ 公開中 |
+| Trace ILLIT | ILLIT | 🔨 鋭意制作中 |
+| Trace Hearts2Hearts | Hearts2Hearts | 🔨 鋭意制作中 |
+
+---
+
+© 2026 missing link — 非公式ファンアプリです。STARSHIP ENTERTAINMENT・IVEとは一切関係ありません。
+"""
+
+with open('/tmp/README.md', 'w') as f:
+    f.write(readme)
+print('OK')
+PYEOF
+python3 /tmp/make_readme.py
+cp /tmp/README.md ~/Documents/trace-ive/README.md
+cd ~/Documents/trace-ive && git add README.md && git commit -m "docs: README追加" && git push
