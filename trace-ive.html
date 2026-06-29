@@ -5485,7 +5485,7 @@ async function submitNewSpot() {
           + '<button onclick="toggleNoticeActive(' + JSON.stringify(n.id) + ',' + n.is_active + ')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:' + bg + ';color:' + col + '">' + label + '</button>'
           + '<button data-id="' + n.id + '" data-order="' + (n.sort_order || 0) + '" data-dir="-1" onclick="moveNoticeBtn(this)" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:rgba(255,255,255,0.15);color:#fff">↑</button>'
           + '<button data-id="' + n.id + '" data-order="' + (n.sort_order || 0) + '" data-dir="1" onclick="moveNoticeBtn(this)" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:rgba(255,255,255,0.15);color:#fff">↓</button>'
-          + '<button onclick="deleteNotice(' + n.id + ')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:#f87171;color:#fff">削除</button>'
+              + '<button data-notice-id="' + n.id + '" onclick="deleteNotice(this.dataset.noticeId)" style="font-size:11px;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;background:#f87171;color:#fff">削除</button>'
           + '</div></div>'
           + (n.body ? '<div style="font-size:12px;color:rgba(255,255,255,0.5)">' + escapeHtml(n.body) + '</div>' : '')
           + '<div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:4px">' + dt + '</div>'
