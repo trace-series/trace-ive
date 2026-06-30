@@ -7053,9 +7053,13 @@ function loadProfileData() {
   sb.auth.getSession().then(function(res) {
     var session = res.data && res.data.session;
     if (!session) return;
-    sb.from("profiles").select("points, visited_spots, referral_count").eq("id", session.user.id).single()
+    sb.from("profiles").select("points, visited_spots, referral_count, is_founder").eq("id", session.user.id).single()
       .then(function(r) {
         if (!r.data) return;
+          if (r.data.is_founder) {
+            var founderCard = document.querySelector('#badge-grid .badge-card.locked');
+            if (founderCard) founderCard.classList.remove('locked');
+          }
         var pts = r.data.points || 0;
         var el = document.getElementById("profile-contrib-total");
         if (el) el.textContent = pts + " pt";
