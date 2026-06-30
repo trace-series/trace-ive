@@ -7432,9 +7432,9 @@ function loadFounderCount() {
   const barEl = document.getElementById('founder-progress-bar');
   if (!countEl) return;
   const client = getSupabaseClient();
-  client.from('profiles').select('id, visited_spots').then(function(r) {
+  client.from('profiles').select('id, is_founder').then(function(r) {
     const rows = r.data || [];
-    const activeCount = rows.filter(function(row) { return (row.visited_spots || []).length > 0; }).length;
+    const activeCount = rows.filter(function(row) { return row.is_founder === true; }).length;
     const filled = Math.min(activeCount, 20);
     countEl.textContent = filled + ' / 20 名 参加済み';
     if (barEl) barEl.style.width = (filled / 20 * 100) + '%';
