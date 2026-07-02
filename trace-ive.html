@@ -6087,7 +6087,7 @@ function awardReferralBonus(referrerId) {
 let activeView = 'map';
 
 function showView(name) {
-  ['map','ranking','feed','post','profile','route','pointrules','terms','privacy','howto'].forEach(v => {
+  ['map','ranking','feed','post','profile','route','pointrules','terms','privacy','howto','settings'].forEach(v => {
     const el = document.getElementById('view-'+v);
     if (el) el.style.display = 'none';
     const nav = document.getElementById('nav-'+v);
