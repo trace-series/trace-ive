@@ -2350,6 +2350,11 @@
       </div>
     </div>
 
+    <div class="profile-section-title">📋 ポイント履歴</div>
+    <div id="point-log-list" style="max-height:200px;overflow-y:auto;">
+      <div style="color:var(--text-mid);font-size:13px;text-align:center;padding:16px;">履歴を読み込み中...</div>
+    </div>
+
     <div class="profile-section-title">🏅 バッジコレクション</div>
     <div class="badge-grid" id="badge-grid">
       <div class="badge-card locked">
@@ -7069,6 +7074,57 @@ function loadProfileData() {
         if (vel) vel.textContent = visited;
         var pel = document.getElementById("stat-pilgrim");
         if (pel) pel.textContent = visited;
+
+        // ポイント履歴表示 & バッジ解除(.thenチェーンのみ使用。awaitは使わない)
+        var supabase3 = getSupabaseClient();
+        supabase3.from('point_log').select('category, amount, spot_name, created_at').eq('user_id', session.user.id)
+          .then(function(plRes) {
+            var plData = plRes.data;
+            var logEl = document.getElementById('point-log-list');
+            if (logEl) {
+              if (!plData || plData.length === 0) {
+                logEl.innerHTML = '<div style="color:var(--text-mid);font-size:13px;text-align:center;padding:16px;">まだ履歴がありません</div>';
+              } else {
+                var sorted = plData.slice().sort(function(a,b){ return new Date(b.created_at||0) - new Date(a.created_at||0); });
+                logEl.innerHTML = sorted.slice(0,20).map(function(p) {
+                  return '<div style="display:flex;justify-content:space-between;padding:8px 4px;border-bottom:1px solid var(--border);font-size:13px;"><span>' + p.category + (p.spot_name ? ' · ' + p.spot_name : '') + '</span><span style="color:var(--accent);">+' + p.amount + 'pt</span></div>';
+                }).join('');
+              }
+            }
+            // バッジ解除: 最初の発見者
+            if (plData && plData.some(function(p){ return p.category === '早期発見'; })) {
+              document.querySelectorAll('.badge-card').forEach(function(elx) {
+                var nameEl = elx.querySelector('.badge-name');
+                if (nameEl && nameEl.textContent === '最初の発見者') elx.classList.remove('locked');
+              });
+            }
+
+            // バッジ解除: マッパー(承認済み5件以上)
+            var supabase4 = getSupabaseClient();
+            supabase4.from('submissions').select('id', { count: 'exact', head: true }).eq('submitter_id', session.user.id).eq('status', 'approved')
+              .then(function(subRes) {
+                var approvedCount = subRes.count || 0;
+                if (approvedCount >= 5) {
+                  document.querySelectorAll('.badge-card').forEach(function(elx) {
+                    var nameEl = elx.querySelector('.badge-name');
+                    if (nameEl && nameEl.textContent === 'マッパー') elx.classList.remove('locked');
+                  });
+                }
+                // バッジ解除: つなぎ役・Scout・Evangelist(紹介数)
+                var ref = r.data.referral_count || 0;
+                var badgeRefMap = { 'つなぎ役': 1, 'Scout': 5, 'Evangelist': 10 };
+                Object.keys(badgeRefMap).forEach(function(name) {
+                  if (ref >= badgeRefMap[name]) {
+                    document.querySelectorAll('.badge-card').forEach(function(elx) {
+                      var nameEl = elx.querySelector('.badge-name');
+                      if (nameEl && nameEl.textContent === name) elx.classList.remove('locked');
+                    });
+                  }
+                });
+              })
+              .catch(function(e4) { console.warn('submissions count error:', e4); });
+          })
+          .catch(function(e3) { console.warn('point_log fetch error:', e3); });
       });
   });
 }
