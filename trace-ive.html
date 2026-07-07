@@ -6094,7 +6094,7 @@ function showView(name) {
     if (nav) nav.classList.remove('active');
   });
   const target = document.getElementById('view-'+name);
-  if (target) target.style.display = 'block'; target && target.removeAttribute && target.style.removeProperty('display') || (target && (target.style.display = 'block'));
+  if (target) target.style.display = 'block';
   if (name === 'post') setTimeout(initPostForm, 50);
   if (name === 'route') renderRouteSpotList();
   if (name === 'ranking') {
