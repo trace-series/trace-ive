@@ -3744,6 +3744,144 @@ async function saveSubmissionToDB(submission) {
   }
 }
 
+// ── タイムライン（承認済み投稿＋巡礼報告をまとめて表示） ──
+function timeAgoLabel(iso) {
+  if (!iso) return '';
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diffMs / 60000);
+  if (min < 1) return 'たった今';
+  if (min < 60) return min + '分前';
+  const hour = Math.floor(min / 60);
+  if (hour < 24) return hour + '時間前';
+  return Math.floor(hour / 24) + '日前';
+}
+
+const LIKED_POSTS_KEY = 'traceive_liked_posts_v1';
+function hasLikedPost(id) {
+  try {
+    const list = JSON.parse(localStorage.getItem(LIKED_POSTS_KEY) || '[]');
+    return list.includes(id);
+  } catch(e) { return false; }
+}
+function recordLikedPost(id) {
+  try {
+    const list = JSON.parse(localStorage.getItem(LIKED_POSTS_KEY) || '[]');
+    if (!list.includes(id)) list.push(id);
+    localStorage.setItem(LIKED_POSTS_KEY, JSON.stringify(list));
+  } catch(e) {}
+}
+
+async function toggleLike(id, btn) {
+  if (hasLikedPost(id)) return; // 1人1回まで
+  if (btn) { btn.disabled = true; }
+  try {
+    const client = getSupabaseClient();
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/submissions?id=eq.${id}&select=likes_count`, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    const [row] = await res.json();
+    const current = (row && row.likes_count) || 0;
+    const next = current + 1;
+    await fetch(`${SUPABASE_URL}/rest/v1/submissions?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ likes_count: next })
+    });
+    recordLikedPost(id);
+    if (btn) {
+      btn.classList.add('liked');
+      btn.innerHTML = '❤️ ' + next + '件';
+    }
+  } catch(e) {
+    console.warn('いいね失敗:', e);
+    if (btn) { btn.disabled = false; }
+  }
+}
+
+async function loadFeed() {
+  const list = document.getElementById('feed-list');
+  if (!list) return;
+  list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);">読み込み中...</div>';
+
+  let posts = [];
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/submissions?status=eq.approved&type=is.null&order=created_at.desc&limit=20`, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      posts = data.map(s => ({
+        feedType: 'post',
+        id: s.id,
+        spot_name: s.spot_name,
+        description: s.description,
+        submitter: s.submitter || '匿名',
+        created_at: s.created_at,
+        likes_count: s.likes_count || 0,
+      }));
+    }
+  } catch(e) { console.warn('feed submissions取得失敗:', e); }
+
+  let visits = [];
+  try {
+    const vres = await fetch(`${SUPABASE_URL}/rest/v1/visit_log?order=created_at.desc&limit=20`, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    const vdata = await vres.json();
+    if (Array.isArray(vdata) && vdata.length) {
+      const userIds = [...new Set(vdata.map(v => v.user_id).filter(Boolean))];
+      let nameMap = {};
+      if (userIds.length) {
+        const pres = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=in.(${userIds.join(',')})&select=id,display_name`, {
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+        });
+        const pdata = await pres.json();
+        if (Array.isArray(pdata)) pdata.forEach(p => { nameMap[p.id] = p.display_name; });
+      }
+      visits = vdata.map(v => ({
+        feedType: 'visit',
+        spot_name: v.spot_name,
+        display_name: nameMap[v.user_id] || '巡礼者',
+        created_at: v.created_at,
+      }));
+    }
+  } catch(e) { console.warn('feed visit_log取得失敗:', e); }
+
+  const items = [...posts, ...visits]
+    .filter(i => i.created_at)
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 30);
+
+  if (!items.length) {
+    list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);"><div style="font-size:32px;margin-bottom:8px;">📸</div><div style="font-size:14px;">巡礼報告が投稿されると表示されます</div></div>';
+    return;
+  }
+
+  list.innerHTML = items.map(item => {
+    if (item.feedType === 'visit') {
+      return `<div style="padding:14px 16px;border-bottom:1px solid rgba(0,0,0,0.06);font-size:13px;color:var(--text);">
+        🚩 <b>${escHtml(item.display_name)}</b>さんが「${escHtml(item.spot_name)}」を巡礼しました
+        <div style="font-size:11px;color:var(--text-light);margin-top:2px;">${timeAgoLabel(item.created_at)}</div>
+      </div>`;
+    }
+    const liked = hasLikedPost(item.id);
+    return `<div style="padding:14px 16px;border-bottom:1px solid rgba(0,0,0,0.06);">
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">📍 ${escHtml(item.spot_name)}</div>
+      ${item.description ? `<div style="font-size:13px;color:var(--text);margin-bottom:6px;line-height:1.5;">${escHtml(item.description)}</div>` : ''}
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:11px;color:var(--text-light);">${escHtml(item.submitter)} · ${timeAgoLabel(item.created_at)}</div>
+        <button class="${liked ? 'liked' : ''}" onclick="toggleLike('${item.id}', this)" ${liked ? 'disabled' : ''} style="border:none;background:${liked ? 'rgba(239,68,68,0.12)' : 'rgba(0,0,0,0.05)'};color:${liked ? '#dc2626' : 'var(--text-light)'};border-radius:20px;padding:6px 14px;font-size:12px;cursor:${liked ? 'default' : 'pointer'};">
+          ${liked ? '❤️' : '🤍'} ${item.likes_count}件
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 const SPOTS = [
   {
     name: '旭川らーめん 大雪軒',
@@ -6353,6 +6491,7 @@ function showView(name) {
   const target = document.getElementById('view-'+name);
   if (target) target.style.display = 'block';
   if (name === 'post') setTimeout(initPostForm, 50);
+  if (name === 'feed') loadFeed();
   if (name === 'route') renderRouteSpotList();
   if (name === 'ranking') {
     loadFounderCount();
