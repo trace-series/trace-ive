@@ -2221,6 +2221,7 @@
             <div class="eval-btns">
               <button class="eval-btn eval-bad" onclick="evalSpot('wrong')">❌ 場所が違う</button>
               <button class="eval-btn eval-bad" onclick="reportLocationCorrection()">📍 正しい位置を報告</button>
+              <button class="eval-btn eval-bad" onclick="reportWrongInfo()">🛡️ 誤情報を報告</button>
               <button class="eval-btn eval-bad" onclick="evalSpot('unclear')">🤔 特定できない</button>
               <button class="eval-btn eval-bad" onclick="evalSpot('closed')">🚫 立入不可</button>
               <button class="eval-btn eval-bad" onclick="evalSpot('outdated')">⚠️ 情報が古い</button>
@@ -5038,6 +5039,51 @@ function reportLocationCorrection() {
   });
 }
 
+// ── 誤情報報告 ──
+const WRONG_INFO_KEY = 'traceive_wrong_info_v1';
+function hasReportedWrongInfo(spotName) {
+  try {
+    const list = JSON.parse(localStorage.getItem(WRONG_INFO_KEY) || '[]');
+    return list.includes(spotName);
+  } catch(e) { return false; }
+}
+function recordWrongInfoReported(spotName) {
+  try {
+    const list = JSON.parse(localStorage.getItem(WRONG_INFO_KEY) || '[]');
+    if (!list.includes(spotName)) list.push(spotName);
+    localStorage.setItem(WRONG_INFO_KEY, JSON.stringify(list));
+  } catch(e) {}
+}
+function reportWrongInfo() {
+  if (!currentSpot) return;
+
+  if (hasReportedWrongInfo(currentSpot.name)) {
+    showEvalToast('⚠️ このスポットの誤情報報告はすでに送信済みです');
+    return;
+  }
+
+  const ok = confirm('「' + currentSpot.name + '」に誤情報があると報告します。よろしいですか？');
+  if (!ok) return;
+
+  const submission = {
+    spot_name: currentSpot.name,
+    type: 'wrong_report',
+    category: currentSpot.category || null,
+    member: currentSpot.member || null,
+    description: '誤情報報告（ユーザー報告）',
+    submitter: '@anonymous',
+    status: 'pending',
+  };
+  saveSubmissionToDB(submission).then(function(ok2) {
+    if (ok2) {
+      recordWrongInfoReported(currentSpot.name);
+      showEvalToast('🛡️ 誤情報報告を受け付けました。管理者が確認します');
+    } else {
+      showEvalToast('⚠️ 送信に失敗しました。もう一度お試しください');
+    }
+  });
+}
+
 // ── GPS距離チェック＆ボーナスポイント ──
 const GPS_BONUS_KEY = 'traceive_gps_bonus_v1';
 const GPS_BONUS_DISTANCE = 200; // メートル
@@ -5641,7 +5687,18 @@ async function submitNewSpot() {
         return;
       }
       const gMapUrl = (lat, lng) => 'https://www.google.com/maps?q=' + lat + ',' + lng;
-      list.innerHTML = data.map(s => s.type === 'location_correction' ? 
+      list.innerHTML = data.map(s => s.type === 'wrong_report' ?
+        `<div style="background:rgba(239,68,68,0.1);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid rgba(239,68,68,0.35);">
+          <div style="font-size:11px;color:#dc2626;font-weight:700;margin-bottom:4px;">🛡️ 誤情報報告</div>
+          <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:8px;">${escHtml(s.spot_name)}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:8px;">報告者: ${s.submitter || '匿名'}</div>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button onclick="approveWrongReport('${s.id}')" style="flex:1;padding:10px;background:linear-gradient(135deg,#15803d,#16a34a);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ 確定</button>
+            <button onclick="rejectSubmission('${s.id}')" style="flex:1;padding:10px;background:rgba(220,38,38,0.3);color:#fca5a5;border:1px solid rgba(220,38,38,0.4);border-radius:10px;font-size:13px;cursor:pointer;">❌ 却下</button>
+            <button onclick="holdSubmission('${s.id}')" style="padding:10px 14px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);border:none;border-radius:10px;font-size:13px;cursor:pointer;">⏸</button>
+          </div>
+        </div>`
+        : s.type === 'location_correction' ? 
         `<div style="background:rgba(201,168,76,0.1);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid rgba(201,168,76,0.35);">
           <div style="font-size:11px;color:#c9a84c;font-weight:700;margin-bottom:4px;">📍 位置修正リクエスト</div>
           <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:8px;">${escHtml(s.target_spot_name || s.spot_name)}</div>
@@ -5747,6 +5804,56 @@ async function submitNewSpot() {
 
     await loadPendingSubmissions();
     showEvalToast('✅ 承認しました！スポットに追加されました');
+  }
+
+  async function approveWrongReport(id) {
+    // 誤情報報告の確定 → point_log記録 → submissionsを承認済みに
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/submissions?id=eq.${id}`, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    const [s] = await res.json();
+    if (!s) return;
+
+    // 報告者のIDを特定(今はadminとして自分が報告者として記録するため、単純化)
+    const subRes = await fetch(`${SUPABASE_URL}/rest/v1/submissions?id=eq.${id}&select=submitter_id`, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    const subData = await subRes.json();
+    const reporterUserId = subData && subData[0] ? subData[0].submitter_id : null;
+
+    // point_logに確定記録を追加（adminが記録）
+    if (reporterUserId) {
+      await fetch(`${SUPABASE_URL}/rest/v1/point_log`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          user_id: reporterUserId,
+          category: 'wrong_info_confirmed',
+          amount: 10,
+          spot_name: s.spot_name,
+          created_at: new Date().toISOString(),
+        })
+      });
+    }
+
+    // submissionsを承認済みに
+    await fetch(`${SUPABASE_URL}/rest/v1/submissions?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: 'approved' })
+    });
+
+    await loadPendingSubmissions();
+    showEvalToast('✅ 誤情報報告を確定しました');
   }
 
   async function rejectSubmission(id) {
@@ -7222,6 +7329,74 @@ function loadProfileData() {
               .catch(function(e4) { console.warn('submissions count error:', e4); });
           })
           .catch(function(e3) { console.warn('point_log fetch error:', e3); });
+
+        // バッジ解除: バズ投稿（いいね100超え）
+        var supabase5 = getSupabaseClient();
+        supabase5.from('submissions').select('id', { count: 'exact', head: true }).eq('submitter_id', session.user.id).gte('likes_count', 100)
+          .then(function(buzzRes) {
+            if ((buzzRes.count || 0) > 0) {
+              document.querySelectorAll('.badge-card').forEach(function(elx) {
+                var nameEl = elx.querySelector('.badge-name');
+                if (nameEl && nameEl.textContent === 'バズ投稿') elx.classList.remove('locked');
+              });
+            }
+          })
+          .catch(function(e5) { console.warn('buzz badge error:', e5); });
+
+        // バッジ解除: 正確レポーター（GOOD評価累計50pt以上）
+        var supabase6 = getSupabaseClient();
+        supabase6.from('point_log').select('amount').eq('user_id', session.user.id).eq('category', 'accurate_report')
+          .then(function(accRes) {
+            var total = (accRes.data || []).reduce(function(sum, p) { return sum + (p.amount || 0); }, 0);
+            if (total >= 50) {
+              document.querySelectorAll('.badge-card').forEach(function(elx) {
+                var nameEl = elx.querySelector('.badge-name');
+                if (nameEl && nameEl.textContent === '正確レポーター') elx.classList.remove('locked');
+              });
+            }
+          })
+          .catch(function(e6) { console.warn('accurate reporter badge error:', e6); });
+
+        // バッジ解除: 海外遠征（韓国スポット投稿）
+        var supabase7 = getSupabaseClient();
+        supabase7.from('submissions').select('id', { count: 'exact', head: true }).eq('submitter_id', session.user.id).eq('country', 'Korea').eq('status', 'approved')
+          .then(function(koreaRes) {
+            if ((koreaRes.count || 0) > 0) {
+              document.querySelectorAll('.badge-card').forEach(function(elx) {
+                var nameEl = elx.querySelector('.badge-name');
+                if (nameEl && nameEl.textContent === '海外遠征') elx.classList.remove('locked');
+              });
+            }
+          })
+          .catch(function(e7) { console.warn('overseas badge error:', e7); });
+
+        // バッジ解除: トップ貢献者（当月1位）
+        var supabase8 = getSupabaseClient();
+        var now = new Date();
+        var monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        supabase8.from('profiles').select('id').gte('updated_at', monthStart).order('points', { ascending: false }).limit(1)
+          .then(function(topRes) {
+            if (topRes.data && topRes.data.length > 0 && topRes.data[0].id === session.user.id) {
+              document.querySelectorAll('.badge-card').forEach(function(elx) {
+                var nameEl = elx.querySelector('.badge-name');
+                if (nameEl && nameEl.textContent === 'トップ貢献者') elx.classList.remove('locked');
+              });
+            }
+          })
+          .catch(function(e8) { console.warn('top contributor badge error:', e8); });
+
+        // バッジ解除: ガーディアン（誤情報報告確定×5件）
+        var supabase9 = getSupabaseClient();
+        supabase9.from('point_log').select('id', { count: 'exact', head: true }).eq('user_id', session.user.id).eq('category', 'wrong_info_confirmed')
+          .then(function(guardRes) {
+            if ((guardRes.count || 0) >= 5) {
+              document.querySelectorAll('.badge-card').forEach(function(elx) {
+                var nameEl = elx.querySelector('.badge-name');
+                if (nameEl && nameEl.textContent === 'ガーディアン') elx.classList.remove('locked');
+              });
+            }
+          })
+          .catch(function(e9) { console.warn('guardian badge error:', e9); });
       });
   });
 }
