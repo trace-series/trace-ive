@@ -4995,7 +4995,7 @@ function recordLocationCorrectionReported(spotName) {
     localStorage.setItem(LOCATION_CORRECTION_KEY, JSON.stringify(list));
   } catch(e) {}
 }
-function reportLocationCorrection() {
+async function reportLocationCorrection() {
   if (!currentSpot) return;
 
   if (hasReportedLocationCorrection(currentSpot.name)) {
@@ -5011,6 +5011,13 @@ function reportLocationCorrection() {
     return;
   }
 
+  // 報告者のユーザーIDを先に取得（バッジ集計に必須）
+  let reporterId = null;
+  try {
+    const { data } = await getSupabaseClient().auth.getSession();
+    reporterId = data && data.session ? data.session.user.id : null;
+  } catch(e) { console.warn('session取得失敗:', e); }
+
   navigator.geolocation.getCurrentPosition(function(pos) {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
@@ -5024,6 +5031,7 @@ function reportLocationCorrection() {
       member: currentSpot.member || null,
       description: '位置修正報告（GPS）',
       submitter: '@anonymous',
+      submitter_id: reporterId,
       status: 'pending',
     };
     saveSubmissionToDB(submission).then(function(ok2) {
@@ -5054,7 +5062,7 @@ function recordWrongInfoReported(spotName) {
     localStorage.setItem(WRONG_INFO_KEY, JSON.stringify(list));
   } catch(e) {}
 }
-function reportWrongInfo() {
+async function reportWrongInfo() {
   if (!currentSpot) return;
 
   if (hasReportedWrongInfo(currentSpot.name)) {
@@ -5062,16 +5070,28 @@ function reportWrongInfo() {
     return;
   }
 
-  const ok = confirm('「' + currentSpot.name + '」に誤情報があると報告します。よろしいですか？');
-  if (!ok) return;
+  const detail = prompt('「' + currentSpot.name + '」の何が違いますか？具体的に教えてください（例：メンバーが違う／スポットの説明が古い／写っている人物が別人 など）');
+  if (detail === null) return; // キャンセル
+  if (!detail.trim()) {
+    alert('内容を入力してください。空欄では報告できません。');
+    return;
+  }
+
+  // 報告者のユーザーIDを取得（バッジ集計に必須）
+  let reporterId = null;
+  try {
+    const { data } = await getSupabaseClient().auth.getSession();
+    reporterId = data && data.session ? data.session.user.id : null;
+  } catch(e) { console.warn('session取得失敗:', e); }
 
   const submission = {
     spot_name: currentSpot.name,
     type: 'wrong_report',
     category: currentSpot.category || null,
     member: currentSpot.member || null,
-    description: '誤情報報告（ユーザー報告）',
+    description: detail.trim(),
     submitter: '@anonymous',
+    submitter_id: reporterId,
     status: 'pending',
   };
   saveSubmissionToDB(submission).then(function(ok2) {
@@ -5289,6 +5309,13 @@ async function submitNewSpot() {
   const member = memberChip.dataset.member;
   const center = map ? map.getCenter() : null;
 
+  // 報告者のユーザーIDを取得（マッパー・海外遠征バッジ集計に必須）
+  let submitterId = null;
+  try {
+    const { data } = await getSupabaseClient().auth.getSession();
+    submitterId = data && data.session ? data.session.user.id : null;
+  } catch(e) { console.warn('session取得失敗:', e); }
+
   const submission = {
     spot_name: name,
     lat: center ? center.lat() : 35.6762,
@@ -5298,6 +5325,7 @@ async function submitNewSpot() {
     description: desc,
     source_url: sourceUrl || null,
     submitter: '@anonymous',
+    submitter_id: submitterId,
     status: 'pending',
   };
 
@@ -5691,6 +5719,7 @@ async function submitNewSpot() {
         `<div style="background:rgba(239,68,68,0.1);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid rgba(239,68,68,0.35);">
           <div style="font-size:11px;color:#dc2626;font-weight:700;margin-bottom:4px;">🛡️ 誤情報報告</div>
           <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:8px;">${escHtml(s.spot_name)}</div>
+          <div style="font-size:12px;color:#fecaca;background:rgba(0,0,0,0.2);border-radius:8px;padding:8px 10px;margin-bottom:8px;">${escHtml(s.description || '(内容未記入)')}</div>
           <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:8px;">報告者: ${s.submitter || '匿名'}</div>
           <div style="display:flex;gap:8px;margin-top:10px;">
             <button onclick="approveWrongReport('${s.id}')" style="flex:1;padding:10px;background:linear-gradient(135deg,#15803d,#16a34a);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ 確定</button>
@@ -5760,6 +5789,25 @@ async function submitNewSpot() {
         },
         body: JSON.stringify({ status: 'approved' })
       });
+      // ガーディアンバッジ用：位置修正の確定も point_log に記録（報告者IDがある場合のみ）
+      if (s.submitter_id) {
+        await fetch(`${SUPABASE_URL}/rest/v1/point_log`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify({
+            user_id: s.submitter_id,
+            category: 'wrong_info_confirmed',
+            amount: 10,
+            spot_name: s.spot_name,
+            created_at: new Date().toISOString(),
+          })
+        });
+      }
       await loadPendingSubmissions();
       showEvalToast('✅ スポット位置を更新しました');
       return;
