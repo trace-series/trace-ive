@@ -2220,6 +2220,7 @@
             <div class="eval-title">⚠️ BAD評価</div>
             <div class="eval-btns">
               <button class="eval-btn eval-bad" onclick="evalSpot('wrong')">❌ 場所が違う</button>
+              <button class="eval-btn eval-bad" onclick="reportLocationCorrection()">📍 正しい位置を報告</button>
               <button class="eval-btn eval-bad" onclick="evalSpot('unclear')">🤔 特定できない</button>
               <button class="eval-btn eval-bad" onclick="evalSpot('closed')">🚫 立入不可</button>
               <button class="eval-btn eval-bad" onclick="evalSpot('outdated')">⚠️ 情報が古い</button>
@@ -4976,6 +4977,65 @@ function openCard(spot) {
 
   // GPS距離表示＆ボーナスポイント判定
   checkGpsBonus(spot);
+}
+
+// ── 位置修正報告 ──
+const LOCATION_CORRECTION_KEY = 'traceive_loc_correction_v1';
+function hasReportedLocationCorrection(spotName) {
+  try {
+    const list = JSON.parse(localStorage.getItem(LOCATION_CORRECTION_KEY) || '[]');
+    return list.includes(spotName);
+  } catch(e) { return false; }
+}
+function recordLocationCorrectionReported(spotName) {
+  try {
+    const list = JSON.parse(localStorage.getItem(LOCATION_CORRECTION_KEY) || '[]');
+    if (!list.includes(spotName)) list.push(spotName);
+    localStorage.setItem(LOCATION_CORRECTION_KEY, JSON.stringify(list));
+  } catch(e) {}
+}
+function reportLocationCorrection() {
+  if (!currentSpot) return;
+
+  if (hasReportedLocationCorrection(currentSpot.name)) {
+    showEvalToast('⚠️ このスポットの位置修正はすでに報告済みです');
+    return;
+  }
+
+  const ok = confirm('現在地を「' + currentSpot.name + '」の正しい位置として報告します。よろしいですか？');
+  if (!ok) return;
+
+  if (!navigator.geolocation) {
+    alert('お使いの環境では位置情報を取得できません。');
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    const submission = {
+      spot_name: currentSpot.name,
+      target_spot_name: currentSpot.name,
+      type: 'location_correction',
+      lat: lat,
+      lng: lng,
+      category: currentSpot.category || null,
+      member: currentSpot.member || null,
+      description: '位置修正報告（GPS）',
+      submitter: '@anonymous',
+      status: 'pending',
+    };
+    saveSubmissionToDB(submission).then(function(ok2) {
+      if (ok2) {
+        recordLocationCorrectionReported(currentSpot.name);
+        showEvalToast('📍 位置修正の報告を受け付けました。管理者確認後に反映されます');
+      } else {
+        showEvalToast('⚠️ 送信に失敗しました。もう一度お試しください');
+      }
+    });
+  }, function(err) {
+    alert('位置情報を取得できませんでした。設定で位置情報の利用を許可してから、もう一度お試しください。');
+  });
 }
 
 // ── GPS距離チェック＆ボーナスポイント ──
