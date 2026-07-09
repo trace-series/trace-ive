@@ -5640,8 +5640,20 @@ async function submitNewSpot() {
         list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.4);padding:40px;">承認待ちの投稿はありません</div>';
         return;
       }
-      list.innerHTML = data.map(s => `
-        <div style="background:rgba(255,255,255,0.06);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.1);">
+      const gMapUrl = (lat, lng) => 'https://www.google.com/maps?q=' + lat + ',' + lng;
+      list.innerHTML = data.map(s => s.type === 'location_correction' ? 
+        `<div style="background:rgba(201,168,76,0.1);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid rgba(201,168,76,0.35);">
+          <div style="font-size:11px;color:#c9a84c;font-weight:700;margin-bottom:4px;">📍 位置修正リクエスト</div>
+          <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:8px;">${escHtml(s.target_spot_name || s.spot_name)}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:8px;">報告座標: ${s.lat.toFixed(4)}, ${s.lng.toFixed(4)}</div>
+          <a href="${gMapUrl(s.lat, s.lng)}" target="_blank" style="font-size:11px;color:#c9a84c;">🗺️ Googleマップで確認</a>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button onclick="approveSubmission('${s.id}')" style="flex:1;padding:10px;background:linear-gradient(135deg,#15803d,#16a34a);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ 位置を更新</button>
+            <button onclick="rejectSubmission('${s.id}')" style="flex:1;padding:10px;background:rgba(220,38,38,0.3);color:#fca5a5;border:1px solid rgba(220,38,38,0.4);border-radius:10px;font-size:13px;cursor:pointer;">❌ 却下</button>
+            <button onclick="holdSubmission('${s.id}')" style="padding:10px 14px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);border:none;border-radius:10px;font-size:13px;cursor:pointer;">⏸</button>
+          </div>
+        </div>` 
+        : `<div style="background:rgba(255,255,255,0.06);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.1);">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
             <div>
               <div style="font-size:15px;font-weight:700;color:#fff;">${escHtml(s.spot_name)}</div>
@@ -5656,8 +5668,8 @@ async function submitNewSpot() {
             <button onclick="rejectSubmission('${s.id}')" style="flex:1;padding:10px;background:rgba(220,38,38,0.3);color:#fca5a5;border:1px solid rgba(220,38,38,0.4);border-radius:10px;font-size:13px;cursor:pointer;">❌ 却下</button>
             <button onclick="holdSubmission('${s.id}')" style="padding:10px 14px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);border:none;border-radius:10px;font-size:13px;cursor:pointer;">⏸</button>
           </div>
-        </div>
-      `).join('');
+        </div>`
+      ).join('');
     } catch(e) {
       list.innerHTML = '<div style="text-align:center;color:#f87171;padding:40px;">通信エラー：' + e.message + '</div>';
       console.error('loadPendingSubmissions error:', e);
