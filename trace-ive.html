@@ -3238,6 +3238,10 @@
       <div class="form-group">
         <div class="form-label">住所 / 場所 <span>*</span></div>
         <input class="form-input" id="post-address" type="text" placeholder="例：東京都渋谷区道玄坂2丁目" maxlength="100">
+        <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:#9b8aab;cursor:pointer;">
+          <input type="checkbox" id="post-location-unsure" style="width:16px;height:16px;">
+          正確な位置がよく分からない（海外・情報不足など）→ 承認前に運営側で確認します
+        </label>
       </div>
       <div class="form-group">
         <div class="form-label">聖地の説明 <span>*</span> <span style="font-weight:400;color:#9b8aab;font-size:12px;">20文字以上</span></div>
@@ -5454,8 +5458,11 @@ async function submitNewSpot() {
     submitterId = data && data.session ? data.session.user.id : null;
   } catch(e) { console.warn('session取得失敗:', e); }
 
+  const locationUnsure = document.getElementById('post-location-unsure')?.checked || false;
+
   const submission = {
     spot_name: name,
+    address: address,
     lat: center ? center.lat() : 35.6762,
     lng: center ? center.lng() : 139.7073,
     category: category,
@@ -5464,6 +5471,7 @@ async function submitNewSpot() {
     source_url: sourceUrl || null,
     submitter: '@anonymous',
     submitter_id: submitterId,
+    location_confirmed: !locationUnsure,
     status: 'pending',
   };
 
@@ -5482,6 +5490,7 @@ async function submitNewSpot() {
     document.getElementById('post-address').value = '';
     document.getElementById('post-desc').value = '';
     document.getElementById('post-source-url').value = '';
+    if (document.getElementById('post-location-unsure')) document.getElementById('post-location-unsure').checked = false;
     document.querySelectorAll('#post-cat-chips .chip, #post-member-chips .chip').forEach(c => c.classList.remove('selected'));
     showView('map');
   } else {
@@ -5880,13 +5889,15 @@ async function submitNewSpot() {
         : `<div style="background:rgba(255,255,255,0.06);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.1);">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
             <div>
-              <div style="font-size:15px;font-weight:700;color:#fff;">${escHtml(s.spot_name)}</div>
+              <div style="font-size:15px;font-weight:700;color:#fff;">${escHtml(s.spot_name)}${s.location_confirmed === false ? ' <span style="font-size:10px;background:rgba(245,158,11,0.25);color:#fbbf24;border-radius:8px;padding:2px 8px;">⚠️ 位置未確認</span>' : ''}</div>
               <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;">${s.category || ''} · ${s.member || ''} · ${s.submitter || ''}</div>
             </div>
             <div style="font-size:10px;color:rgba(255,255,255,0.3);">${new Date(s.created_at).toLocaleDateString('ja-JP')}</div>
           </div>
           <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:8px;line-height:1.6;">${escHtml(s.description || '')}</div>
-          ${s.source_url ? `<a href="${escHtml(s.source_url)}" target="_blank" style="font-size:11px;color:#c9a84c;">🔗 出典を確認</a>` : ''}
+          ${s.address ? `<div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px;">📮 ${escHtml(s.address)}</div>` : ''}
+          ${(s.lat && s.lng) ? `<a href="${gMapUrl(s.lat, s.lng)}" target="_blank" style="font-size:11px;color:#c9a84c;">🗺️ この座標をGoogleマップで確認</a>` : ''}
+          ${s.source_url ? `<div><a href="${escHtml(s.source_url)}" target="_blank" style="font-size:11px;color:#c9a84c;">🔗 出典を確認</a></div>` : ''}
           <div style="display:flex;gap:8px;margin-top:12px;">
             <button onclick="approveSubmission('${s.id}')" style="flex:1;padding:10px;background:linear-gradient(135deg,#15803d,#16a34a);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ 承認</button>
             <button onclick="rejectSubmission('${s.id}')" style="flex:1;padding:10px;background:rgba(220,38,38,0.3);color:#fca5a5;border:1px solid rgba(220,38,38,0.4);border-radius:10px;font-size:13px;cursor:pointer;">❌ 却下</button>
