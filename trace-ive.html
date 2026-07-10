@@ -2378,7 +2378,7 @@
       <div class="badge-card locked">
         <div class="badge-icon">🔥</div>
         <div class="badge-name">バズ投稿</div>
-        <div class="badge-desc">いいね100超え</div>
+        <div class="badge-desc">いいね合計500件</div>
       </div>
       <div class="badge-card locked">
         <div class="badge-icon">🎯</div>
@@ -2923,7 +2923,7 @@
         <span class="pr-badge-icon">🔥</span>
         <div class="pr-badge-info">
           <div class="pr-badge-name">バズ投稿</div>
-          <div class="pr-badge-cond">1投稿でいいね100件以上</div>
+          <div class="pr-badge-cond">投稿＋巡礼報告のいいね合計500件以上</div>
         </div>
       </div>
       <div class="pr-badge-row">
@@ -3783,18 +3783,19 @@ function recordLikedPost(id) {
   } catch(e) {}
 }
 
-async function toggleLike(id, btn) {
-  if (hasLikedPost(id)) return; // 1人1回まで
+async function toggleLike(id, btn, table) {
+  table = table || 'submissions';
+  const likeKey = table + ':' + id;
+  if (hasLikedPost(likeKey)) return; // 1人1回まで
   if (btn) { btn.disabled = true; }
   try {
-    const client = getSupabaseClient();
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/submissions?id=eq.${id}&select=likes_count`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}&select=likes_count`, {
       headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
     });
     const [row] = await res.json();
     const current = (row && row.likes_count) || 0;
     const next = current + 1;
-    await fetch(`${SUPABASE_URL}/rest/v1/submissions?id=eq.${id}`, {
+    await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
       method: 'PATCH',
       headers: {
         'apikey': SUPABASE_ANON_KEY,
@@ -3803,7 +3804,7 @@ async function toggleLike(id, btn) {
       },
       body: JSON.stringify({ likes_count: next })
     });
-    recordLikedPost(id);
+    recordLikedPost(likeKey);
     if (btn) {
       btn.classList.add('liked');
       btn.innerHTML = '❤️ ' + next + '件';
@@ -3843,7 +3844,7 @@ async function loadFeed() {
     const client = getSupabaseClient();
     const { data: vdata, error: verr } = await client
       .from('visit_log')
-      .select('user_id, spot_name, visited_at')
+      .select('id, user_id, spot_name, visited_at, likes_count')
       .order('visited_at', { ascending: false })
       .limit(20);
     if (verr) console.warn('visit_log取得エラー:', verr);
@@ -3859,9 +3860,11 @@ async function loadFeed() {
       }
       visits = vdata.map(v => ({
         feedType: 'visit',
+        id: v.id,
         spot_name: v.spot_name,
         display_name: nameMap[v.user_id] || '巡礼者',
         created_at: v.visited_at,
+        likes_count: v.likes_count || 0,
       }));
     }
   } catch(e) { console.warn('feed visit_log取得失敗:', e); }
@@ -3878,18 +3881,31 @@ async function loadFeed() {
 
   list.innerHTML = items.map(item => {
     if (item.feedType === 'visit') {
-      return `<div style="padding:14px 16px;border-bottom:1px solid rgba(0,0,0,0.06);font-size:13px;color:var(--text);">
-        🚩 <b>${escHtml(item.display_name)}</b>さんが「${escHtml(item.spot_name)}」を巡礼しました
-        <div style="font-size:11px;color:var(--text-light);margin-top:2px;">${timeAgoLabel(item.created_at)}</div>
+      const liked = hasLikedPost('visit_log:' + item.id);
+      return `<div style="background:linear-gradient(135deg,#fff,var(--purple-pale));border-radius:18px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(123,79,166,0.08);border:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--purple-mid),var(--purple-deep));display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">🚩</div>
+          <div style="font-size:13px;color:var(--text);line-height:1.4;"><b style="color:var(--purple-deep);">${escHtml(item.display_name)}</b>さんが<br><b>「${escHtml(item.spot_name)}」</b>を巡礼しました 🌸</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+          <div style="font-size:11px;color:var(--text-light);">${timeAgoLabel(item.created_at)}</div>
+          <button class="${liked ? 'liked' : ''}" onclick="toggleLike('${item.id}', this, 'visit_log')" ${liked ? 'disabled' : ''} style="border:none;background:${liked ? 'rgba(224,60,110,0.15)' : 'var(--purple-pale)'};color:${liked ? '#e03c6e' : 'var(--purple-mid)'};border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:${liked ? 'default' : 'pointer'};">
+            ${liked ? '❤️' : '🤍'} ${item.likes_count}件
+          </button>
+        </div>
       </div>`;
     }
-    const liked = hasLikedPost(item.id);
-    return `<div style="padding:14px 16px;border-bottom:1px solid rgba(0,0,0,0.06);">
-      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">📍 ${escHtml(item.spot_name)}</div>
-      ${item.description ? `<div style="font-size:13px;color:var(--text);margin-bottom:6px;line-height:1.5;">${escHtml(item.description)}</div>` : ''}
+    const liked = hasLikedPost('submissions:' + item.id);
+    return `<div style="background:linear-gradient(135deg,#fff,var(--purple-pale));border-radius:18px;padding:16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(123,79,166,0.08);border:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <span style="font-size:15px;">📍</span>
+        <span style="font-size:14px;font-weight:700;color:var(--purple-deep);">${escHtml(item.spot_name)}</span>
+        <span style="font-size:10px;background:var(--gold);color:#fff;border-radius:8px;padding:2px 8px;margin-left:auto;">🌟 新スポット</span>
+      </div>
+      ${item.description ? `<div style="font-size:13px;color:var(--text-mid);margin-bottom:8px;line-height:1.5;">${escHtml(item.description)}</div>` : ''}
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:11px;color:var(--text-light);">${escHtml(item.submitter)} · ${timeAgoLabel(item.created_at)}</div>
-        <button class="${liked ? 'liked' : ''}" onclick="toggleLike('${item.id}', this)" ${liked ? 'disabled' : ''} style="border:none;background:${liked ? 'rgba(239,68,68,0.12)' : 'rgba(0,0,0,0.05)'};color:${liked ? '#dc2626' : 'var(--text-light)'};border-radius:20px;padding:6px 14px;font-size:12px;cursor:${liked ? 'default' : 'pointer'};">
+        <div style="font-size:11px;color:var(--text-light);">👤 ${escHtml(item.submitter)} · ${timeAgoLabel(item.created_at)}</div>
+        <button class="${liked ? 'liked' : ''}" onclick="toggleLike('${item.id}', this, 'submissions')" ${liked ? 'disabled' : ''} style="border:none;background:${liked ? 'rgba(224,60,110,0.15)' : 'var(--purple-pale)'};color:${liked ? '#e03c6e' : 'var(--purple-mid)'};border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:${liked ? 'default' : 'pointer'};">
           ${liked ? '❤️' : '🤍'} ${item.likes_count}件
         </button>
       </div>
@@ -7654,17 +7670,21 @@ function loadProfileData() {
           })
           .catch(function(e3) { console.warn('point_log fetch error:', e3); });
 
-        // バッジ解除: バズ投稿（いいね100超え）
+        // バッジ解除: バズ投稿（いいね合計500件以上、新規スポット投稿＋巡礼報告の合計）
         var supabase5 = getSupabaseClient();
-        supabase5.from('submissions').select('id', { count: 'exact', head: true }).eq('submitter_id', session.user.id).gte('likes_count', 100)
-          .then(function(buzzRes) {
-            if ((buzzRes.count || 0) > 0) {
-              document.querySelectorAll('.badge-card').forEach(function(elx) {
-                var nameEl = elx.querySelector('.badge-name');
-                if (nameEl && nameEl.textContent === 'バズ投稿') elx.classList.remove('locked');
-              });
-            }
-          })
+        Promise.all([
+          supabase5.from('submissions').select('likes_count').eq('submitter_id', session.user.id),
+          supabase5.from('visit_log').select('likes_count').eq('user_id', session.user.id),
+        ]).then(function(buzzResArr) {
+          var subLikes = (buzzResArr[0].data || []).reduce(function(sum, r) { return sum + (r.likes_count || 0); }, 0);
+          var visitLikes = (buzzResArr[1].data || []).reduce(function(sum, r) { return sum + (r.likes_count || 0); }, 0);
+          if ((subLikes + visitLikes) >= 500) {
+            document.querySelectorAll('.badge-card').forEach(function(elx) {
+              var nameEl = elx.querySelector('.badge-name');
+              if (nameEl && nameEl.textContent === 'バズ投稿') elx.classList.remove('locked');
+            });
+          }
+        })
           .catch(function(e5) { console.warn('buzz badge error:', e5); });
 
         // バッジ解除: 正確レポーター（GOOD評価累計50pt以上）
