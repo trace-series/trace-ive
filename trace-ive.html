@@ -3843,8 +3843,8 @@ async function loadFeed() {
     const client = getSupabaseClient();
     const { data: vdata, error: verr } = await client
       .from('visit_log')
-      .select('user_id, spot_name, created_at')
-      .order('created_at', { ascending: false })
+      .select('user_id, spot_name, visited_at')
+      .order('visited_at', { ascending: false })
       .limit(20);
     if (verr) console.warn('visit_log取得エラー:', verr);
     if (Array.isArray(vdata) && vdata.length) {
@@ -3861,7 +3861,7 @@ async function loadFeed() {
         feedType: 'visit',
         spot_name: v.spot_name,
         display_name: nameMap[v.user_id] || '巡礼者',
-        created_at: v.created_at,
+        created_at: v.visited_at,
       }));
     }
   } catch(e) { console.warn('feed visit_log取得失敗:', e); }
@@ -6522,7 +6522,7 @@ function jumpToSpot(name) {
       const { error: updateError } = await client.from('profiles').update({ points: newPoints, visited_spots: newVisited }).eq('id', userId);
       if (updateError) { alert('保存エラー: ' + updateError.message); window._reportVisitInProgress = false; return; }
       // 行動分析用：いつ巡礼したかのログ（失敗してもメイン処理は止めない）
-      client.from('visit_log').insert({ user_id: userId, spot_name: spotId }).then().catch(function(e) {
+      client.from('visit_log').insert({ user_id: userId, spot_name: spotId, visited_at: new Date().toISOString() }).then().catch(function(e) {
         console.warn('visit_log insert error:', e);
       });
       // 友達紹介：初回の巡礼報告完了時のみ、紹介者に+50pt
@@ -7941,8 +7941,8 @@ function renderOshiRankingList(member, period) {
   list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light);">読み込み中...</div>';
   const cutoff = getPeriodCutoffISO(period);
   const client = getSupabaseClient();
-  let visitQuery = client.from('visit_log').select('user_id, spot_name, created_at');
-  if (cutoff) visitQuery = visitQuery.gte('created_at', cutoff);
+  let visitQuery = client.from('visit_log').select('user_id, spot_name, visited_at');
+  if (cutoff) visitQuery = visitQuery.gte('visited_at', cutoff);
   Promise.all([
     visitQuery,
     client.from('profiles').select('id, display_name, oshi1, oshi2')
@@ -8033,8 +8033,8 @@ function renderSpotRanking(period) {
   var isEvent = period && period.startsWith('event:');
   var cutoff = isEvent ? null : getPeriodCutoffISO(period);
   var client = getSupabaseClient();
-  var query = client.from('visit_log').select('spot_name, created_at');
-  if (cutoff) query = query.gte('created_at', cutoff);
+  var query = client.from('visit_log').select('spot_name, visited_at');
+  if (cutoff) query = query.gte('visited_at', cutoff);
   query.then(function(r) {
     var rows = r.data || [];
     var counts = {};
