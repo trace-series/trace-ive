@@ -2740,6 +2740,10 @@
         <span class="pr-pt pr-pt-good">+50 pt</span>
       </div>
       <div class="pr-row">
+        <span class="pr-label">同じスポットの重複報告（2件目以降）<br><span style="font-size:10px;color:var(--text-light);">最初の発見者クレジットは1人目のみ付与されます</span></span>
+        <span class="pr-pt pr-pt-good">+10 pt</span>
+      </div>
+      <div class="pr-row">
         <span class="pr-label">投稿が公式認定された</span>
         <span class="pr-pt pr-pt-good">+100 pt</span>
       </div>
@@ -2852,6 +2856,10 @@
       <div class="pr-row">
         <span class="pr-label">1日の投稿上限</span>
         <span class="pr-limit">3件</span>
+      </div>
+      <div class="pr-row">
+        <span class="pr-label">新規スポット投稿の月間上限（ランク別）</span>
+        <span class="pr-limit">ブロンズ/シルバー：1件・ゴールド/プラチナ：2件・ダイヤモンド：3件</span>
       </div>
       <div class="pr-row">
         <span class="pr-label">連続投稿クールダウン</span>
@@ -5447,6 +5455,31 @@ async function submitNewSpot() {
     return;
   }
 
+  // ランク別 月間投稿上限チェック（実際のDB記録を数える。localStorageではない）
+  try {
+    const { data: sessData } = await getSupabaseClient().auth.getSession();
+    const uid = sessData && sessData.session ? sessData.session.user.id : null;
+    if (uid) {
+      const monthlyLimit = SUBMIT_MONTHLY_LIMITS[currentUserRank] ?? SUBMIT_MONTHLY_LIMITS.bronze;
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const cres = await fetch(`${SUPABASE_URL}/rest/v1/submissions?submitter_id=eq.${uid}&type=is.null&created_at=gte.${monthStart}&select=id`, {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Prefer': 'count=exact',
+        }
+      });
+      const crange = cres.headers.get('content-range'); // 例: "0-1/3"
+      const usedCount = crange ? parseInt(crange.split('/')[1], 10) : (await cres.json()).length;
+      if (usedCount >= monthlyLimit) {
+        const tierName = (RANK_TIERS.find(t => t.key === currentUserRank) || {}).name || 'ブロンズ';
+        showPostError('⚠️ 今月の投稿上限（' + tierName + 'ランク：月' + monthlyLimit + '件）に達しています。来月またお願いします。');
+        return;
+      }
+    }
+  } catch(e) { console.warn('月間投稿数チェック失敗:', e); }
+
   const category = catChip.dataset.cat;
   const member = memberChip.dataset.member;
   const center = map ? map.getCenter() : null;
@@ -5862,6 +5895,20 @@ async function submitNewSpot() {
         return;
       }
       const gMapUrl = (lat, lng) => 'https://www.google.com/maps?q=' + lat + ',' + lng;
+
+      // 同名スポットの重複投稿を検出（新規スポット投稿のみ対象）。
+      // 同じspot_nameが複数あれば、created_atが最も早いものだけを「最初の報告」とする。
+      const nameFirstId = {};
+      const nameDupCount = {};
+      data.filter(s => !s.type).forEach(s => {
+        const key = (s.spot_name || '').trim();
+        if (!key) return;
+        nameDupCount[key] = (nameDupCount[key] || 0) + 1;
+        if (!nameFirstId[key] || new Date(s.created_at) < new Date(data.find(d => d.id === nameFirstId[key]).created_at)) {
+          nameFirstId[key] = s.id;
+        }
+      });
+
       list.innerHTML = data.map(s => s.type === 'wrong_report' ?
         `<div style="background:rgba(239,68,68,0.1);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid rgba(239,68,68,0.35);">
           <div style="font-size:11px;color:#dc2626;font-weight:700;margin-bottom:4px;">🛡️ 誤情報報告</div>
@@ -5889,17 +5936,21 @@ async function submitNewSpot() {
         : `<div style="background:rgba(255,255,255,0.06);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.1);">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
             <div>
-              <div style="font-size:15px;font-weight:700;color:#fff;">${escHtml(s.spot_name)}${s.location_confirmed === false ? ' <span style="font-size:10px;background:rgba(245,158,11,0.25);color:#fbbf24;border-radius:8px;padding:2px 8px;">⚠️ 位置未確認</span>' : ''}</div>
+              <div style="font-size:15px;font-weight:700;color:#fff;">${escHtml(s.spot_name)}${s.location_confirmed === false ? ' <span style="font-size:10px;background:rgba(245,158,11,0.25);color:#fbbf24;border-radius:8px;padding:2px 8px;">⚠️ 位置未確認</span>' : ''}${(!s.type && nameDupCount[(s.spot_name||'').trim()] > 1) ? (s.id === nameFirstId[(s.spot_name||'').trim()] ? ' <span style="font-size:10px;background:rgba(34,197,94,0.25);color:#4ade80;border-radius:8px;padding:2px 8px;">🏆 最初の報告（同名'+nameDupCount[(s.spot_name||'').trim()]+'件中）</span>' : ' <span style="font-size:10px;background:rgba(148,163,184,0.25);color:#cbd5e1;border-radius:8px;padding:2px 8px;">🔁 重複報告（後発）</span>') : ''}</div>
               <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;">${s.category || ''} · ${s.member || ''} · ${s.submitter || ''}</div>
             </div>
-            <div style="font-size:10px;color:rgba(255,255,255,0.3);">${new Date(s.created_at).toLocaleDateString('ja-JP')}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.3);">${new Date(s.created_at).toLocaleDateString('ja-JP')} ${new Date(s.created_at).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}</div>
           </div>
           <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:8px;line-height:1.6;">${escHtml(s.description || '')}</div>
           ${s.address ? `<div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px;">📮 ${escHtml(s.address)}</div>` : ''}
           ${(s.lat && s.lng) ? `<a href="${gMapUrl(s.lat, s.lng)}" target="_blank" style="font-size:11px;color:#c9a84c;">🗺️ この座標をGoogleマップで確認</a>` : ''}
           ${s.source_url ? `<div><a href="${escHtml(s.source_url)}" target="_blank" style="font-size:11px;color:#c9a84c;">🔗 出典を確認</a></div>` : ''}
           <div style="display:flex;gap:8px;margin-top:12px;">
-            <button onclick="approveSubmission('${s.id}')" style="flex:1;padding:10px;background:linear-gradient(135deg,#15803d,#16a34a);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ 承認</button>
+            ${(!s.type && nameDupCount[(s.spot_name||'').trim()] > 1 && s.id !== nameFirstId[(s.spot_name||'').trim()]) ?
+              `<button onclick="approveDuplicateSubmission('${s.id}')" style="flex:1;padding:10px;background:linear-gradient(135deg,#0369a1,#0284c7);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">🎖️ 重複ボーナスのみ付与（+10pt）</button>`
+              :
+              `<button onclick="approveSubmission('${s.id}')" style="flex:1;padding:10px;background:linear-gradient(135deg,#15803d,#16a34a);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">✅ 承認（+50pt）</button>`
+            }
             <button onclick="rejectSubmission('${s.id}')" style="flex:1;padding:10px;background:rgba(220,38,38,0.3);color:#fca5a5;border:1px solid rgba(220,38,38,0.4);border-radius:10px;font-size:13px;cursor:pointer;">❌ 却下</button>
             <button onclick="holdSubmission('${s.id}')" style="padding:10px 14px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);border:none;border-radius:10px;font-size:13px;cursor:pointer;">⏸</button>
           </div>
@@ -5999,8 +6050,70 @@ async function submitNewSpot() {
       body: JSON.stringify({ status: 'approved' })
     });
 
+    // 最初の発見者ポイント（早期発見）
+    if (s.submitter_id) {
+      await fetch(`${SUPABASE_URL}/rest/v1/point_log`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          user_id: s.submitter_id,
+          category: '早期発見',
+          amount: 50,
+          spot_name: s.spot_name,
+          created_at: new Date().toISOString(),
+        })
+      });
+    }
+
     await loadPendingSubmissions();
     showEvalToast('✅ 承認しました！スポットに追加されました');
+  }
+
+  // 重複報告（同じスポットへの2件目以降）の承認。
+  // スポットは新規作成せず、報告者に少額のポイントのみ付与する。
+  async function approveDuplicateSubmission(id) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/submissions?id=eq.${id}`, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    const [s] = await res.json();
+    if (!s) return;
+
+    await fetch(`${SUPABASE_URL}/rest/v1/submissions?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: 'approved' })
+    });
+
+    if (s.submitter_id) {
+      await fetch(`${SUPABASE_URL}/rest/v1/point_log`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          user_id: s.submitter_id,
+          category: '重複報告',
+          amount: 10,
+          spot_name: s.spot_name,
+          created_at: new Date().toISOString(),
+        })
+      });
+    }
+
+    await loadPendingSubmissions();
+    showEvalToast('✅ 重複報告としてポイントのみ付与しました（スポット追加なし）');
   }
 
   async function approveWrongReport(id) {
@@ -7101,6 +7214,16 @@ function filterRouteRegion(el, region) {
     { key: 'platinum', minPt: 2500, name: 'プラチナ',     requiresScout: false },
     { key: 'diamond',  minPt: 6000, name: 'ダイヤモンド', requiresScout: true  },
   ];
+
+  // 新規スポット投稿の月間上限（ランク別）
+  const SUBMIT_MONTHLY_LIMITS = {
+    bronze:   1,
+    silver:   1,
+    gold:     2,
+    platinum: 2,
+    diamond:  3,
+    premium:  999,
+  };
 
   function getRankKey(points, referralCount) {
     const pt = points || 0;
