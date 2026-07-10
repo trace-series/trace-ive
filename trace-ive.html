@@ -3840,18 +3840,21 @@ async function loadFeed() {
 
   let visits = [];
   try {
-    const vres = await fetch(`${SUPABASE_URL}/rest/v1/visit_log?order=created_at.desc&limit=20`, {
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
-    });
-    const vdata = await vres.json();
+    const client = getSupabaseClient();
+    const { data: vdata, error: verr } = await client
+      .from('visit_log')
+      .select('user_id, spot_name, created_at')
+      .order('created_at', { ascending: false })
+      .limit(20);
+    if (verr) console.warn('visit_log取得エラー:', verr);
     if (Array.isArray(vdata) && vdata.length) {
       const userIds = [...new Set(vdata.map(v => v.user_id).filter(Boolean))];
       let nameMap = {};
       if (userIds.length) {
-        const pres = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=in.(${userIds.join(',')})&select=id,display_name`, {
-          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
-        });
-        const pdata = await pres.json();
+        const { data: pdata } = await client
+          .from('profiles')
+          .select('id, display_name')
+          .in('id', userIds);
         if (Array.isArray(pdata)) pdata.forEach(p => { nameMap[p.id] = p.display_name; });
       }
       visits = vdata.map(v => ({
