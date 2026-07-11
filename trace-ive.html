@@ -4911,7 +4911,7 @@ function applyFilters() {
   };
 
   markers.forEach(marker => {
-    const memberMatch = activeMember === 'all' || marker.spotData.member === '全員' || marker.spotData.member === activeMember || (marker.spotData.member && marker.spotData.member.split(',').map(m=>m.trim()).includes(activeMember));
+    const memberMatch = activeMember === 'all' || marker.spotData.member === '全員' || getSpotMemberList(marker.spotData.member).includes(activeMember);
     const categoryMatch = activeCategory === 'all' || marker.spotData.category === activeCategory;
     const show = memberMatch && categoryMatch;
     marker.setVisible(show);
@@ -5107,10 +5107,12 @@ function openCard(spot) {
     span.textContent = b;
     badgeEl.appendChild(span);
   });
-  const memberBadge = document.createElement('span');
-  memberBadge.className = 'badge badge-gold';
-  memberBadge.textContent = spot.member;
-  badgeEl.appendChild(memberBadge);
+  getSpotMemberList(spot.member).forEach(function(mName) {
+    const memberBadge = document.createElement('span');
+    memberBadge.className = 'badge badge-gold';
+    memberBadge.textContent = mName;
+    badgeEl.appendChild(memberBadge);
+  });
 
   // 信頼度UI
   updateTrustUI(spot);
@@ -6291,6 +6293,12 @@ async function submitNewSpot() {
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  // スポットのmember文字列（単一 or カンマ区切りの複数）を配列に変換
+  function getSpotMemberList(memberStr) {
+    if (!memberStr) return [];
+    return String(memberStr).split(',').map(function(m){ return m.trim(); }).filter(Boolean);
+  }
+
 function toggleCard() {
   cardOpen = !cardOpen;
   const card = document.getElementById('map-card');
@@ -6312,7 +6320,7 @@ function renderRouteSpotList() {
   var catIcon = {'カフェ・飲食店':'🍜','撮影スポット':'📸','ライブ・イベント会場':'🎤','観光・名所':'🏯','ショップ':'🛍️'};
   var currentRegion = container.dataset.region || 'all';
   var filtered = SPOTS.filter(function(s) {
-    if (activeMember !== 'all' && s.member !== '全員' && !(s.member || []).includes(activeMember)) return false;
+    if (activeMember !== 'all' && s.member !== '全員' && !getSpotMemberList(s.member).includes(activeMember)) return false;
     if (currentRegion === 'all') return true;
     var addr = s.address || '';
     var koreaKeys = ['韓国', 'ソウル', '済州', '釜山', '弘大', 'COEX', '江南', '梨泰院', '明洞'];
@@ -6334,7 +6342,7 @@ function renderRouteSpotList() {
         var isKorea2 = koreaKeys2.some(function(k){ return addr2.indexOf(k) !== -1; });
         var isTokyo2 = tokyoKeys2.some(function(k){ return addr2.indexOf(k) !== -1; });
         var spotRegion2 = isKorea2 ? 'korea' : (isTokyo2 ? 'tokyo' : 'japan_other');
-        html += '<div class="route-spot-check" data-spot="' + s.name + '" data-region="' + spotRegion2 + '" data-meta="' + meta + '" data-icon="' + icon + '" data-lat="' + s.lat + '" data-lng="' + s.lng + '" data-member="' + (s.member || []).join(',') + '">'
+        html += '<div class="route-spot-check" data-spot="' + s.name + '" data-region="' + spotRegion2 + '" data-meta="' + meta + '" data-icon="' + icon + '" data-lat="' + s.lat + '" data-lng="' + s.lng + '" data-member="' + getSpotMemberList(s.member).join(',') + '">'
       + '<div class="rsc-left">'
       + '<div class="rsc-check" onclick="toggleRouteSpot(this)">□</div>'
       + '<div class="rsc-icon">' + icon + '</div>'
@@ -6403,7 +6411,7 @@ function renderSpotList() {
   var catIcon = {'カフェ・飲食店':'🍜','撮影スポット':'📸','ライブ・イベント会場':'🎤','観光・名所':'🏯','ショップ':'🛍️'};
   var filtered = SPOTS.filter(function(s) {
     if (activeCategory !== 'all' && s.category !== activeCategory) return false;
-    if (activeMember !== 'all' && s.member !== '全員' && !(s.member || []).includes(activeMember)) return false;
+    if (activeMember !== 'all' && s.member !== '全員' && !getSpotMemberList(s.member).includes(activeMember)) return false;
     if (originSpot) {
       if (s.name === originSpot.name) return false;
       if (activeRadius > 0) {
@@ -6442,8 +6450,8 @@ function renderSpotList() {
     div.className = 'spot-list-item';
     div.innerHTML = '<div class="spot-list-icon">' + icon + '</div>'
       + '<div class="spot-list-info">'
-      + '<div class="spot-list-name">' + s.name + '</div>'
-      + '<div class="spot-list-addr">' + (s.address || '') + '</div>'
+      + '<div class="spot-list-name">' + escHtml(s.name) + '</div>'
+      + '<div class="spot-list-addr">' + escHtml(s.address || '') + '</div>'
       + '</div>' + distHtml;
     div.onclick = (function(spot) { return function() { selectSpotFromList(spot.name); }; })(s);
     frag.appendChild(div);
@@ -6619,8 +6627,9 @@ function shareX() {
   }
 
   const tags = GROUP_CONFIG.hashtags.join(' ');
-  const memberInfo = GROUP_CONFIG.members.find(m => m.name === currentSpot.member);
-  const memberTags = memberInfo ? memberInfo.tags.join(' ') + ' ' : '';
+  const spotMemberNames = getSpotMemberList(currentSpot.member);
+  const memberTagList = GROUP_CONFIG.members.filter(m => spotMemberNames.includes(m.name)).map(m => m.tags.join(' '));
+  const memberTags = memberTagList.length ? memberTagList.join(' ') + ' ' : '';
   const text = encodeURIComponent(`【聖地巡礼】${currentSpot.name}\n${currentSpot.sub}\n\n${memberTags}${tags}`);
   window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
 
@@ -7206,13 +7215,12 @@ function showLangComingSoon() {
     }
 
     let multiplier = 1;
+    const spotMembers = getSpotMemberList(currentSpot.member);
 
     // 誕生日倍率
     const bdEvent = getBirthdayEvent();
-    if (bdEvent && currentSpot.member) {
-      const isBdMember = bdEvent.member.name === currentSpot.member || bdEvent.member.nameEn === currentSpot.member;
-      if (isBdMember) multiplier *= bdEvent.multiplier;
-    }
+    const isBdMember = bdEvent && (spotMembers.includes(bdEvent.member.name) || spotMembers.includes(bdEvent.member.nameEn));
+    if (isBdMember) multiplier *= bdEvent.multiplier;
 
     // 推し倍率
     const oshiMult = getOshiMultiplier(currentSpot.member);
@@ -7220,10 +7228,10 @@ function showLangComingSoon() {
 
     const finalPt = Math.round(basePt * multiplier);
     const notes = [];
-    if (bdEvent && bdEvent.member && (bdEvent.member.name === currentSpot.member || bdEvent.member.nameEn === currentSpot.member)) {
+    if (isBdMember) {
       notes.push(`誕生${bdEvent.type === 'day' ? '日' : '月'}`);
     }
-    if (oshiMult > 1) notes.push(oshi1 === currentSpot.member ? '💜1推し' : '🩷2推し');
+    if (oshiMult > 1) notes.push((oshi1 && spotMembers.includes(oshi1)) ? '💜1推し' : '🩷2推し');
     const multiplierNote = multiplier > 1 ? ` (×${multiplier.toFixed(1)} ${notes.join('・')})` : '';
     addPendingPoint(currentSpot.name, labelMap[type] + multiplierNote, finalPt);
 
@@ -7971,10 +7979,11 @@ function saveOshiSettings() {
 }
 
 // 推し倍率をポイント計算に適用（evalSpotから呼ばれる）
-function getOshiMultiplier(memberName) {
-  if (!memberName) return 1;
-  if (oshi1 && oshi1 === memberName) return OSHI_MULTIPLIER_1;
-  if (oshi2 && oshi2 === memberName) return OSHI_MULTIPLIER_2;
+function getOshiMultiplier(memberField) {
+  const members = getSpotMemberList(memberField);
+  if (members.length === 0) return 1;
+  if (oshi1 && members.includes(oshi1)) return OSHI_MULTIPLIER_1;
+  if (oshi2 && members.includes(oshi2)) return OSHI_MULTIPLIER_2;
   return 1;
 }
 
@@ -8283,7 +8292,7 @@ function filterRankingMember(el, member) {
   let visibleCount = 0;
   items.forEach((item, i) => {
     const m = item.getAttribute('data-member') || '';
-    const show = member === 'all' || m === member;
+    const show = member === 'all' || getSpotMemberList(m).includes(member);
     item.style.display = show ? 'flex' : 'none';
     if (show) {
       visibleCount++;
