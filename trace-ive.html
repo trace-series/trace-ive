@@ -2260,6 +2260,7 @@
       <div class="rtab" onclick="switchRankingPeriod(this,'half')">半年</div>
       <div class="rtab" onclick="switchRankingPeriod(this,'quarter')">3ヶ月</div>
       <div class="rtab" onclick="switchRankingPeriod(this,'month')">月間</div>
+      <div class="rtab" onclick="switchRankingPeriod(this,'achievement')">🏆 達成率</div>
       <div id="event-ranking-tabs"></div>
     </div>
 
@@ -8269,7 +8270,54 @@ function switchRankingPeriod(el, period) {
   document.querySelectorAll('#ranking-period-tabs .rtab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   currentRankingPeriod = period;
+  if (period === 'achievement') {
+    renderAchievementRanking();
+    return;
+  }
   renderSpotRanking(period);
+}
+
+function renderAchievementRanking() {
+  var list = document.getElementById('ranking-list');
+  if (!list) return;
+  list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light);">読み込み中...</div>';
+  var client = getSupabaseClient();
+  var totalSpots = SPOTS.length;
+  client.from('profiles').select('id, display_name, avatar_url, visited_spots').then(function(r) {
+    var rows = r.data || [];
+    var ranked = rows.map(function(p) {
+      var count = (p.visited_spots || []).length;
+      var rate = totalSpots > 0 ? Math.round((count / totalSpots) * 1000) / 10 : 0;
+      return { name: p.display_name || '匿名ユーザー', icon: p.avatar_url || '👤', count: count, rate: rate };
+    })
+      .filter(function(x) { return x.count > 0; })
+      .sort(function(a, b) { return b.rate - a.rate || b.count - a.count; })
+      .slice(0, 20);
+    if (!ranked.length) {
+      list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);"><div style="font-size:32px;margin-bottom:8px;">🏆</div><div style="font-size:14px;">まだ巡礼報告データがありません</div></div>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < ranked.length; i++) {
+      var u = ranked[i];
+      var rankClass = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other';
+      html += '<div class="ranking-item">';
+      html += '<div class="rank-num ' + rankClass + '">' + (i+1) + '</div>';
+      html += '<div class="rank-thumb">' + escHtml(u.icon.length <= 2 ? u.icon : '👤') + '</div>';
+      html += '<div class="rank-info">';
+      html += '<div class="rank-name">' + escHtml(u.name) + '</div>';
+      html += '<div class="rank-meta">' + u.count + ' / ' + totalSpots + ' スポット巡礼済み</div>';
+      html += '</div>';
+      html += '<div class="rank-score">';
+      html += '<div class="rank-score-num">' + u.rate + '%</div>';
+      html += '<div class="rank-score-label">達成率</div>';
+      html += '</div></div>';
+    }
+    list.innerHTML = html;
+  }).catch(function(e) {
+    console.warn('achievement ranking error:', e);
+    list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#f87171;">読み込みエラー</div>';
+  });
 }
 
 // ── メンバータブ長押しで推しランキングへ ──
