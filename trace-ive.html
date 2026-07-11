@@ -2167,11 +2167,11 @@
         </div>
         <div class="card-actions" style="margin-top:14px;">
           <button class="btn-primary" onclick="reportVisit()">📸 巡礼した！</button>
-          <button class="btn-secondary" id="btn-navi" onclick="openNavi()">🗺️ ナビ</button>
-          <button class="btn-secondary" onclick="shareX()">𝕏 シェア</button>
+          <button class="btn-primary" style="background:linear-gradient(135deg,#1a1a1a,#000);" onclick="shareX()">𝕏 シェア</button>
         </div>
-        <div style="padding:10px 0 0;">
-          <button id="btn-set-origin" onclick="setOriginSpot()" style="width:100%;background:linear-gradient(135deg,#f3e8ff,#e8d5ff);border:2px solid #c084fc;border-radius:12px;padding:9px;font-size:13px;font-weight:700;color:#6b21a8;cursor:pointer;">📍 ここを起点に周辺スポットを探す</button>
+        <div class="card-actions" style="margin-top:8px;">
+          <button id="btn-navi" onclick="openNavi()" style="flex:1;background:linear-gradient(135deg,#f3e8ff,#e8d5ff);border:2px solid #c084fc;border-radius:12px;padding:9px;font-size:13px;font-weight:700;color:#6b21a8;cursor:pointer;">🗺️ ナビ</button>
+          <button id="btn-set-origin" onclick="setOriginSpot()" style="flex:1;background:linear-gradient(135deg,#f3e8ff,#e8d5ff);border:2px solid #c084fc;border-radius:12px;padding:9px;font-size:13px;font-weight:700;color:#6b21a8;cursor:pointer;">📍 起点に設定</button>
         </div>
         <div class="card-detail" id="card-detail" style="display:none;">
           <div class="card-detail-row">
@@ -2383,7 +2383,7 @@
       <div class="badge-card locked">
         <div class="badge-icon">🎯</div>
         <div class="badge-name">正確レポーター</div>
-        <div class="badge-desc">登録スポットへのGOOD評価累計50pt以上</div>
+        <div class="badge-desc">GOOD評価の実施で累計50pt以上獲得</div>
       </div>
       <div class="badge-card locked">
         <div class="badge-icon">👑</div>
@@ -2857,9 +2857,9 @@
         <span class="pr-label">1日の投稿上限</span>
         <span class="pr-limit">3件</span>
       </div>
-      <div class="pr-row">
+      <div class="pr-row" style="flex-direction:column;align-items:flex-start;gap:6px;">
         <span class="pr-label">新規スポット投稿の月間上限（ランク別）</span>
-        <span class="pr-limit">ブロンズ/シルバー：1件・ゴールド/プラチナ：2件・ダイヤモンド：3件</span>
+        <span class="pr-limit" style="white-space:normal;">ブロンズ/シルバー：1件・ゴールド/プラチナ：2件・ダイヤモンド：3件</span>
       </div>
       <div class="pr-row">
         <span class="pr-label">連続投稿クールダウン</span>
@@ -2930,7 +2930,7 @@
         <span class="pr-badge-icon">🎯</span>
         <div class="pr-badge-info">
           <div class="pr-badge-name">正確レポーター</div>
-          <div class="pr-badge-cond">登録スポットへのGOOD評価累計50pt以上</div>
+          <div class="pr-badge-cond">GOOD評価の実施で累計50pt以上獲得</div>
         </div>
       </div>
       <div class="pr-badge-row">
@@ -3722,7 +3722,7 @@ async function fetchSpotsFromDB() {
       address: s.address || '',
       member: s.member || 'IVE',
       discoverer: s.discoverer || '@missing_link',
-      likes: 0,
+      likes: s.likes_count || 0,
       badges: [s.category || ''],
       color: '#3d1a5e',
       trustScore: s.trust_score || 8,
@@ -6482,6 +6482,34 @@ function jumpToSpot(name) {
   }, 100);
 }
 
+async function incrementSpotLikes(dbId) {
+  if (!dbId) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/spots?id=eq.${dbId}&select=likes_count`, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    const [row] = await res.json();
+    const current = (row && row.likes_count) || 0;
+    const next = current + 1;
+    await fetch(`${SUPABASE_URL}/rest/v1/spots?id=eq.${dbId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ likes_count: next })
+    });
+    if (currentSpot && currentSpot.db_id === dbId) {
+      currentSpot.likes = next;
+      const likesEl = document.getElementById('card-likes');
+      if (likesEl) likesEl.textContent = next + ' 件の巡礼報告';
+    }
+  } catch(e) {
+    console.warn('スポットlikes更新失敗:', e);
+  }
+}
+
 // ── 巡礼報告 ──
   const REPORT_VISIT_MAX_DISTANCE = 300; // メートル
 
@@ -6541,6 +6569,8 @@ function jumpToSpot(name) {
       client.from('visit_log').insert({ user_id: userId, spot_name: spotId, visited_at: new Date().toISOString() }).then().catch(function(e) {
         console.warn('visit_log insert error:', e);
       });
+      // スポットの巡礼報告カウント（likes_count）を+1
+      incrementSpotLikes(currentSpot.db_id);
       // 友達紹介：初回の巡礼報告完了時のみ、紹介者に+50pt
       if (isFirstEverReport && profile.referred_by) {
         awardReferralBonus(profile.referred_by);
@@ -6560,13 +6590,59 @@ function openNavi() {
 }
 
 // ── Xシェア ──
+const X_SHARE_BONUS_KEY = 'traceive_xshare_bonus_v1';
+const X_SHARE_BONUS_PT = 50;
+
+function getXShareBonusHistory() {
+  try { return JSON.parse(localStorage.getItem(X_SHARE_BONUS_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+
+function hasXShareBonusReceived(spotName) {
+  return getXShareBonusHistory().includes(spotName);
+}
+
+function recordXShareBonus(spotName) {
+  const h = getXShareBonusHistory();
+  if (!h.includes(spotName)) {
+    h.push(spotName);
+    localStorage.setItem(X_SHARE_BONUS_KEY, JSON.stringify(h));
+  }
+}
+
 function shareX() {
   if (!currentSpot) return;
+  const spotName = currentSpot.name;
+
+  if (!hasXShareBonusReceived(spotName)) {
+    alert(`#TraceIVE をつけて投稿すると +${X_SHARE_BONUS_PT}pt もらえます！\n\nXの投稿画面に移動します。投稿してアプリに戻ってきてね。`);
+  }
+
   const tags = GROUP_CONFIG.hashtags.join(' ');
   const memberInfo = GROUP_CONFIG.members.find(m => m.name === currentSpot.member);
   const memberTags = memberInfo ? memberInfo.tags.join(' ') + ' ' : '';
   const text = encodeURIComponent(`【聖地巡礼】${currentSpot.name}\n${currentSpot.sub}\n\n${memberTags}${tags}`);
   window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+
+  // Xの投稿画面から戻ってきたタイミングで「投稿しましたか？」と確認（自動付与ではなく自己申告制）
+  let asked = false;
+  const onReturn = () => {
+    if (document.visibilityState !== 'visible' || asked) return;
+    asked = true;
+    document.removeEventListener('visibilitychange', onReturn);
+    window.removeEventListener('focus', onReturn);
+    if (hasXShareBonusReceived(spotName)) return;
+    setTimeout(() => {
+      const posted = confirm(`#TraceIVE をつけて投稿しましたか？\n\n投稿していれば「OK」を押してポイントを受け取ってください。`);
+      if (posted && !hasXShareBonusReceived(spotName)) {
+        recordXShareBonus(spotName);
+        addPendingPoint(spotName, '𝕏 #TraceIVEシェア', X_SHARE_BONUS_PT);
+        showEvalToast(`𝕏 シェアありがとう！ +${X_SHARE_BONUS_PT}pt 獲得！`);
+      }
+    }, 300);
+  };
+  document.addEventListener('visibilitychange', onReturn);
+  window.addEventListener('focus', onReturn);
 }
 
 // ── 友達紹介（土台部分・6/19実装） ──
@@ -7643,6 +7719,21 @@ function loadProfileData() {
               });
             }
 
+            // バッジ解除: 正確レポーター（GOOD評価累計50pt以上）
+            // ※GOOD評価のpoint_logカテゴリはevalSpot()内のlabelMapのラベル(+倍率注記)として保存されるため前方一致で判定
+            var goodEvalPrefixes = ['📸 行って確認と報告','🎯 構図一致を報告','📱 SNSで確認と報告','🎬 動画で確認と報告','📰 メディア掲載を報告','🔗 出典ありを報告'];
+            if (plData) {
+              var accurateTotal = plData
+                .filter(function(p){ return goodEvalPrefixes.some(function(prefix){ return (p.category||'').indexOf(prefix) === 0; }); })
+                .reduce(function(sum, p){ return sum + (p.amount || 0); }, 0);
+              if (accurateTotal >= 50) {
+                document.querySelectorAll('.badge-card').forEach(function(elx) {
+                  var nameEl = elx.querySelector('.badge-name');
+                  if (nameEl && nameEl.textContent === '正確レポーター') elx.classList.remove('locked');
+                });
+              }
+            }
+
             // バッジ解除: マッパー(承認済み5件以上)
             var supabase4 = getSupabaseClient();
             supabase4.from('submissions').select('id', { count: 'exact', head: true }).eq('submitter_id', session.user.id).eq('status', 'approved')
@@ -7686,20 +7777,6 @@ function loadProfileData() {
           }
         })
           .catch(function(e5) { console.warn('buzz badge error:', e5); });
-
-        // バッジ解除: 正確レポーター（GOOD評価累計50pt以上）
-        var supabase6 = getSupabaseClient();
-        supabase6.from('point_log').select('amount').eq('user_id', session.user.id).eq('category', 'accurate_report')
-          .then(function(accRes) {
-            var total = (accRes.data || []).reduce(function(sum, p) { return sum + (p.amount || 0); }, 0);
-            if (total >= 50) {
-              document.querySelectorAll('.badge-card').forEach(function(elx) {
-                var nameEl = elx.querySelector('.badge-name');
-                if (nameEl && nameEl.textContent === '正確レポーター') elx.classList.remove('locked');
-              });
-            }
-          })
-          .catch(function(e6) { console.warn('accurate reporter badge error:', e6); });
 
         // バッジ解除: 海外遠征（韓国スポット投稿）
         var supabase7 = getSupabaseClient();
