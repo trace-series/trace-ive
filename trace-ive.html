@@ -2437,13 +2437,13 @@
       <div class="x-connect-arrow">›</div>
     </div>
 
-      <div style="background:linear-gradient(135deg,#4285f4,#34a853);border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;margin-top:8px;">
-        <div style="width:40px;height:40px;background:white;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;">G</div>
-        <div style="flex:1;">
-          <div style="color:white;font-weight:700;font-size:14px;">Googleアカウント連携中</div>
-          <div style="color:rgba(255,255,255,0.8);font-size:12px;" id="google-connect-sub">ポイント・発見者クレジットが永続保持されます</div>
+      <div class="x-connect-card" id="google-connect-card" onclick="startWithGoogle()" style="background:linear-gradient(135deg,#4285f4,#34a853);margin-top:8px;margin-bottom:0;">
+        <div style="width:40px;height:40px;background:white;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;flex-shrink:0;">G</div>
+        <div class="x-connect-text">
+          <div class="x-connect-title" id="google-connect-title">G Google連携</div>
+          <div class="x-connect-sub" id="google-connect-sub" style="color:rgba(255,255,255,0.8);">ポイント・発見者クレジットが永続保持されます</div>
         </div>
-        <div style="color:white;font-size:18px;">✓</div>
+        <div class="x-connect-arrow" id="google-connect-arrow" style="color:white;">›</div>
       </div>
     <div class="profile-section-title">⚙️ 設定</div>
     <div class="settings-list">
@@ -3923,8 +3923,8 @@ async function loadFeed() {
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
           <div style="font-size:11px;color:var(--text-light);">${timeAgoLabel(item.created_at)}</div>
-          <button class="${liked ? 'liked' : ''}" onclick="toggleLike('${item.id}', this, 'visit_log')" ${liked ? 'disabled' : ''} style="border:none;background:${liked ? 'rgba(224,60,110,0.15)' : 'var(--purple-pale)'};color:${liked ? '#e03c6e' : 'var(--purple-mid)'};border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:${liked ? 'default' : 'pointer'};">
-            ${liked ? '❤️' : '🤍'} ${item.likes_count}件
+          <button class="${liked ? 'liked' : ''}" onclick="toggleLike('${item.id}', this, 'visit_log')" ${liked ? 'disabled' : ''} style="border:none;background:${liked ? 'rgba(224,60,110,0.15)' : 'var(--purple-pale)'};color:${liked ? '#e03c6e' : 'var(--purple-mid)'};border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:${liked ? 'default' : 'pointer'};display:flex;align-items:center;gap:5px;">
+            <span>${liked ? '❤️ いいね済み' : '🤍 いいね'}</span><span style="opacity:0.75;">${item.likes_count}件</span>
           </button>
         </div>
       </div>`;
@@ -3939,8 +3939,8 @@ async function loadFeed() {
       ${item.description ? `<div style="font-size:13px;color:var(--text-mid);margin-bottom:8px;line-height:1.5;">${escHtml(item.description)}</div>` : ''}
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div style="font-size:11px;color:var(--text-light);">👤 ${escHtml(item.submitter)} · ${timeAgoLabel(item.created_at)}</div>
-        <button class="${liked ? 'liked' : ''}" onclick="toggleLike('${item.id}', this, 'submissions')" ${liked ? 'disabled' : ''} style="border:none;background:${liked ? 'rgba(224,60,110,0.15)' : 'var(--purple-pale)'};color:${liked ? '#e03c6e' : 'var(--purple-mid)'};border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:${liked ? 'default' : 'pointer'};">
-          ${liked ? '❤️' : '🤍'} ${item.likes_count}件
+        <button class="${liked ? 'liked' : ''}" onclick="toggleLike('${item.id}', this, 'submissions')" ${liked ? 'disabled' : ''} style="border:none;background:${liked ? 'rgba(224,60,110,0.15)' : 'var(--purple-pale)'};color:${liked ? '#e03c6e' : 'var(--purple-mid)'};border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:${liked ? 'default' : 'pointer'};display:flex;align-items:center;gap:5px;">
+          <span>${liked ? '❤️ いいね済み' : '🤍 いいね'}</span><span style="opacity:0.75;">${item.likes_count}件</span>
         </button>
       </div>
     </div>`;
@@ -5687,8 +5687,31 @@ async function submitNewSpot() {
         }
         var xTitle = document.getElementById('x-connect-title');
         var xSub = document.getElementById('x-connect-sub');
-        if (xTitle && xHandle) xTitle.textContent = xHandle + ' で連携中';
-        if (xSub) xSub.textContent = 'ポイント・発見者クレジットが永続保持されます';
+        var googleTitle = document.getElementById('google-connect-title');
+        var googleSub = document.getElementById('google-connect-sub');
+        var googleArrow = document.getElementById('google-connect-arrow');
+        if (isGoogle) {
+          // Googleで連携中 → Googleカードを「連携中」表示に、Xカードは未連携表示に戻す
+          if (googleTitle) googleTitle.textContent = (xName || 'Googleアカウント') + ' で連携中';
+          if (googleSub) googleSub.textContent = 'ポイント・発見者クレジットが永続保持されます';
+          if (googleArrow) googleArrow.textContent = '✓';
+          if (xTitle) xTitle.textContent = '𝕏 X連携';
+          if (xSub) xSub.textContent = '発見者名がXで表示・#TraceIVE投稿連動ポイント・特別バッジ解放';
+        } else if (xHandle) {
+          // Xで連携中 → Xカードを「連携中」表示に、Googleカードは未連携表示に戻す
+          if (xTitle) xTitle.textContent = xHandle + ' で連携中';
+          if (xSub) xSub.textContent = 'ポイント・発見者クレジットが永続保持されます';
+          if (googleTitle) googleTitle.textContent = 'G Google連携';
+          if (googleSub) googleSub.textContent = 'ポイント・発見者クレジットが永続保持されます';
+          if (googleArrow) googleArrow.textContent = '›';
+        } else {
+          // どちらも未連携（匿名など）
+          if (xTitle) xTitle.textContent = '𝕏 X連携';
+          if (xSub) xSub.textContent = '発見者名がXで表示・#TraceIVE投稿連動ポイント・特別バッジ解放';
+          if (googleTitle) googleTitle.textContent = 'G Google連携';
+          if (googleSub) googleSub.textContent = 'ポイント・発見者クレジットが永続保持されます';
+          if (googleArrow) googleArrow.textContent = '›';
+        }
         if (xName) {
           client.from('profiles').update({ display_name: xName, x_id: isGoogle ? null : (meta.user_name || null) }).eq('id', user.id).then().catch(function(e) {
             console.warn('display_name update error:', e);
@@ -5807,7 +5830,7 @@ async function submitNewSpot() {
   }
 
   function switchAdminTab(tab) {
-    ['pending','spots','admins','notices'].forEach(t => {
+    ['pending','spots','admins','notices','devmode'].forEach(t => {
       document.getElementById('admin-tab-' + t).style.display = t === tab ? 'block' : 'none';
       const btn = document.getElementById('atab-' + t);
       if (btn) {
@@ -5819,6 +5842,59 @@ async function submitNewSpot() {
     if (tab === 'spots') loadAdminSpots();
     if (tab === 'admins') loadAdminList();
     if (tab === 'notices') loadAdminNotices();
+    if (tab === 'devmode') loadDevSettingsPanel();
+  }
+
+  // ── 開発者モード設定（自分のアカウントのみに適用） ──
+  function loadDevSettingsPanel() {
+    const client = getSupabaseClient();
+    client.auth.getSession().then(function(res) {
+      const session = res.data && res.data.session;
+      if (!session) return;
+      client.from('profiles').select('hide_from_ranking, dev_bypass_rank').eq('id', session.user.id).single().then(function(r) {
+        const d = r.data || {};
+        hideFromRankingActive = !!d.hide_from_ranking;
+        devBypassRankActive = !!d.dev_bypass_rank;
+        updateDevToggleBtn('hide_from_ranking', hideFromRankingActive);
+        updateDevToggleBtn('dev_bypass_rank', devBypassRankActive);
+      }).catch(function(e) { console.warn('dev settings load error:', e); });
+    });
+  }
+
+  function updateDevToggleBtn(field, isOn) {
+    const id = field === 'hide_from_ranking' ? 'dev-btn-hide-ranking' : 'dev-btn-bypass-rank';
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.textContent = isOn ? 'ON' : 'OFF';
+    btn.style.background = isOn ? 'linear-gradient(135deg,#3d1a5e,#6b2d8b)' : 'rgba(255,255,255,0.15)';
+    btn.style.color = isOn ? '#fff' : 'rgba(255,255,255,0.6)';
+  }
+
+  function toggleDevSetting(field) {
+    const client = getSupabaseClient();
+    client.auth.getSession().then(function(res) {
+      const session = res.data && res.data.session;
+      if (!session) return;
+      const current = field === 'hide_from_ranking' ? hideFromRankingActive : devBypassRankActive;
+      const next = !current;
+      const update = {};
+      update[field] = next;
+      client.from('profiles').update(update).eq('id', session.user.id).then(function() {
+        if (field === 'hide_from_ranking') {
+          hideFromRankingActive = next;
+        } else {
+          devBypassRankActive = next;
+          if (typeof updateUserRank === 'function') updateUserRank(lastKnownPoints, lastKnownReferralCount);
+        }
+        updateDevToggleBtn(field, next);
+        const msg = document.getElementById('dev-setting-msg');
+        if (msg) { msg.textContent = '✅ 設定を更新しました'; setTimeout(function(){ msg.textContent=''; }, 2000); }
+      }).catch(function(e) {
+        console.warn('dev setting update error:', e);
+        const msg = document.getElementById('dev-setting-msg');
+        if (msg) msg.textContent = '❌ 更新に失敗しました';
+      });
+    });
   }
 
 
@@ -7395,13 +7471,20 @@ function filterRouteRegion(el, region) {
 
   let currentUserRank = 'bronze';
   let optimizeUsedThisMonth = 0;
+  // ── 開発者モード設定（自分のアカウントのみに適用） ──
+  let hideFromRankingActive = false; // true: 達成率/推しファン/トップ貢献者バッジの集計から自分を除外
+  let devBypassRankActive = false;   // true: ランク制限を無視して全ランクの機能を利用可能にする(表示上はダイヤモンド扱い)
+  let lastKnownPoints = 0;
+  let lastKnownReferralCount = 0;
 
   function getRouteLimit() {
     return ROUTE_LIMITS[currentUserRank] || ROUTE_LIMITS.bronze;
   }
 
   function updateUserRank(points, referralCount) {
-    currentUserRank = getRankKey(points, referralCount);
+    lastKnownPoints = points || 0;
+    lastKnownReferralCount = referralCount || 0;
+    currentUserRank = devBypassRankActive ? 'diamond' : getRankKey(points, referralCount);
     const tier = RANK_TIERS.find(t => t.key === currentUserRank);
     const badgeEl = document.getElementById('contrib-rank-badge');
     if (badgeEl && tier) badgeEl.textContent = tier.name;
@@ -7739,13 +7822,15 @@ function loadProfileData() {
   sb.auth.getSession().then(function(res) {
     var session = res.data && res.data.session;
     if (!session) return;
-    sb.from("profiles").select("points, visited_spots, referral_count, is_founder").eq("id", session.user.id).single()
+    sb.from("profiles").select("points, visited_spots, referral_count, is_founder, hide_from_ranking, dev_bypass_rank").eq("id", session.user.id).single()
       .then(function(r) {
         if (!r.data) return;
           if (r.data.is_founder) {
             var founderCard = document.querySelector('#badge-grid .badge-card.locked');
             if (founderCard) founderCard.classList.remove('locked');
           }
+          hideFromRankingActive = !!r.data.hide_from_ranking;
+          devBypassRankActive = !!r.data.dev_bypass_rank;
         var pts = r.data.points || 0;
         var el = document.getElementById("profile-contrib-total");
         if (el) el.textContent = pts + " pt";
@@ -7859,9 +7944,10 @@ function loadProfileData() {
         var supabase8 = getSupabaseClient();
         var now = new Date();
         var monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-        supabase8.from('profiles').select('id').gte('updated_at', monthStart).order('points', { ascending: false }).limit(1)
+        supabase8.from('profiles').select('id, hide_from_ranking').gte('updated_at', monthStart).order('points', { ascending: false }).limit(10)
           .then(function(topRes) {
-            if (topRes.data && topRes.data.length > 0 && topRes.data[0].id === session.user.id) {
+            var topRows = (topRes.data || []).filter(function(p) { return !p.hide_from_ranking; });
+            if (topRows.length > 0 && topRows[0].id === session.user.id) {
               document.querySelectorAll('.badge-card').forEach(function(elx) {
                 var nameEl = elx.querySelector('.badge-name');
                 if (nameEl && nameEl.textContent === 'トップ貢献者') elx.classList.remove('locked');
@@ -8283,8 +8369,8 @@ function renderAchievementRanking() {
   list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light);">読み込み中...</div>';
   var client = getSupabaseClient();
   var totalSpots = SPOTS.length;
-  client.from('profiles').select('id, display_name, avatar_url, visited_spots').then(function(r) {
-    var rows = r.data || [];
+  client.from('profiles').select('id, display_name, avatar_url, visited_spots, hide_from_ranking').then(function(r) {
+    var rows = (r.data || []).filter(function(p) { return !p.hide_from_ranking; });
     var ranked = rows.map(function(p) {
       var count = (p.visited_spots || []).length;
       var rate = totalSpots > 0 ? Math.round((count / totalSpots) * 1000) / 10 : 0;
@@ -8344,10 +8430,10 @@ function buildOshiRanking() {
   const client = getSupabaseClient();
   Promise.all([
     client.from('visit_log').select('user_id'),
-    client.from('profiles').select('id, display_name, oshi1, oshi2')
+    client.from('profiles').select('id, display_name, oshi1, oshi2, hide_from_ranking')
   ]).then(function(results) {
     const visits = (results[0] && results[0].data) || [];
-    const profiles = (results[1] && results[1].data) || [];
+    const profiles = ((results[1] && results[1].data) || []).filter(function(p) { return !p.hide_from_ranking; });
     const profileMap = {};
     profiles.forEach(function(p) { profileMap[p.id] = p; });
 
@@ -9035,6 +9121,9 @@ function applyTransferCode() {
       <button onclick="switchAdminTab('notices')" id="atab-notices" style="flex:1;padding:10px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border:none;border-radius:10px;font-size:13px;cursor:pointer;">
         お知らせ
       </button>
+      <button onclick="switchAdminTab('devmode')" id="atab-devmode" style="flex:1;padding:10px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border:none;border-radius:10px;font-size:13px;cursor:pointer;">
+        開発者
+      </button>
     </div>
 
     <!-- 承認待ちタブ -->
@@ -9081,6 +9170,31 @@ function applyTransferCode() {
         </div>
         <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:8px;">投稿済み一覧</div>
         <div id="admin-notices-list"><div style="text-align:center;color:rgba(255,255,255,0.4);padding:20px;">読み込み中...</div></div>
+      </div>
+    </div>
+
+    <!-- 開発者モードタブ -->
+    <div id="admin-tab-devmode" style="display:none;">
+      <div style="background:rgba(255,255,255,0.06);border-radius:14px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">🕹️ 開発者モード</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:16px;">今ログイン中のアカウントにのみ適用されます</div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.08);gap:12px;">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#fff;">ランキング非表示</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;">達成率・推しファン・トップ貢献者バッジの集計から自分を除外</div>
+          </div>
+          <button id="dev-btn-hide-ranking" onclick="toggleDevSetting('hide_from_ranking')" style="flex-shrink:0;padding:8px 16px;border:none;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);">OFF</button>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;gap:12px;">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#fff;">ランク制限を無視</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;">ルート最適化などランク限定機能を確認用に全解放（表示上👑ダイヤモンド扱い）</div>
+          </div>
+          <button id="dev-btn-bypass-rank" onclick="toggleDevSetting('dev_bypass_rank')" style="flex-shrink:0;padding:8px 16px;border:none;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);">OFF</button>
+        </div>
+        <div id="dev-setting-msg" style="font-size:12px;color:#4ade80;margin-top:10px;min-height:16px;"></div>
       </div>
     </div>
 
