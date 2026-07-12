@@ -2310,6 +2310,8 @@
         <button class="profile-edit-btn" onclick="openProfileEdit()">編集</button>
       </div>
       <div class="profile-badges-row" id="profile-badges-row">
+        <span class="profile-badge pbadge-founder" id="pbadge-founder-el" style="display:none;">🏅 創設メンバー</span>
+        <span class="profile-badge pbadge-discoverer" id="pbadge-discoverer-el" style="display:none;">🥇 発見者バッジ</span>
       </div>
     </div>
 
@@ -7828,6 +7830,8 @@ function loadProfileData() {
           if (r.data.is_founder) {
             var founderCard = document.querySelector('#badge-grid .badge-card.locked');
             if (founderCard) founderCard.classList.remove('locked');
+            var founderPill = document.getElementById('pbadge-founder-el');
+            if (founderPill) founderPill.style.display = 'inline-block';
           }
           hideFromRankingActive = !!r.data.hide_from_ranking;
           devBypassRankActive = !!r.data.dev_bypass_rank;
@@ -7866,6 +7870,28 @@ function loadProfileData() {
                 var nameEl = elx.querySelector('.badge-name');
                 if (nameEl && nameEl.textContent === '最初の発見者') elx.classList.remove('locked');
               });
+            }
+
+            // 発見者バッジの件数を集計して表示（プロフィール上部のピル + 統計カード）
+            var discovererCount = (plData || []).filter(function(p){ return p.category === '早期発見'; }).length;
+            var discovererPill = document.getElementById('pbadge-discoverer-el');
+            if (discovererPill) {
+              if (discovererCount > 0) {
+                discovererPill.textContent = '🥇 発見者バッジ ×' + discovererCount;
+                discovererPill.style.display = 'inline-block';
+              } else {
+                discovererPill.style.display = 'none';
+              }
+            }
+            var discovererStatEl = document.getElementById('stat-discoverer');
+            if (discovererStatEl) {
+              discovererStatEl.textContent = discovererCount;
+              var statCardEl = discovererStatEl.closest('.stat-card');
+              if (statCardEl) {
+                statCardEl.querySelectorAll('div').forEach(function(dv) {
+                  if (dv.textContent.trim() === 'Coming Soon') dv.remove();
+                });
+              }
             }
 
             // バッジ解除: 正確レポーター（GOOD評価累計50pt以上）
