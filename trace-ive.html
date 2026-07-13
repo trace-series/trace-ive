@@ -2793,11 +2793,11 @@
       </div>
     </div>
 
-    <!-- 評価ポイント（確定待ち） -->
-    <div class="pr-section-title">✅ 評価でもらえるポイント <span class="pr-pending-note">確定待ち</span></div>
-    <div class="pr-desc">管理者が判定を確定した時点で付与されます。正しい評価をした人だけが得をする仕組みです。</div>
+    <!-- 評価ポイント -->
+    <div class="pr-section-title">✅ 評価でもらえるポイント</div>
 
-    <div class="pr-section-title" style="font-size:12px;margin-top:8px;">🏃 現地確認系（どちらか1つのみ）</div>
+    <div class="pr-section-title" style="font-size:12px;margin-top:8px;">🏃 現地確認系（どちらか1つのみ）<span class="pr-pending-note" style="background:#dcfce7;color:#15803d;">即時付与</span></div>
+    <div class="pr-desc">「巡礼した！」でGPS確認済みのスポットのみ評価できます。押すだけでポイントになる状態を防ぐための仕組みです。</div>
     <div class="pr-card">
       <div class="pr-row">
         <span class="pr-label">📸 行って確認（正しかった場合）</span>
@@ -2809,7 +2809,8 @@
       </div>
     </div>
 
-    <div class="pr-section-title" style="font-size:12px;margin-top:8px;">🔍 リモート確認系（複数可・合計上限10pt）</div>
+    <div class="pr-section-title" style="font-size:12px;margin-top:8px;">🔍 リモート確認系（複数可・合計上限10pt）<span class="pr-pending-note">確定待ち</span></div>
+    <div class="pr-desc">管理者が判定を確定した時点で付与されます。</div>
     <div class="pr-card">
       <div class="pr-row">
         <span class="pr-label">📱 SNSで確認（正しかった場合）</span>
@@ -2833,7 +2834,7 @@
       </div>
     </div>
 
-    <div class="pr-section-title" style="font-size:12px;margin-top:8px;">⚠️ BAD評価（正しかった場合）</div>
+    <div class="pr-section-title" style="font-size:12px;margin-top:8px;">⚠️ BAD評価（正しかった場合）<span class="pr-pending-note">確定待ち</span></div>
     <div class="pr-card">
       <div class="pr-row">
         <span class="pr-label">❌ 場所が違う</span>
@@ -3319,6 +3320,19 @@
         <input class="form-input" id="post-source-url" type="url" placeholder="https://x.com/username/status/...">
         <div style="font-size:11px;color:#9b8aab;margin-top:6px;line-height:1.6;">
           📌 聖地を特定するきっかけになったXのポストがあれば貼ってください。投稿者への感謝クレジットとして表示されます。
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">元ネタ写真 <span style="font-weight:400;color:#9b8aab;font-size:12px;">（任意・提供すると+30pt）</span></div>
+        <input type="file" id="post-photo-input" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="handlePostPhotoSelected(this)">
+        <div id="post-photo-preview-wrap" style="display:none;margin-bottom:8px;position:relative;width:120px;">
+          <img id="post-photo-preview" style="width:120px;height:120px;object-fit:cover;border-radius:12px;border:2px solid #e8d5ff;">
+          <button type="button" onclick="clearPostPhoto()" style="position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;background:#f87171;color:#fff;border:none;font-size:14px;cursor:pointer;line-height:1;">✕</button>
+        </div>
+        <button type="button" class="btn-primary" style="background:linear-gradient(135deg,#f3e8ff,#e8d5ff);color:#6b21a8;width:auto;padding:10px 18px;font-size:13px;" onclick="document.getElementById('post-photo-input').click()">📷 写真を選ぶ</button>
+        <div id="post-photo-status" style="font-size:11px;color:#9b8aab;margin-top:6px;line-height:1.6;"></div>
+        <div style="font-size:11px;color:#9b8aab;margin-top:6px;line-height:1.6;">
+          📌 このスポットが登場したX・YouTube等の元ネタ写真。自動で圧縮されます。運営側で別の写真に差し替える場合があります。
         </div>
       </div>
       <div class="consent-box">
@@ -5382,7 +5396,7 @@ function checkGpsBonus(spot) {
         distEl.textContent = `現在地から ${distKm} km 🎉 GPS到達ボーナス +${GPS_BONUS_PT}pt！`;
         distEl.style.color = '#15803d';
         distEl.style.fontWeight = '700';
-        addPendingPoint(spot.name, '📡 GPS到達ボーナス（200m以内）', GPS_BONUS_PT);
+        addPendingPoint(spot.name, '📡 GPS到達ボーナス（200m以内）', GPS_BONUS_PT, true);
         showEvalToast(`🎉 GPS到達ボーナス +${GPS_BONUS_PT}pt 獲得！`);
         setTimeout(() => {
           distEl.style.color = '';
@@ -5489,6 +5503,84 @@ function initPostForm() {
   }
 }
 
+// ── 元ネタ写真：選択→自動圧縮→プレビュー ──
+let pendingPostPhotoBlob = null;
+
+function compressImageFile(file, maxDim, quality) {
+  return new Promise(function(resolve, reject) {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      img.onload = function() {
+        let w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w >= h) { h = Math.round(h * (maxDim / w)); w = maxDim; }
+          else { w = Math.round(w * (maxDim / h)); h = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob(function(blob) {
+          if (blob) resolve(blob); else reject(new Error('画像の圧縮に失敗しました'));
+        }, 'image/jpeg', quality);
+      };
+      img.onerror = function() { reject(new Error('画像の読み込みに失敗しました')); };
+      img.src = e.target.result;
+    };
+    reader.onerror = function() { reject(new Error('ファイルの読み込みに失敗しました')); };
+    reader.readAsDataURL(file);
+  });
+}
+
+function handlePostPhotoSelected(inputEl) {
+  const file = inputEl.files && inputEl.files[0];
+  const statusEl = document.getElementById('post-photo-status');
+  if (!file) return;
+  if (statusEl) statusEl.textContent = '圧縮中...';
+  compressImageFile(file, 1280, 0.8).then(function(blob) {
+    if (blob.size > 1024 * 1024) {
+      if (statusEl) statusEl.textContent = '❌ 圧縮後も1MBを超えています。別の写真を選んでください。';
+      pendingPostPhotoBlob = null;
+      return;
+    }
+    pendingPostPhotoBlob = blob;
+    const url = URL.createObjectURL(blob);
+    const preview = document.getElementById('post-photo-preview');
+    const wrap = document.getElementById('post-photo-preview-wrap');
+    if (preview) preview.src = url;
+    if (wrap) wrap.style.display = 'block';
+    if (statusEl) statusEl.textContent = '✅ 圧縮完了（' + Math.round(blob.size / 1024) + 'KB）';
+  }).catch(function(e) {
+    console.warn('image compress error:', e);
+    if (statusEl) statusEl.textContent = '❌ 画像の処理に失敗しました';
+    pendingPostPhotoBlob = null;
+  });
+}
+
+function clearPostPhoto() {
+  pendingPostPhotoBlob = null;
+  const input = document.getElementById('post-photo-input');
+  const wrap = document.getElementById('post-photo-preview-wrap');
+  const statusEl = document.getElementById('post-photo-status');
+  if (input) input.value = '';
+  if (wrap) wrap.style.display = 'none';
+  if (statusEl) statusEl.textContent = '';
+}
+
+async function uploadSpotPhoto(blob) {
+  const client = getSupabaseClient();
+  const fileName = 'spot_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.jpg';
+  const { error } = await client.storage.from('spot-photos').upload(fileName, blob, {
+    contentType: 'image/jpeg',
+    cacheControl: '3600',
+  });
+  if (error) { console.warn('photo upload error:', error); return null; }
+  const { data } = client.storage.from('spot-photos').getPublicUrl(fileName);
+  return data && data.publicUrl ? data.publicUrl : null;
+}
+
 // ── 新規スポット投稿（Supabase保存） ──
 async function submitNewSpot() {
   clearPostError();
@@ -5564,6 +5656,18 @@ async function submitNewSpot() {
 
   const locationUnsure = document.getElementById('post-location-unsure')?.checked || false;
 
+  // 元ネタ写真のアップロード（選択されている場合のみ）
+  let uploadedImageUrl = null;
+  if (pendingPostPhotoBlob) {
+    const btnEarly = document.getElementById('post-submit-btn');
+    if (btnEarly) { btnEarly.disabled = true; btnEarly.textContent = '写真をアップロード中...'; }
+    try {
+      uploadedImageUrl = await uploadSpotPhoto(pendingPostPhotoBlob);
+    } catch (e) {
+      console.warn('photo upload failed:', e);
+    }
+  }
+
   const submission = {
     spot_name: name,
     address: address,
@@ -5573,6 +5677,7 @@ async function submitNewSpot() {
     member: member,
     description: desc,
     source_url: sourceUrl || null,
+    image_url: uploadedImageUrl,
     submitter: '@anonymous',
     submitter_id: submitterId,
     location_confirmed: !locationUnsure,
@@ -5594,6 +5699,7 @@ async function submitNewSpot() {
     document.getElementById('post-address').value = '';
     document.getElementById('post-desc').value = '';
     document.getElementById('post-source-url').value = '';
+    clearPostPhoto();
     if (document.getElementById('post-location-unsure')) document.getElementById('post-location-unsure').checked = false;
     document.querySelectorAll('#post-cat-chips .chip, #post-member-chips .chip').forEach(c => c.classList.remove('selected'));
     showView('map');
@@ -5832,7 +5938,7 @@ async function submitNewSpot() {
   }
 
   function switchAdminTab(tab) {
-    ['pending','spots','admins','notices','devmode'].forEach(t => {
+    ['pending','evals','spots','admins','notices','devmode'].forEach(t => {
       document.getElementById('admin-tab-' + t).style.display = t === tab ? 'block' : 'none';
       const btn = document.getElementById('atab-' + t);
       if (btn) {
@@ -5841,10 +5947,84 @@ async function submitNewSpot() {
         btn.style.fontWeight = t === tab ? '700' : '400';
       }
     });
+    if (tab === 'evals') loadPendingEvaluations();
     if (tab === 'spots') loadAdminSpots();
     if (tab === 'admins') loadAdminList();
     if (tab === 'notices') loadAdminNotices();
     if (tab === 'devmode') loadDevSettingsPanel();
+  }
+
+  // ── 評価承認（現地確認以外のリモート確認・BAD評価の確定） ──
+  async function loadPendingEvaluations() {
+    const list = document.getElementById('admin-evals-list');
+    if (!list) return;
+    list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.4);padding:20px;">読み込み中...</div>';
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/point_log?status=eq.pending&order=created_at.asc&select=*`, {
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+      });
+      const rows = await res.json();
+      const badge = document.getElementById('admin-evals-count');
+      if (badge) badge.textContent = (rows || []).length;
+      if (!rows || rows.length === 0) {
+        list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.4);padding:20px;">承認待ちの評価はありません</div>';
+        return;
+      }
+      // display_name 一括取得
+      const uids = [...new Set(rows.map(r => r.user_id).filter(Boolean))];
+      let nameMap = {};
+      if (uids.length > 0) {
+        const pRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=in.(${uids.join(',')})&select=id,display_name`, {
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+        });
+        const pRows = await pRes.json();
+        (pRows || []).forEach(p => { nameMap[p.id] = p.display_name; });
+      }
+      list.innerHTML = rows.map(function(r) {
+        const dt = new Date(r.created_at).toLocaleDateString('ja-JP');
+        const uname = nameMap[r.user_id] || '巡礼者';
+        return '<div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:12px 14px;margin-bottom:10px;">'
+          + '<div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:4px;">' + escapeHtml(uname) + ' さん</div>'
+          + '<div style="font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:2px;">📍 ' + escapeHtml(r.spot_name || '') + '</div>'
+          + '<div style="font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:8px;">' + escapeHtml(r.category || '') + '　<span style="color:#4ade80;font-weight:700;">+' + r.amount + 'pt</span>　<span style="color:rgba(255,255,255,0.3);">' + dt + '</span></div>'
+          + '<div style="display:flex;gap:8px;">'
+          + '<button onclick="approveEvalPoint(' + JSON.stringify(r.id) + ',' + JSON.stringify(r.user_id) + ',' + r.amount + ')" style="flex:1;padding:8px;border:none;border-radius:8px;background:#4ade80;color:#14532d;font-size:12px;font-weight:700;cursor:pointer;">✅ 承認</button>'
+          + '<button onclick="rejectEvalPoint(' + JSON.stringify(r.id) + ')" style="flex:1;padding:8px;border:none;border-radius:8px;background:rgba(255,255,255,0.15);color:#fff;font-size:12px;font-weight:700;cursor:pointer;">❌ 却下</button>'
+          + '</div></div>';
+      }).join('');
+    } catch (e) {
+      console.warn('loadPendingEvaluations error:', e);
+      list.innerHTML = '<div style="text-align:center;color:#f87171;padding:20px;">読み込みエラー</div>';
+    }
+  }
+
+  async function approveEvalPoint(id, userId, amount) {
+    await fetch(`${SUPABASE_URL}/rest/v1/point_log?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: 'confirmed' })
+    });
+    await awardPointsViaFetch(userId, amount);
+    await loadPendingEvaluations();
+    showEvalToast('✅ 承認してポイントを付与しました');
+  }
+
+  async function rejectEvalPoint(id) {
+    await fetch(`${SUPABASE_URL}/rest/v1/point_log?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: 'rejected' })
+    });
+    await loadPendingEvaluations();
+    showEvalToast('❌ 却下しました');
   }
 
   // ── 開発者モード設定（自分のアカウントのみに適用） ──
@@ -6109,6 +6289,27 @@ async function submitNewSpot() {
     }
   }
 
+  // 承認フロー用：point_logへの記録に加え、profiles.pointsにも即時反映する
+  async function awardPointsViaFetch(userId, amount) {
+    if (!userId || !amount) return;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=points`, {
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+      });
+      const rows = await res.json();
+      const current = (rows && rows[0] && rows[0].points) || 0;
+      await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ points: current + amount })
+      });
+    } catch (e) { console.warn('awardPointsViaFetch error:', e); }
+  }
+
   async function approveSubmission(id) {
     // submissionsから取得
     const res = await fetch(`${SUPABASE_URL}/rest/v1/submissions?id=eq.${id}`, {
@@ -6154,6 +6355,7 @@ async function submitNewSpot() {
             created_at: new Date().toISOString(),
           })
         });
+        await awardPointsViaFetch(s.submitter_id, 10);
       }
       await loadPendingSubmissions();
       showEvalToast('✅ スポット位置を更新しました');
@@ -6178,6 +6380,7 @@ async function submitNewSpot() {
         category: s.category,
         address: '',
         member: s.member,
+        image_url: s.image_url || null,
         discoverer: s.submitter,
         trust_score: 5,
         good_count: 0,
@@ -6215,6 +6418,28 @@ async function submitNewSpot() {
           created_at: new Date().toISOString(),
         })
       });
+      await awardPointsViaFetch(s.submitter_id, 50);
+
+      // 元ネタ写真の提供ボーナス（+30pt）
+      if (s.image_url) {
+        await fetch(`${SUPABASE_URL}/rest/v1/point_log`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify({
+            user_id: s.submitter_id,
+            category: '元ネタ写真提供',
+            amount: 30,
+            spot_name: s.spot_name,
+            created_at: new Date().toISOString(),
+          })
+        });
+        await awardPointsViaFetch(s.submitter_id, 30);
+      }
     }
 
     await loadPendingSubmissions();
@@ -6257,6 +6482,7 @@ async function submitNewSpot() {
           created_at: new Date().toISOString(),
         })
       });
+      await awardPointsViaFetch(s.submitter_id, 10);
     }
 
     await loadPendingSubmissions();
@@ -6296,6 +6522,7 @@ async function submitNewSpot() {
           created_at: new Date().toISOString(),
         })
       });
+      await awardPointsViaFetch(reporterUserId, 10);
     }
 
     // submissionsを承認済みに
@@ -6776,7 +7003,7 @@ function shareX() {
       const posted = confirm(`#TraceIVE をつけて投稿しましたか？\n\n投稿していれば「OK」を押してポイントを受け取ってください。`);
       if (posted && !hasXShareBonusReceived(spotName)) {
         recordXShareBonus(spotName);
-        addPendingPoint(spotName, '𝕏 #TraceIVEシェア', X_SHARE_BONUS_PT);
+        addPendingPoint(spotName, '𝕏 #TraceIVEシェア', X_SHARE_BONUS_PT, true);
         showEvalToast(`𝕏 シェアありがとう！ +${X_SHARE_BONUS_PT}pt 獲得！`);
       }
     }, 300);
@@ -7261,6 +7488,13 @@ function showLangComingSoon() {
   function evalSpot(type) {
     if (!currentSpot) return;
 
+    // 現地系（行って確認／構図一致）は、GPS確認済みの「巡礼した！」報告がないと評価できない
+    // （現地確認の信頼性をGPS実績で担保し、押すだけでポイントになる状態を防ぐ）
+    if (ONSITE_TYPES.has(type) && !myVisitedSpots.includes(currentSpot.name)) {
+      showEvalToast('📍 先に「巡礼した！」ボタンでGPS確認をしてから評価してください');
+      return;
+    }
+
     const evaled = getEvaledTypes(currentSpot.name);
 
     // 同一タイプの重複チェック
@@ -7364,7 +7598,8 @@ function showLangComingSoon() {
     }
     if (oshiMult > 1) notes.push((oshi1 && spotMembers.includes(oshi1)) ? '💜1推し' : '🩷2推し');
     const multiplierNote = multiplier > 1 ? ` (×${multiplier.toFixed(1)} ${notes.join('・')})` : '';
-    addPendingPoint(currentSpot.name, labelMap[type] + multiplierNote, finalPt);
+    // 現地系（GPS確認済み）は即時付与。リモート確認・誤情報報告系は引き続き確定待ち。
+    addPendingPoint(currentSpot.name, labelMap[type] + multiplierNote, finalPt, ONSITE_TYPES.has(type));
 
     // スコア表示を一瞬色変え
     const scoreEl = document.getElementById('card-trust-score');
@@ -8667,7 +8902,7 @@ function loadUserData(data) {
 // evalSpot 後に自動保存（既存関数をラップ）
 const _origEvalSpot = evalSpot;
 // evalSpot は既に定義済みなので、保存フックを追加
-function addPendingPoint(spotName, typeLabel, pt) {
+function addPendingPoint(spotName, typeLabel, pt, applyNow) {
   getSupabaseClient().auth.getUser().then(({ data }) => {
     if (!data.user) return;
     getSupabaseClient().from('point_log').insert({
@@ -8675,10 +8910,22 @@ function addPendingPoint(spotName, typeLabel, pt) {
       category: typeLabel,
       amount: pt,
       spot_name: spotName,
+      status: applyNow ? 'confirmed' : 'pending',
       created_at: new Date().toISOString()
     }).then(({ error }) => {
       if (error) console.error('point_log insert error:', error);
     });
+    // applyNow=true の場合、即時付与としてポイント総数にも反映する
+    // （GPS到達ボーナス／Xシェアなど「獲得しました」と即時表示するもの向け。
+    //   評価(GOOD/BAD)系は「確定待ち」設計のため対象外）
+    if (applyNow) {
+      getSupabaseClient().from('profiles').select('points').eq('id', data.user.id).single().then(function(r) {
+        const current = (r.data && r.data.points) || 0;
+        getSupabaseClient().from('profiles').update({ points: current + pt }).eq('id', data.user.id).then().catch(function(e) {
+          console.warn('points update error:', e);
+        });
+      }).catch(function(e) { console.warn('points fetch error:', e); });
+    }
   });
 }
 
@@ -9138,6 +9385,9 @@ function applyTransferCode() {
       <button onclick="switchAdminTab('pending')" id="atab-pending" style="flex:1;padding:10px;background:linear-gradient(135deg,#3d1a5e,#6b2d8b);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">
         承認待ち <span id="pending-count-badge" style="background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:20px;font-size:11px;"></span>
       </button>
+      <button onclick="switchAdminTab('evals')" id="atab-evals" style="flex:1;padding:10px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border:none;border-radius:10px;font-size:13px;cursor:pointer;">
+        評価承認 <span id="admin-evals-count" style="background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:20px;font-size:11px;"></span>
+      </button>
       <button onclick="switchAdminTab('spots')" id="atab-spots" style="flex:1;padding:10px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border:none;border-radius:10px;font-size:13px;cursor:pointer;">
         スポット管理
       </button>
@@ -9155,6 +9405,13 @@ function applyTransferCode() {
     <!-- 承認待ちタブ -->
     <div id="admin-tab-pending">
       <div id="admin-pending-list">
+        <div style="text-align:center;color:rgba(255,255,255,0.4);padding:40px;">読み込み中...</div>
+      </div>
+    </div>
+
+    <!-- 評価承認タブ -->
+    <div id="admin-tab-evals" style="display:none;">
+      <div id="admin-evals-list">
         <div style="text-align:center;color:rgba(255,255,255,0.4);padding:40px;">読み込み中...</div>
       </div>
     </div>
