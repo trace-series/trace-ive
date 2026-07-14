@@ -2542,7 +2542,7 @@
       <div class="section-title" style="margin-bottom:0;">利用規約</div>
     </div>
     <div class="section-sub">TERMS OF SERVICE</div>
-    <div style="font-size:12px;color:var(--text-light);margin-bottom:20px;">最終更新日：2026年7月11日</div>
+    <div style="font-size:12px;color:var(--text-light);margin-bottom:20px;">最終更新日：2026年7月14日</div>
 
     <div style="display:flex;flex-direction:column;gap:20px;padding-bottom:40px;">
 
@@ -2563,7 +2563,7 @@
 
       <div style="background:white;border-radius:14px;padding:16px;border:1px solid var(--border);">
         <div style="font-size:14px;font-weight:700;color:var(--purple-deep);margin-bottom:8px;">第3条（投稿コンテンツ）</div>
-        <div style="font-size:13px;color:var(--text-mid);line-height:1.8;">ユーザーが投稿したスポット情報は、Trace IVEのデータベースに登録されます。投稿者には「発見者」クレジットが永続的に付与されます。運営は不適切な投稿を削除・修正する権限を持ちます。</div>
+        <div style="font-size:13px;color:var(--text-mid);line-height:1.8;">ユーザーが投稿したスポット情報は、Trace IVEのデータベースに登録されます。投稿者には「発見者」クレジットが永続的に付与されます。運営は不適切な投稿を削除・修正する権限を持ちます。スポットに紐づく元ネタ写真についても、運営の判断により別の写真への差し替えまたは削除を行う場合があります。この場合も、写真提供者に付与されたポイントが取り消されることはありません。</div>
       </div>
 
       <div style="background:white;border-radius:14px;padding:16px;border:1px solid var(--border);">
@@ -2620,7 +2620,7 @@
       <div class="section-title" style="margin-bottom:0;">プライバシーポリシー</div>
     </div>
     <div class="section-sub">PRIVACY POLICY</div>
-    <div style="font-size:12px;color:var(--text-light);margin-bottom:20px;">最終更新日：2026年7月11日</div>
+    <div style="font-size:12px;color:var(--text-light);margin-bottom:20px;">最終更新日：2026年7月14日</div>
 
     <div style="display:flex;flex-direction:column;gap:20px;padding-bottom:40px;">
 
@@ -2628,6 +2628,7 @@
         <div style="font-size:14px;font-weight:700;color:var(--purple-deep);margin-bottom:8px;">収集する情報</div>
         <div style="font-size:13px;color:var(--text-mid);line-height:1.8;">本サービスでは以下の情報を収集する場合があります。<br><br>
         ・投稿されたスポット情報（スポット名・住所・説明・カテゴリー）<br>
+        ・投稿された元ネタ写真（スポットに紐づく画像データ。公開設定で保存され、アプリ内で誰でも閲覧できます）<br>
         ・評価・巡礼報告データ、獲得ポイント・ランク<br>
         ・巡礼報告・位置修正報告時に取得する位置情報（GPS）<br>
         ・Googleログイン時のメールアドレス・表示名<br>
@@ -2646,7 +2647,10 @@
 
       <div style="background:white;border-radius:14px;padding:16px;border:1px solid var(--border);">
         <div style="font-size:14px;font-weight:700;color:var(--purple-deep);margin-bottom:8px;">第三者への提供</div>
-        <div style="font-size:13px;color:var(--text-mid);line-height:1.8;">収集した個人情報を第三者に販売・提供することはありません。ただし法令に基づく場合を除きます。</div>
+        <div style="font-size:13px;color:var(--text-mid);line-height:1.8;">収集した個人情報を、個人を特定できる形で第三者に販売・提供することはありません。<br><br>
+        運営者本人に加え、運営が認定したモデレーターが、投稿の承認・評価の確認・お知らせの管理等の運営業務のために、投稿内容やアカウント情報を閲覧・操作する場合があります。<br><br>
+        また、位置情報や巡礼行動等のデータを統計的に加工し、個人を特定できない形に集計した上で、将来的に観光関連事業者・自治体等への提供や共同研究等に利用する場合があります。この場合も、個人を特定できる情報が第三者に渡ることはありません。<br><br>
+        法令に基づく場合についても、この限りではありません。</div>
       </div>
 
       <div style="background:white;border-radius:14px;padding:16px;border:1px solid var(--border);">
@@ -5778,6 +5782,7 @@ async function submitNewSpot() {
         var xName = isGoogle ? (meta.full_name || meta.name || meta.email || 'Googleユーザー') : (meta.full_name || meta.name || meta.user_name || 'ユーザー');
         var xHandle = isGoogle ? null : (meta.user_name ? '@' + meta.user_name : meta.email);
         var xAvatar = meta.avatar_url || '';
+        var xProviderId = (meta.provider_id || meta.sub || (user.identities && user.identities[0] && user.identities[0].id)) || null;
         localStorage.setItem(OB_KEY, JSON.stringify({
           method: 'x', date: new Date().toISOString(),
           xHandle: xHandle, xName: xName, xAvatar: xAvatar,
@@ -5821,7 +5826,11 @@ async function submitNewSpot() {
           if (googleArrow) googleArrow.textContent = '›';
         }
         if (xName) {
-          client.from('profiles').update({ display_name: xName, x_id: isGoogle ? null : (meta.user_name || null) }).eq('id', user.id).then().catch(function(e) {
+          client.from('profiles').update({
+            display_name: xName,
+            x_id: isGoogle ? null : (meta.user_name || null),
+            x_provider_id: isGoogle ? null : xProviderId,
+          }).eq('id', user.id).then().catch(function(e) {
             console.warn('display_name update error:', e);
           });
         }
