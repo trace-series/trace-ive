@@ -6903,7 +6903,7 @@ async function incrementSpotLikes(dbId) {
           window._reportVisitInProgress = false;
           return;
         }
-        doReportVisit(spotId);
+        doReportVisit(spotId, pos.coords.latitude, pos.coords.longitude);
       },
       function(err) {
         alert('位置情報を取得できませんでした。設定で位置情報の利用を許可してから、もう一度お試しください。');
@@ -6913,7 +6913,7 @@ async function incrementSpotLikes(dbId) {
     );
   }
 
-  function doReportVisit(spotId) {
+  function doReportVisit(spotId, visitLat, visitLng) {
     const client = getSupabaseClient();
     client.auth.getSession().then(async ({ data }) => {
       const session = data && data.session;
@@ -6940,8 +6940,12 @@ async function incrementSpotLikes(dbId) {
       const newVisited = [...visited, spotId];
       const { error: updateError } = await client.from('profiles').update({ points: newPoints, visited_spots: newVisited }).eq('id', userId);
       if (updateError) { alert('保存エラー: ' + updateError.message); window._reportVisitInProgress = false; return; }
-      // 行動分析用：いつ巡礼したかのログ（失敗してもメイン処理は止めない）
-      client.from('visit_log').insert({ user_id: userId, spot_name: spotId, visited_at: new Date().toISOString() }).then().catch(function(e) {
+      // 行動分析用：いつ・どこで巡礼したかのログ（ヒートマップ・動線分析用。失敗してもメイン処理は止めない）
+      client.from('visit_log').insert({
+        user_id: userId, spot_name: spotId, visited_at: new Date().toISOString(),
+        lat: (typeof visitLat === 'number') ? visitLat : null,
+        lng: (typeof visitLng === 'number') ? visitLng : null,
+      }).then().catch(function(e) {
         console.warn('visit_log insert error:', e);
       });
       // スポットの巡礼報告カウント（likes_count）を+1
