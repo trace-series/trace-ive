@@ -3286,6 +3286,14 @@
           <input type="checkbox" id="post-location-unsure" style="width:16px;height:16px;">
           正確な位置がよく分からない（海外・情報不足など）→ 承認前に運営側で確認します
         </label>
+        <div style="margin-top:10px;">
+          <button type="button" class="btn-primary" style="background:linear-gradient(135deg,#f3e8ff,#e8d5ff);color:#6b21a8;width:auto;padding:9px 16px;font-size:13px;" onclick="geocodePostAddress()">🔍 住所からピンを移動</button>
+          <div id="post-geocode-status" style="font-size:11px;color:#9b8aab;margin-top:6px;line-height:1.6;"></div>
+        </div>
+        <div style="font-size:12px;color:#9b8aab;margin-top:8px;margin-bottom:6px;line-height:1.6;">
+          📍 下の地図のピンをドラッグして、実際の場所に合わせてください。これがそのまま登録される位置になります。
+        </div>
+        <div id="post-mini-map" style="width:100%;height:220px;border-radius:14px;border:1.5px solid #e8d5ff;background:#f3e8ff;"></div>
       </div>
       <div class="form-group">
         <div class="form-label">聖地の説明 <span>*</span> <span style="font-weight:400;color:#9b8aab;font-size:12px;">20文字以上</span></div>
@@ -5467,6 +5475,64 @@ function clearPostError() {
   if (box) box.style.display = 'none';
 }
 
+// ── 投稿フォーム：位置確認ミニマップ（住所欄は表示用テキストのみのため、
+// 実際の緯度経度は必ずこのミニマップのピン位置から取得する） ──
+let postMiniMap = null;
+let postMiniMarker = null;
+
+function initPostMiniMap() {
+  const el = document.getElementById('post-mini-map');
+  if (!el || typeof google === 'undefined' || !google.maps) return;
+
+  const fallbackCenter = (map ? map.getCenter() : null) || { lat: () => 35.6762, lng: () => 139.7073 };
+  const startPos = { lat: fallbackCenter.lat(), lng: fallbackCenter.lng() };
+
+  if (!postMiniMap) {
+    postMiniMap = new google.maps.Map(el, {
+      center: startPos,
+      zoom: 16,
+      disableDefaultUI: true,
+      zoomControl: true,
+    });
+    postMiniMarker = new google.maps.Marker({
+      position: startPos,
+      map: postMiniMap,
+      draggable: true,
+    });
+  } else {
+    // 既存のマップ・ピンはそのまま。フォームを開き直した時に位置を初期化し直す
+    postMiniMap.setCenter(startPos);
+    postMiniMarker.setPosition(startPos);
+    google.maps.event.trigger(postMiniMap, 'resize');
+  }
+}
+
+function geocodePostAddress() {
+  const status = document.getElementById('post-geocode-status');
+  const address = (document.getElementById('post-address')?.value || '').trim();
+  if (!address) {
+    if (status) status.textContent = '⚠️ 先に住所・場所を入力してください';
+    return;
+  }
+  if (typeof google === 'undefined' || !google.maps || !postMiniMap) {
+    if (status) status.textContent = '⚠️ 地図の準備ができていません。少し待ってから再度お試しください';
+    return;
+  }
+  if (status) status.textContent = '検索中...';
+  const geocoder = new google.maps.Geocoder();
+  geocoder.geocode({ address: address, region: 'jp' }, function(results, gstatus) {
+    if (gstatus === 'OK' && results && results[0]) {
+      const loc = results[0].geometry.location;
+      postMiniMap.setCenter(loc);
+      postMiniMap.setZoom(17);
+      postMiniMarker.setPosition(loc);
+      if (status) status.textContent = '✅ 「' + results[0].formatted_address + '」に移動しました。ズレていればピンをドラッグして調整してください';
+    } else {
+      if (status) status.textContent = '⚠️ 見つかりませんでした。地図を直接ドラッグ／ピンを移動して合わせてください';
+    }
+  });
+}
+
 function initPostForm() {
   clearPostError();
   const limitBox = document.getElementById('post-limit-box');
@@ -5483,6 +5549,8 @@ function initPostForm() {
     if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.textContent = '🔒 投稿が制限されています'; }
     return;
   }
+
+  initPostMiniMap();
 
   const remaining = POST_DAILY_LIMIT - getPostDailyCount();
   if (limitBox) {
@@ -5644,7 +5712,7 @@ async function submitNewSpot() {
 
   const category = catChip.dataset.cat;
   const member = memberChip.dataset.member;
-  const center = map ? map.getCenter() : null;
+  const pinPos = postMiniMarker ? postMiniMarker.getPosition() : (map ? map.getCenter() : null);
 
   // 報告者のユーザーIDを取得（マッパー・海外遠征バッジ集計に必須）
   let submitterId = null;
@@ -5670,8 +5738,8 @@ async function submitNewSpot() {
   const submission = {
     spot_name: name,
     address: address,
-    lat: center ? center.lat() : 35.6762,
-    lng: center ? center.lng() : 139.7073,
+    lat: pinPos ? pinPos.lat() : 35.6762,
+    lng: pinPos ? pinPos.lng() : 139.7073,
     category: category,
     member: member,
     description: desc,
