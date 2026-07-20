@@ -3282,12 +3282,12 @@
       <div class="form-group">
         <div class="form-label">住所 / 場所 <span>*</span></div>
         <input class="form-input" id="post-address" type="text" placeholder="例：東京都渋谷区道玄坂2丁目" maxlength="100">
-        <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:#9b8aab;cursor:pointer;">
-          <input type="checkbox" id="post-location-unsure" style="width:16px;height:16px;">
+        <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;font-weight:700;color:#dc2626;cursor:pointer;">
+          <input type="checkbox" id="post-location-unsure" style="width:18px;height:18px;accent-color:#dc2626;">
           正確な位置がよく分からない（海外・情報不足など）→ 承認前に運営側で確認します
         </label>
         <div style="margin-top:10px;">
-          <button type="button" class="btn-primary" style="background:linear-gradient(135deg,#f3e8ff,#e8d5ff);color:#6b21a8;width:auto;padding:9px 16px;font-size:13px;" onclick="geocodePostAddress()">🔍 住所からピンを移動</button>
+          <button type="button" class="btn-primary" style="width:100%;padding:13px;font-size:14px;font-weight:700;" onclick="geocodePostAddress()">🔍 住所からピンを移動（必須）</button>
           <div id="post-geocode-status" style="font-size:11px;color:#9b8aab;margin-top:6px;line-height:1.6;"></div>
         </div>
         <div style="font-size:12px;color:#9b8aab;margin-top:8px;margin-bottom:6px;line-height:1.6;">
@@ -5479,6 +5479,7 @@ function clearPostError() {
 // 実際の緯度経度は必ずこのミニマップのピン位置から取得する） ──
 let postMiniMap = null;
 let postMiniMarker = null;
+let postPinConfirmed = false; // 「住所からピンを移動」成功 or 手動ドラッグで true。未確定のまま投稿はブロックする
 
 function initPostMiniMap() {
   const el = document.getElementById('post-mini-map');
@@ -5486,6 +5487,7 @@ function initPostMiniMap() {
 
   const fallbackCenter = (map ? map.getCenter() : null) || { lat: () => 35.6762, lng: () => 139.7073 };
   const startPos = { lat: fallbackCenter.lat(), lng: fallbackCenter.lng() };
+  postPinConfirmed = false;
 
   if (!postMiniMap) {
     postMiniMap = new google.maps.Map(el, {
@@ -5499,6 +5501,7 @@ function initPostMiniMap() {
       map: postMiniMap,
       draggable: true,
     });
+    postMiniMarker.addListener('dragend', function() { postPinConfirmed = true; });
   } else {
     // 既存のマップ・ピンはそのまま。フォームを開き直した時に位置を初期化し直す
     postMiniMap.setCenter(startPos);
@@ -5526,12 +5529,14 @@ function geocodePostAddress() {
       postMiniMap.setCenter(loc);
       postMiniMap.setZoom(17);
       postMiniMarker.setPosition(loc);
+      postPinConfirmed = true;
       if (status) status.textContent = '✅ 「' + results[0].formatted_address + '」に移動しました。ズレていればピンをドラッグして調整してください';
     } else {
       if (status) status.textContent = '⚠️ 見つかりませんでした。地図を直接ドラッグ／ピンを移動して合わせてください';
     }
   });
 }
+
 
 function initPostForm() {
   clearPostError();
@@ -5662,6 +5667,12 @@ async function submitNewSpot() {
   if (name.length < 2) { showPostError('❌ スポット名は2文字以上入力してください'); return; }
   if (!address) { showPostError('❌ 住所・場所を入力してください'); return; }
   if (!desc || desc.length < 20) { showPostError('❌ 聖地の説明は20文字以上入力してください（現在' + desc.length + '文字）'); return; }
+
+  const locationUnsureEarly = document.getElementById('post-location-unsure')?.checked || false;
+  if (!postPinConfirmed && !locationUnsureEarly) {
+    showPostError('❌ 地図のピンが未確定です。「🔍 住所からピンを移動」ボタンを押すか、ピンを直接ドラッグして実際の場所に合わせてください。場所が分からない場合は上の「正確な位置がよく分からない」にチェックしてください。');
+    return;
+  }
 
   const catChip = document.querySelector('#post-cat-chips .chip.selected');
   if (!catChip) { showPostError('❌ カテゴリーを選択してください'); return; }
