@@ -5272,7 +5272,7 @@ async function reportLocationCorrection() {
       category: currentSpot.category || null,
       member: currentSpot.member || null,
       description: '位置修正報告（GPS）',
-      submitter: '@anonymous',
+      submitter: getSubmitterHandle(),
       submitter_id: reporterId,
       status: 'pending',
     };
@@ -5332,7 +5332,7 @@ async function reportWrongInfo() {
     category: currentSpot.category || null,
     member: currentSpot.member || null,
     description: detail.trim(),
-    submitter: '@anonymous',
+    submitter: getSubmitterHandle(),
     submitter_id: reporterId,
     status: 'pending',
   };
@@ -5725,12 +5725,13 @@ async function submitNewSpot() {
   const member = memberChip.dataset.member;
   const pinPos = postMiniMarker ? postMiniMarker.getPosition() : (map ? map.getCenter() : null);
 
-  // 報告者のユーザーIDを取得（マッパー・海外遠征バッジ集計に必須）
+  // 報告者のユーザーIDとXハンドルを取得（マッパー・海外遠征バッジ集計、発見者表示に必須）
   let submitterId = null;
   try {
     const { data } = await getSupabaseClient().auth.getSession();
     submitterId = data && data.session ? data.session.user.id : null;
   } catch(e) { console.warn('session取得失敗:', e); }
+  const submitterHandle = getSubmitterHandle();
 
   const locationUnsure = document.getElementById('post-location-unsure')?.checked || false;
 
@@ -5756,7 +5757,7 @@ async function submitNewSpot() {
     description: desc,
     source_url: sourceUrl || null,
     image_url: uploadedImageUrl,
-    submitter: '@anonymous',
+    submitter: submitterHandle,
     submitter_id: submitterId,
     location_confirmed: !locationUnsure,
     status: 'pending',
@@ -5789,6 +5790,12 @@ async function submitNewSpot() {
 
   // ── オンボーディング ──
   const OB_KEY = 'traceive_onboarding_v1';
+  function getSubmitterHandle() {
+    try {
+      const ob = JSON.parse(localStorage.getItem(OB_KEY) || 'null');
+      return (ob && ob.xHandle) || '@anonymous';
+    } catch(e) { return '@anonymous'; }
+  }
   const ANON_FIRST_KEY = 'traceive_anon_first_v1';
 
   function checkOnboarding() {
