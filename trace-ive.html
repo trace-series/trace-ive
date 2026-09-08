@@ -206,6 +206,7 @@
   .map-container {
     position: relative;
     height: calc(100vh - 120px);
+    height: calc(100dvh - 120px);
     overflow: hidden;
     touch-action: none;
   }
@@ -278,6 +279,7 @@
   .map-bottom-card.open {
     transform: translateY(0);
     max-height: 80vh;
+    max-height: 80dvh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -1989,6 +1991,7 @@
     background: #f9f7ff;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
     z-index: 100;
     padding: 8px 12px 80px;
   }
@@ -2165,6 +2168,7 @@
         <button id="vfbtn-unvisited" class="radius-btn" onclick="setVisitedFilter('unvisited', this)">⬜ 未訪問</button>
       </div>
         <button id="nearest-spot-btn" onclick="goToNearestSpot()" style="position:fixed;bottom:90px;right:16px;z-index:1000;background:linear-gradient(135deg,#3d1a5e,#7b1a3e);color:#fff;border:none;border-radius:50px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:none;align-items:center;gap:6px;">📍 最寄りスポット</button>
+        <button id="card-fixed-close-btn" onclick="toggleCard()" aria-label="カードを閉じる" style="position:fixed;top:130px;right:14px;z-index:1200;width:36px;height:36px;border-radius:50%;background:rgba(20,20,20,0.75);color:#fff;border:none;font-size:18px;line-height:1;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.3);">✕</button>
 
       <!-- 下部カード -->
       <div class="map-bottom-card" id="map-card">
@@ -5345,6 +5349,8 @@ function openCard(spot) {
   document.getElementById('card-detail').style.display = 'block';
   document.getElementById('map-card').classList.add('open');
   cardOpen = true;
+  const closeBtnOnOpen = document.getElementById('card-fixed-close-btn');
+  if (closeBtnOnOpen) closeBtnOnOpen.style.display = 'flex';
   const nearBtn2 = document.getElementById('nearest-spot-btn');
   if (nearBtn2) nearBtn2.style.display = 'none';
 
@@ -6141,12 +6147,15 @@ function toggleCard() {
   cardOpen = !cardOpen;
   const card = document.getElementById('map-card');
   const nearBtn = document.getElementById('nearest-spot-btn');
+  const closeBtn = document.getElementById('card-fixed-close-btn');
   if (cardOpen) {
     card.classList.add('open');
     if (nearBtn) nearBtn.style.display = 'none';
+    if (closeBtn) closeBtn.style.display = 'flex';
   } else {
     card.classList.remove('open');
     if (nearBtn) nearBtn.style.display = 'flex';
+    if (closeBtn) closeBtn.style.display = 'none';
   }
 }
 
@@ -6202,6 +6211,9 @@ function setOriginSpot() {
   originSpot = currentSpot;
   activeRadius = 0;
   document.getElementById('map-card').classList.remove('open');
+  cardOpen = false;
+  const closeBtnOnOrigin = document.getElementById('card-fixed-close-btn');
+  if (closeBtnOnOrigin) closeBtnOnOrigin.style.display = 'none';
   listViewOpen = true;
   var container = document.getElementById('spot-list-container');
   container.style.display = 'block';
@@ -6253,7 +6265,7 @@ function renderSpotList() {
     if (activeVisitedFilter === 'visited' && !myVisitedSpots.includes(s.db_id)) return false;
     if (activeVisitedFilter === 'unvisited' && myVisitedSpots.includes(s.db_id)) return false;
     if (originSpot) {
-      if (s.name === originSpot.name) return false;
+      if (s.db_id === originSpot.db_id) return false;
       if (activeRadius > 0) {
         var d = haversineKm(originSpot.lat, originSpot.lng, s.lat, s.lng);
         if (d > activeRadius) return false;
@@ -6293,13 +6305,13 @@ function renderSpotList() {
       + '<div class="spot-list-name">' + escHtml(s.name) + '</div>'
       + '<div class="spot-list-addr">' + escHtml(s.address || '') + '</div>'
       + '</div>' + distHtml;
-    div.onclick = (function(spot) { return function() { selectSpotFromList(spot.name); }; })(s);
+    div.onclick = (function(spot) { return function() { selectSpotFromList(spot.db_id); }; })(s);
     frag.appendChild(div);
   });
   container.appendChild(frag);
 }
-function selectSpotFromList(name) {
-  var spot = SPOTS.find(function(s) { return s.name === name; });
+function selectSpotFromList(dbId) {
+  var spot = SPOTS.find(function(s) { return s.db_id === dbId; });
   if (!spot) return;
   listViewOpen = false;
   document.getElementById('spot-list-container').style.display = 'none';
