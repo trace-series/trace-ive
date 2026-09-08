@@ -340,7 +340,6 @@
   .badge-red { background: #fde8e6; color: var(--red); }
   .badge-purple { background: var(--purple-pale); color: var(--purple-mid); }
   .badge-gold { background: #fdf3d8; color: var(--gold); }
-  .badge-ended { background: #4a4a4a; color: #fff; }
 
   .card-detail {
     padding-top: 16px;
@@ -3850,8 +3849,6 @@ async function fetchSpotsFromDB() {
       category: s.category || '',
       address: s.address || '',
       member: s.member || 'IVE',
-      startDate: s.start_date || null,
-      endDate: s.end_date || null,
       discoverer: s.discoverer || '@missing_link',
       likes: s.likes_count || 0,
       badges: [s.category || ''],
@@ -5169,10 +5166,36 @@ async function initMap() {
   // 初回起動チェック
   checkOnboarding();
 
+  // 同一座標（またはごく近い座標）のスポットが複数ある場合、ピンが完全に重なって
+  // 下側のピンをタップできなくなるのを防ぐため、見た目の表示位置だけを円状に少しずらす。
+  // spot.lat/lng自体（距離計算・ルート等で使う実座標）は変更しない。
+  function getMarkerOffsetPositions(spots) {
+    const groups = {};
+    spots.forEach(s => {
+      const key = s.lat.toFixed(5) + ',' + s.lng.toFixed(5);
+      (groups[key] = groups[key] || []).push(s);
+    });
+    const offsetMap = new Map();
+    Object.values(groups).forEach(group => {
+      if (group.length <= 1) return;
+      const radius = 0.00015; // 緯度経度で約15m相当
+      group.forEach((s, i) => {
+        const angle = (2 * Math.PI * i) / group.length;
+        offsetMap.set(s, {
+          lat: s.lat + radius * Math.cos(angle),
+          lng: s.lng + (radius * Math.sin(angle)) / Math.cos(s.lat * Math.PI / 180)
+        });
+      });
+    });
+    return offsetMap;
+  }
+
   // ピンを追加
+  const markerOffsetPositions = getMarkerOffsetPositions(SPOTS);
   SPOTS.forEach(spot => {
+    const markerPos = markerOffsetPositions.get(spot) || { lat: spot.lat, lng: spot.lng };
     const marker = new google.maps.Marker({
-      position: { lat: spot.lat, lng: spot.lng },
+      position: markerPos,
       map: map,
       title: spot.name,
       icon: {
@@ -5219,12 +5242,6 @@ function gm_authFailure() {
 }
 
 // ── カード操作 ──
-function isSpotEnded(spot) {
-  if (!spot.endDate) return false;
-  const todayStr = new Date().toISOString().slice(0, 10);
-  return todayStr > spot.endDate;
-}
-
 function openCard(spot) {
   currentSpot = spot;
   document.getElementById('card-title').textContent = spot.name;
@@ -5285,12 +5302,6 @@ function openCard(spot) {
   // バッジ（XSS対策：createElement使用）
   const badgeEl = document.getElementById('card-badges');
   badgeEl.innerHTML = '';
-  if (isSpotEnded(spot)) {
-    const endedBadge = document.createElement('span');
-    endedBadge.className = 'badge badge-ended';
-    endedBadge.textContent = '⏰ 開催終了';
-    badgeEl.appendChild(endedBadge);
-  }
   spot.badges.forEach((b, i) => {
     const span = document.createElement('span');
     span.className = 'badge ' + (i === 0 ? 'badge-red' : 'badge-purple');
@@ -6277,10 +6288,9 @@ function renderSpotList() {
     }
     var div = document.createElement('div');
     div.className = 'spot-list-item';
-    var endedTag = isSpotEnded(s) ? '<span style="color:#4a4a4a;font-weight:700;font-size:11px;margin-right:4px;">［終了］</span>' : '';
     div.innerHTML = '<div class="spot-list-icon">' + icon + '</div>'
       + '<div class="spot-list-info">'
-      + '<div class="spot-list-name">' + endedTag + escHtml(s.name) + '</div>'
+      + '<div class="spot-list-name">' + escHtml(s.name) + '</div>'
       + '<div class="spot-list-addr">' + escHtml(s.address || '') + '</div>'
       + '</div>' + distHtml;
     div.onclick = (function(spot) { return function() { selectSpotFromList(spot.name); }; })(s);
