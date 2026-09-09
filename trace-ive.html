@@ -3574,7 +3574,7 @@ const GROUP_CONFIG = {
   ],
 
   // ポイント倍率
-    birthdayMonthMultiplier: 1.2,  // 誕生月：1.2倍
+    birthdayMonthMultiplier: 1.2,  // 誕生日2週間前〜前日：1.2倍
     birthdayDayMultiplier: 1.5,    // 誕生当日：1.5倍
 
   // ── シーズンイベント（カムバ・ライブ等に合わせて追加）──
@@ -3665,20 +3665,26 @@ function showUpdateModal() {
 }
 
 // ── 誕生日イベント判定 ──
-function getBirthdayEvent() {
-  const now = new Date();
-  const m = now.getMonth() + 1;
-  const d = now.getDate();
+function daysUntilBirthday(b) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const y = today.getFullYear();
+  let bd = new Date(y, b.month - 1, b.day);
+  bd.setHours(0, 0, 0, 0);
+  if (bd < today) bd = new Date(y + 1, b.month - 1, b.day);
+  return Math.round((bd - today) / 86400000);
+}
+function getBirthdayEvents() {
+  const events = [];
   for (const member of GROUP_CONFIG.members) {
-    const b = member.birthday;
-    if (b.month === m && b.day === d) {
-      return { member, type: 'day', multiplier: GROUP_CONFIG.birthdayDayMultiplier };
-    }
-    if (b.month === m) {
-      return { member, type: 'month', multiplier: GROUP_CONFIG.birthdayMonthMultiplier };
+    const days = daysUntilBirthday(member.birthday);
+    if (days === 0) {
+      events.push({ member, type: 'day', daysLeft: 0, multiplier: GROUP_CONFIG.birthdayDayMultiplier });
+    } else if (days > 0 && days <= 14) {
+      events.push({ member, type: 'pre', daysLeft: days, multiplier: GROUP_CONFIG.birthdayMonthMultiplier });
     }
   }
-  return null;
+  return events;
 }
 
 // ── ポップアップの「今日は表示しない」管理 ──
@@ -3689,6 +3695,28 @@ function hasDismissedPopupToday(key) {
 function dismissPopupToday(key) {
   const today = new Date().toISOString().slice(0, 10);
   localStorage.setItem('traceive_popup_dismissed_' + key, today);
+}
+
+// ── ポップアップの順番表示キュー（誕生日複数人・イベントを1つずつ順番に出す）──
+let _popupQueue = [];
+function buildPopupQueue() {
+  const queue = [];
+  for (const ev of getBirthdayEvents()) {
+    const key = 'birthday_' + ev.member.nameEn;
+    if (!hasDismissedPopupToday(key)) queue.push({ kind: 'birthday', data: ev, key });
+  }
+  const activeEv = getActiveEvent();
+  if (activeEv) {
+    const key = 'event_' + activeEv.id;
+    if (!hasDismissedPopupToday(key)) queue.push({ kind: 'event', data: activeEv, key });
+  }
+  return queue;
+}
+function showNextPopupInQueue() {
+  if (!_popupQueue.length) return;
+  const next = _popupQueue.shift();
+  if (next.kind === 'birthday') showBirthdayPopup(next.data, next.key);
+  else showEventPopup(next.data, next.key);
 }
 
 // ── シーズンイベント判定（東京ドーム公演など）──
@@ -3707,7 +3735,14 @@ function getEventMultiplier() {
 }
 
 // ── シーズンイベントポップアップ表示 ──
-function showEventPopup(ev) {
+function closeEventPopup(dismiss, key) {
+  if (dismiss) dismissPopupToday(key);
+  const el = document.getElementById('event-overlay');
+  if (el) el.remove();
+  showNextPopupInQueue();
+}
+function showEventPopup(ev, dismissKey) {
+  dismissKey = dismissKey || ('event_' + ev.id);
   const overlay = document.createElement('div');
   overlay.id = 'event-overlay';
   overlay.style.cssText = `
@@ -3723,7 +3758,7 @@ function showEventPopup(ev) {
       text-align:center;color:#fff;position:relative;
       box-shadow:0 20px 60px rgba(0,0,0,0.5);
     ">
-      <button onclick="document.getElementById('event-overlay').remove()" style="
+      <button onclick="closeEventPopup(false,'${dismissKey}')" style="
         position:absolute;top:14px;right:16px;background:none;border:none;
         color:rgba(255,255,255,0.6);font-size:22px;cursor:pointer;
       ">×</button>
@@ -3742,7 +3777,7 @@ function showEventPopup(ev) {
         background:rgba(255,255,255,0.1);border-radius:10px;
         padding:8px 12px;font-size:12px;color:#e8d0f8;
       ">${ev.start} 〜 ${ev.end}</div>
-      <div onclick="dismissPopupToday('event_${ev.id}');document.getElementById('event-overlay').remove();" style="
+      <div onclick="closeEventPopup(true,'${dismissKey}')" style="
         margin-top:14px;font-size:12px;color:rgba(255,255,255,0.5);
         cursor:pointer;text-decoration:underline;
       ">今日は表示しない</div>
@@ -3752,11 +3787,17 @@ function showEventPopup(ev) {
     </style>
   `;
   document.body.appendChild(overlay);
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeEventPopup(false, dismissKey); });
 }
 
 // ── 誕生日ポップアップ表示 ──
-function showBirthdayPopup(event) {
+function closeBirthdayPopup(dismiss, key) {
+  if (dismiss) dismissPopupToday(key);
+  const el = document.getElementById('birthday-overlay');
+  if (el) el.remove();
+  showNextPopupInQueue();
+}
+function showBirthdayPopup(event, dismissKey) {
   const overlay = document.createElement('div');
   overlay.id = 'birthday-overlay';
   overlay.style.cssText = `
@@ -3768,6 +3809,7 @@ function showBirthdayPopup(event) {
 
   const isDay = event.type === 'day';
   const member = event.member;
+  dismissKey = dismissKey || ('birthday_' + member.nameEn);
   const tag = `#${member.hashtag}`;
   const stars = isDay ? '🎂🎉🎊✨🎈' : '🌸💜✨';
 
@@ -3778,13 +3820,13 @@ function showBirthdayPopup(event) {
       text-align:center;color:#fff;position:relative;
       box-shadow:0 20px 60px rgba(0,0,0,0.5);
     ">
-      <button onclick="document.getElementById('birthday-overlay').remove()" style="
+      <button onclick="closeBirthdayPopup(false,'${dismissKey}')" style="
         position:absolute;top:14px;right:16px;background:none;border:none;
         color:rgba(255,255,255,0.6);font-size:22px;cursor:pointer;
       ">×</button>
       <div style="font-size:40px;margin-bottom:8px;">${isDay ? '🎂' : '🌸'}</div>
       <div style="font-size:22px;font-weight:700;margin-bottom:4px;">
-        ${isDay ? `Happy Birthday\n${member.name}！` : `${member.name}の誕生月🎉`}
+        ${isDay ? `Happy Birthday\n${member.name}！` : `${member.name}の誕生日まであと${event.daysLeft}日🎉`}
           <div style="font-size:13px;color:rgba(255,255,255,0.8);margin-bottom:8px;">🎂 ${member.birthday.month}月${member.birthday.day}日</div>
       </div>
       <div style="font-size:14px;opacity:0.85;margin:10px 0 16px;">${stars}</div>
@@ -3805,7 +3847,7 @@ function showBirthdayPopup(event) {
         border:none;border-radius:14px;padding:10px 20px;
         color:#fff;font-size:13px;font-weight:700;cursor:pointer;width:100%;
       ">𝕏 お祝いポストを送る</button>
-      <div onclick="dismissPopupToday('birthday');document.getElementById('birthday-overlay').remove();" style="
+      <div onclick="closeBirthdayPopup(true,'${dismissKey}')" style="
         margin-top:14px;font-size:12px;color:rgba(255,255,255,0.5);
         cursor:pointer;text-decoration:underline;
       ">今日は表示しない</div>
@@ -3816,7 +3858,7 @@ function showBirthdayPopup(event) {
   `;
 
   document.body.appendChild(overlay);
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeBirthdayPopup(false, dismissKey); });
 }
 
 function shareBirthdayX(nameJa, nameEn, tag) {
@@ -6417,8 +6459,16 @@ async function incrementSpotLikes(dbId) {
         return;
       }
       const spotMembersForBd = getSpotMemberList(currentSpot.member);
-      const bdEventForVisit = getBirthdayEvent();
-      const isBdMemberForVisit = bdEventForVisit && (spotMembersForBd.includes(bdEventForVisit.member.name) || spotMembersForBd.includes(bdEventForVisit.member.nameEn));
+      const bdEventForVisit = (function() {
+        let best = null;
+        for (const ev of getBirthdayEvents()) {
+          if (spotMembersForBd.includes(ev.member.name) || spotMembersForBd.includes(ev.member.nameEn)) {
+            if (!best || ev.multiplier > best.multiplier) best = ev;
+          }
+        }
+        return best;
+      })();
+      const isBdMemberForVisit = !!bdEventForVisit;
       const multiplier = isBdMemberForVisit ? bdEventForVisit.multiplier : 1;
       const eventMultiplier = (typeof getEventMultiplier === 'function') ? getEventMultiplier() : 1;
       const oshiMultiplier = (typeof getOshiMultiplier === 'function') ? getOshiMultiplier(currentSpot.member) : 1;
@@ -7083,9 +7133,17 @@ function showLangComingSoon() {
     let multiplier = 1;
     const spotMembers = getSpotMemberList(currentSpot.member);
 
-    // 誕生日倍率
-    const bdEvent = getBirthdayEvent();
-    const isBdMember = bdEvent && (spotMembers.includes(bdEvent.member.name) || spotMembers.includes(bdEvent.member.nameEn));
+    // 誕生日倍率（対象期間中の複数人と重なる場合は最大倍率を採用）
+    const bdEvent = (function() {
+      let best = null;
+      for (const ev of getBirthdayEvents()) {
+        if (spotMembers.includes(ev.member.name) || spotMembers.includes(ev.member.nameEn)) {
+          if (!best || ev.multiplier > best.multiplier) best = ev;
+        }
+      }
+      return best;
+    })();
+    const isBdMember = !!bdEvent;
     if (isBdMember) multiplier *= bdEvent.multiplier;
 
     // 推し倍率
@@ -7095,7 +7153,7 @@ function showLangComingSoon() {
     const finalPt = Math.round(basePt * multiplier);
     const notes = [];
     if (isBdMember) {
-      notes.push(`誕生${bdEvent.type === 'day' ? '日' : '月'}`);
+      notes.push(`誕生${bdEvent.type === 'day' ? '日' : '日前'}`);
     }
     if (oshiMult > 1) notes.push((oshi1 && spotMembers.includes(oshi1)) ? '💜1推し' : '🩷2推し');
     const multiplierNote = multiplier > 1 ? ` (×${multiplier.toFixed(1)} ${notes.join('・')})` : '';
@@ -7422,15 +7480,10 @@ function filterRouteRegion(el, region) {
       } catch(e) { console.warn('image_url merge error:', e); }
     })();
 
-    // 誕生日ポップアップ（500ms遅延でページ表示後に出す）
+    // 誕生日（複数人可）・イベントのポップアップを順番に表示（500ms遅延でページ表示後に出す）
     setTimeout(() => {
-      const bdEvent = getBirthdayEvent();
-      if (bdEvent && !hasDismissedPopupToday('birthday')) {
-        showBirthdayPopup(bdEvent);
-      } else if (!bdEvent) {
-        const ev = getActiveEvent();
-        if (ev && !hasDismissedPopupToday('event_' + ev.id)) showEventPopup(ev);
-      }
+      _popupQueue = buildPopupQueue();
+      showNextPopupInQueue();
     }, 500);
     // 推し設定を読み込む
     loadOshiSettings();
