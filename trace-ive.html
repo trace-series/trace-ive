@@ -6181,11 +6181,12 @@ async function submitNewSpot() {
           if (googleArrow) googleArrow.textContent = '›';
         }
         if (xName) {
-          client.from('profiles').update({
+          client.from('profiles').upsert({
+            id: user.id,
             display_name: xName,
             x_id: isGoogle ? null : (meta.user_name || null),
             x_provider_id: isGoogle ? null : xProviderId,
-          }).eq('id', user.id).then().catch(function(e) {
+          }, { onConflict: 'id' }).then().catch(function(e) {
             console.warn('display_name update error:', e);
           });
         }
