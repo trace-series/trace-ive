@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>よくある質問 — Trace IVE</title>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fdf6fb;
+    --white: #ffffff;
+    --blue-deep: #3d1a5e;
+    --blue-mid: #7b4fa6;
+    --blue-pale: #f0e8f8;
+    --pink: #c9a84c;
+    --text: #1a1025;
+    --text-mid: #4a3060;
+    --text-light: #9b8aab;
+    --border: rgba(123, 79, 166, 0.16);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding-bottom: 48px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 20px 24px;
+    text-align: center;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--blue-deep);
+    background: var(--blue-pale);
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+  }
+
+  h1 {
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  header p {
+    font-size: 13px;
+    color: var(--text-mid);
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  /* ── CATEGORY NAV ── */
+  .cat-nav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    -webkit-overflow-scrolling: touch;
+  }
+  .cat-nav::-webkit-scrollbar { display: none; }
+
+  .cat-chip {
+    flex-shrink: 0;
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--blue-deep);
+    background: var(--white);
+    border: 1.5px solid var(--blue-mid);
+    padding: 8px 14px;
+    border-radius: 20px;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  /* ── SECTIONS ── */
+  main {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 8px 16px 0;
+  }
+
+  .cat-section {
+    padding-top: 28px;
+    scroll-margin-top: 64px;
+  }
+
+  .cat-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--blue-deep);
+    margin-bottom: 12px;
+    padding-left: 2px;
+  }
+
+  .cat-title .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--pink);
+    flex-shrink: 0;
+  }
+
+  details.faq-item {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+
+  details.faq-item[open] {
+    border-color: var(--blue-mid);
+  }
+
+  summary.faq-q {
+    list-style: none;
+    cursor: pointer;
+    padding: 15px 44px 15px 16px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text);
+    position: relative;
+  }
+
+  summary.faq-q::-webkit-details-marker { display: none; }
+
+  summary.faq-q::after {
+    content: '+';
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--blue-mid);
+    transition: transform 0.2s;
+  }
+
+  details.faq-item[open] summary.faq-q::after {
+    transform: translateY(-50%) rotate(45deg);
+  }
+
+  .faq-a {
+    padding: 0 16px 16px 16px;
+    font-size: 13px;
+    color: var(--text-mid);
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+
+  /* ── CONTACT CTA ── */
+  .contact-cta {
+    margin: 40px 16px 0;
+    max-width: 448px;
+    margin-left: auto;
+    margin-right: auto;
+    background: linear-gradient(135deg, var(--blue-deep), var(--blue-mid));
+    border-radius: 18px;
+    padding: 24px 20px;
+    text-align: center;
+    color: #fff;
+  }
+
+  .contact-cta .icon {
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+
+  .contact-cta h2 {
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .contact-cta p {
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 18px;
+  }
+
+  .contact-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #000;
+    color: #fff;
+    text-decoration: none;
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+    font-size: 13.5px;
+    font-weight: 700;
+    padding: 12px 22px;
+    border-radius: 24px;
+  }
+
+  .contact-btn .x-mark { font-size: 15px; font-weight: 900; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">💬 サポート</div>
+  <h1>よくある質問</h1>
+  <p>Trace IVEについて、よくいただく質問をまとめました。気になることをタップして確認してください。</p>
+</header>
+
+<nav class="cat-nav">
+  <a class="cat-chip" href="#cat-accuracy">情報の正確性</a>
+  <a class="cat-chip" href="#cat-report">間違い・情報提供</a>
+  <a class="cat-chip" href="#cat-usage">使い方</a>
+  <a class="cat-chip" href="#cat-about">アプリについて</a>
+</nav>
+
+<main>
+
+  <section class="cat-section" id="cat-accuracy">
+    <div class="cat-title"><span class="dot"></span>情報の正確性について</div>
+
+    <details class="faq-item">
+      <summary class="faq-q">聖地情報はどうやって集めているの？</summary>
+      <div class="faq-a">メンバーのSNS投稿、YouTubeコンテンツ、MV・写真集の撮影地情報など、公開されている情報をもとに運営が一つずつ確認しながら登録しています。</div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">「メンバー：全員」となっている場所は、本当に全員が訪れた場所ですか？</summary>
+      <div class="faq-a">一部のスポットは情報整理中のため、暫定的に「全員」と表示しています。訪問メンバーを特定できる手がかりが見つかり次第、正しい表示に随時修正しています。</div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">情報の出典はどこで確認できますか？</summary>
+      <div class="faq-a">スポットの種類（SNS投稿・YouTubeコンテンツ・MV撮影地など）は地図上のカテゴリ表示で確認できます。元となった投稿・動画への直接リンクは順次追加予定です。</div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">閉業・移転した場所はどう扱われますか？</summary>
+      <div class="faq-a">確認でき次第、地図上に注記を追加し、訪問できない旨がわかるようにしています。現地に行く前に念のため営業状況をご確認ください。</div>
+    </details>
+  </section>
+
+  <section class="cat-section" id="cat-report">
+    <div class="cat-title"><span class="dot"></span>間違い・情報提供について</div>
+
+    <details class="faq-item">
+      <summary class="faq-q">間違った情報を見つけたらどうすればいい？</summary>
+      <div class="faq-a">各スポットカード下部の報告ボタンから、その場で報告できます。「場所が違う」「正しい位置を報告（現在地をもとに位置を報告）」「誤情報を報告（詳細を入力）」「特定できない」「立入不可」「情報が古い」の中から、状況に近いものをタップしてください。うまく報告できない場合や、より詳しく伝えたい場合は、下部の問い合わせ窓口（X）もご利用いただけます。</div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">新しい聖地情報を教えたい場合は？</summary>
+      <div class="faq-a">下部メニューの「＋投稿する」から、スポット名・住所を入力して投稿できます。運営の承認後、地図に反映されます。X連携でご投稿いただくと、あなたのお名前が発見者としてスポットに記録され、運営Xでもご紹介することがあります。「この聖地を見つけたのは自分」という記録が残るのも、投稿の楽しみのひとつです。正確な位置がわからない場合（海外の場所や情報不足など）はチェックを入れておくと、運営側で確認のうえ承認します。うまく投稿できない場合や、投稿フォームでは伝えきれない内容は問い合わせ窓口（X）へご連絡ください。</div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">メンバーの紐付けが違う気がします</summary>
+      <div class="faq-a">根拠となる投稿や動画があれば、あわせて問い合わせ窓口までお知らせください。確認して修正いたします。</div>
+    </details>
+  </section>
+
+  <section class="cat-section" id="cat-usage">
+    <div class="cat-title"><span class="dot"></span>使い方について</div>
+
+    <details class="faq-item">
+      <summary class="faq-q">地図のピンの色や絵文字にはどんな意味がありますか？</summary>
+      <div class="faq-a">絵文字はメンバーを表しています。ピンの色はスポットの種類（MV撮影地・SNS投稿場所・YouTubeコンテンツ訪問地など）を示しています。</div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">メンバータブはどう使いますか？</summary>
+      <div class="faq-a">見たいメンバーのアイコンをタップすると、そのメンバーに関連するスポットだけが地図に表示されます。「全員」タブですべてのスポットを表示できます。</div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">写真は誰でも投稿できますか？</summary>
+      <div class="faq-a">ログインすれば投稿いただけます。投稿写真は運営の確認・承認を経てから掲載され、内容によっては別の写真に差し替えさせていただく場合があります。未ログイン（匿名）の場合は、地図の閲覧やスポットの評価は可能ですが、投稿などの一部機能は制限されます。</div>
+    </details>
+    <details class="faq-item">
+      <summary class="faq-q">推し設定をすると何が変わりますか？</summary>
+      <div class="faq-a">1推し・2推しに設定したメンバーのスポットを評価・報告すると、獲得ポイントに倍率がかかります（1推し1.5倍／2推し1.2倍）。また、推しメンランキングにも反映されます。</div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">「友達を紹介」はどんな仕組みですか？</summary>
+      <div class="faq-a">マイページの「友達を紹介」から紹介リンクをコピーして友達に送ってください。友達がそのリンクから登録し、初めての巡礼報告をすると、紹介したあなたに+50pt（紹介人数に応じてボーナスも加算）が入ります。友達側への特典はありません。</div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">機種変更してもデータは引き継がれますか？</summary>
+      <div class="faq-a">X／Googleでログインしていれば、新しい端末で同じアカウントにログインするだけでポイント・投稿・評価履歴が自動的に引き継がれます。未ログイン（匿名）で利用していた場合は、設定の「データ引き継ぎ」から引き継ぎコードを発行し、新しい端末でそのコードを入力することで一部のデータを移行できます。</div>
+    </details>
+
+  </section>
+
+  <section class="cat-section" id="cat-about">
+    <div class="cat-title"><span class="dot"></span>アプリについて</div>
+
+    <details class="faq-item">
+      <summary class="faq-q">このアプリは公式のものですか？</summary>
+      <div class="faq-a">いいえ、ファンが個人で運営している非公式のファンメイドアプリです。所属事務所およびグループの公式アプリではありません。</div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">ログインしないと何ができませんか？</summary>
+      <div class="faq-a">地図の閲覧やスポットの評価は未ログインでも可能ですが、スポット投稿や発見者クレジットなど一部機能はログインが必要です。</div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">個人情報はどう扱われますか？</summary>
+      <div class="faq-a">ログインにはX／Googleの認証のみを使用しており、パスワードなどの情報がアプリに送信されることはありません。</div>
+    </details>
+  </section>
+
+</main>
+
+<div class="contact-cta">
+  <div class="icon">🐦</div>
+  <h2>解決しませんでしたか？</h2>
+  <p>ここに載っていない質問や、個別のご相談は<br>お問い合わせ窓口までお気軽にどうぞ。</p>
+  <a class="contact-btn" href="https://x.com/traceIVE4179" target="_blank" rel="noopener">
+    <span class="x-mark">𝕏</span>お問い合わせ窓口へ
+  </a>
+</div>
+
+</body>
+</html>
