@@ -2255,7 +2255,7 @@
             <div class="eval-title">⚠️ BAD評価</div>
             <div class="eval-btns">
               <button class="eval-btn eval-bad" onclick="evalSpot('wrong')">❌ 場所が違う</button>
-              <button class="eval-btn eval-bad" onclick="openLocationCorrectionModal()">📍 正しい位置を報告</button>
+              <button class="eval-btn eval-bad" onclick="reportLocationCorrection()">📍 正しい位置を報告</button>
               <button class="eval-btn eval-bad" onclick="reportWrongInfo()">🛡️ 誤情報を報告</button>
               <button class="eval-btn eval-bad" onclick="evalSpot('unclear')">🤔 特定できない</button>
               <button class="eval-btn eval-bad" onclick="evalSpot('closed')">🚫 立入不可</button>
@@ -2552,11 +2552,6 @@
       <div class="settings-item" onclick="openTransferModal()">
         <div class="settings-item-icon">📲</div>
         <div class="settings-item-text">データ引き継ぎ</div>
-        <div class="settings-item-arrow">›</div>
-      </div>
-      <div class="settings-item" onclick="window.open('https://trace-series.github.io/trace-ive/trace-ive-faq.html','_blank')">
-        <div class="settings-item-icon">💬</div>
-        <div class="settings-item-text">よくある質問</div>
         <div class="settings-item-arrow">›</div>
       </div>
       <div class="settings-item" onclick="window.open('https://x.com/traceIVE4179','_blank')">
@@ -3926,6 +3921,11 @@ async function fetchSpotsFromDB() {
       badCount: s.bad_count || 0,
       adminLevel: s.admin_level || 'reliable',
       db_id: s.id,
+      image_url: s.image_url || null,
+      image_url_2: s.image_url_2 || null,
+      image_url_3: s.image_url_3 || null,
+      image_url_4: s.image_url_4 || null,
+      source_url: s.source_url || null,
     }));
   } catch(e) {
     console.warn('Supabase取得失敗、ローカルデータで起動:', e);
@@ -5437,12 +5437,7 @@ function recordLocationCorrectionReported(spotName) {
     localStorage.setItem(LOCATION_CORRECTION_KEY, JSON.stringify(list));
   } catch(e) {}
 }
-// ── 位置修正報告：ピンドラッグ／現在地の2方式 ──
-let correctionMiniMap = null;
-let correctionMiniMarker = null;
-let correctionMethod = 'drag'; // 'drag'（地図上で指定）or 'gps'（現在地を使用）
-
-function openLocationCorrectionModal() {
+async function reportLocationCorrection() {
   if (!currentSpot) return;
 
   if (hasReportedLocationCorrection(currentSpot.name)) {
@@ -5450,80 +5445,13 @@ function openLocationCorrectionModal() {
     return;
   }
 
-  const status = document.getElementById('correction-gps-status');
-  if (status) status.textContent = '';
-  correctionMethod = 'drag';
-  document.getElementById('location-correction-modal').style.display = 'block';
-  document.body.style.overflow = 'hidden';
+  const ok = confirm('現在地を「' + currentSpot.name + '」の正しい位置として報告します。よろしいですか？');
+  if (!ok) return;
 
-  // モーダル表示後でないと地図コンテナのサイズが確定しないため少し遅らせて初期化
-  setTimeout(initCorrectionMiniMap, 50);
-}
-
-function closeLocationCorrectionModal(e) {
-  if (!e || e.target === document.getElementById('location-correction-modal')) {
-    document.getElementById('location-correction-modal').style.display = 'none';
-    document.body.style.overflow = '';
-  }
-}
-
-function initCorrectionMiniMap() {
-  const el = document.getElementById('correction-mini-map');
-  if (!el || typeof google === 'undefined' || !google.maps || !currentSpot) return;
-
-  const startPos = { lat: currentSpot.lat, lng: currentSpot.lng };
-
-  if (!correctionMiniMap) {
-    correctionMiniMap = new google.maps.Map(el, {
-      center: startPos,
-      zoom: 17,
-      disableDefaultUI: true,
-      zoomControl: true,
-    });
-    correctionMiniMarker = new google.maps.Marker({
-      position: startPos,
-      map: correctionMiniMap,
-      draggable: true,
-    });
-    correctionMiniMarker.addListener('dragend', function() {
-      correctionMethod = 'drag';
-      const status = document.getElementById('correction-gps-status');
-      if (status) status.textContent = '';
-    });
-  } else {
-    correctionMiniMap.setCenter(startPos);
-    correctionMiniMarker.setPosition(startPos);
-    google.maps.event.trigger(correctionMiniMap, 'resize');
-  }
-}
-
-function useCurrentLocationForCorrection() {
-  const status = document.getElementById('correction-gps-status');
   if (!navigator.geolocation) {
-    if (status) status.textContent = '⚠️ お使いの環境では位置情報を取得できません';
+    alert('お使いの環境では位置情報を取得できません。');
     return;
   }
-  if (status) status.textContent = '取得中...';
-  navigator.geolocation.getCurrentPosition(function(pos) {
-    const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-    if (correctionMiniMap && correctionMiniMarker) {
-      correctionMiniMap.setCenter(loc);
-      correctionMiniMap.setZoom(18);
-      correctionMiniMarker.setPosition(loc);
-    }
-    correctionMethod = 'gps';
-    if (status) status.textContent = '✅ 現在地をピンに反映しました。ズレていればドラッグして調整してください';
-  }, function(err) {
-    if (status) status.textContent = '⚠️ 位置情報を取得できませんでした。設定で利用を許可してから、もう一度お試しください';
-  });
-}
-
-async function submitLocationCorrection() {
-  if (!currentSpot || !correctionMiniMarker) return;
-
-  const pos = correctionMiniMarker.getPosition();
-  const lat = pos.lat();
-  const lng = pos.lng();
 
   // 報告者のユーザーIDを先に取得（バッジ集計に必須）
   let reporterId = null;
@@ -5532,28 +5460,33 @@ async function submitLocationCorrection() {
     reporterId = data && data.session ? data.session.user.id : null;
   } catch(e) { console.warn('session取得失敗:', e); }
 
-  const submission = {
-    spot_name: currentSpot.name,
-    target_spot_name: currentSpot.name,
-    type: 'location_correction',
-    lat: lat,
-    lng: lng,
-    category: currentSpot.category || null,
-    member: currentSpot.member || null,
-    description: correctionMethod === 'gps' ? '位置修正報告（現在地）' : '位置修正報告（ピン指定）',
-    submitter: getSubmitterHandle(),
-    submitter_id: reporterId,
-    status: 'pending',
-  };
-
-  const ok = await saveSubmissionToDB(submission);
-  if (ok) {
-    recordLocationCorrectionReported(currentSpot.name);
-    closeLocationCorrectionModal();
-    showEvalToast('📍 位置修正の報告を受け付けました。管理者確認後に反映されます');
-  } else {
-    showEvalToast('⚠️ 送信に失敗しました。もう一度お試しください');
-  }
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    const submission = {
+      spot_name: currentSpot.name,
+      target_spot_name: currentSpot.name,
+      type: 'location_correction',
+      lat: lat,
+      lng: lng,
+      category: currentSpot.category || null,
+      member: currentSpot.member || null,
+      description: '位置修正報告（GPS）',
+      submitter: getSubmitterHandle(),
+      submitter_id: reporterId,
+      status: 'pending',
+    };
+    saveSubmissionToDB(submission).then(function(ok2) {
+      if (ok2) {
+        recordLocationCorrectionReported(currentSpot.name);
+        showEvalToast('📍 位置修正の報告を受け付けました。管理者確認後に反映されます');
+      } else {
+        showEvalToast('⚠️ 送信に失敗しました。もう一度お試しください');
+      }
+    });
+  }, function(err) {
+    alert('位置情報を取得できませんでした。設定で位置情報の利用を許可してから、もう一度お試しください。');
+  });
 }
 
 // ── 誤情報報告 ──
@@ -6181,12 +6114,11 @@ async function submitNewSpot() {
           if (googleArrow) googleArrow.textContent = '›';
         }
         if (xName) {
-          client.from('profiles').upsert({
-            id: user.id,
+          client.from('profiles').update({
             display_name: xName,
             x_id: isGoogle ? null : (meta.user_name || null),
             x_provider_id: isGoogle ? null : xProviderId,
-          }, { onConflict: 'id' }).then().catch(function(e) {
+          }).eq('id', user.id).then().catch(function(e) {
             console.warn('display_name update error:', e);
           });
         }
@@ -7608,22 +7540,6 @@ function filterRouteRegion(el, region) {
       setTimeout(() => showUpdateModal(), 800);
     }
     localStorage.setItem('traceive_version', currentVer);
-    // image_url・source_urlをSupabaseからSPOTSにマージ
-    (async () => {
-      try {
-        const { data } = await getSupabaseClient().from('spots').select('name, image_url, image_url_2, image_url_3, image_url_4, source_url');
-        if (data) {
-          data.forEach(row => {
-            const spot = SPOTS.find(s => s.name === row.name);
-            if (spot && row.image_url) spot.image_url = row.image_url;
-            if (spot && row.image_url_2) spot.image_url_2 = row.image_url_2;
-            if (spot && row.image_url_3) spot.image_url_3 = row.image_url_3;
-            if (spot && row.image_url_4) spot.image_url_4 = row.image_url_4;
-            if (spot && row.source_url) spot.source_url = row.source_url;
-          });
-        }
-      } catch(e) { console.warn('image_url merge error:', e); }
-    })();
 
     // 誕生日（複数人可）・イベントのポップアップを順番に表示（500ms遅延でページ表示後に出す）
     setTimeout(() => {
@@ -8891,32 +8807,6 @@ function applyTransferCode() {
 
 
 <!-- 構図一致証拠モーダル -->
-<div id="location-correction-modal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.65);overflow-y:auto;" onclick="closeLocationCorrectionModal(event)">
-  <div style="background:#fff;border-radius:20px;margin:60px 16px 40px;padding:24px 20px;" onclick="event.stopPropagation()">
-
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <div style="font-size:17px;font-weight:700;color:#1a1a1a;">📍 正しい位置を報告</div>
-      <button onclick="closeLocationCorrectionModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#9a9a9a;">×</button>
-    </div>
-    <div style="font-size:12px;color:#9a9a9a;margin-bottom:16px;">ピンをドラッグして正しい位置に合わせてください。現地にいる場合は「現在地を使う」も利用できます</div>
-
-    <div id="correction-mini-map" style="width:100%;height:200px;border-radius:12px;margin-bottom:10px;background:#ececec;"></div>
-
-    <button onclick="useCurrentLocationForCorrection()" style="width:100%;padding:10px;background:#ececec;border:1.5px dashed #b3b3b3;border-radius:12px;font-size:12px;color:#1a1a1a;font-weight:700;cursor:pointer;margin-bottom:6px;">
-      📡 現在地を使う（現地にいる場合）
-    </button>
-    <div id="correction-gps-status" style="font-size:11px;color:#5b6b7a;min-height:16px;margin-bottom:14px;"></div>
-
-    <div style="padding:12px;background:#fef3c7;border-radius:10px;font-size:12px;color:#92400e;margin-bottom:16px;">
-      ⚠️ 虚偽の報告をするとポイントが剥奪される場合があります
-    </div>
-
-    <button onclick="submitLocationCorrection()" style="width:100%;padding:12px;background:linear-gradient(135deg,#1a1a1a,#c0392b);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;">
-      この位置を正しい場所として報告
-    </button>
-  </div>
-</div>
-
 <div id="matched-modal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.65);overflow-y:auto;" onclick="closeMatchedModal(event)">
   <div style="background:#fff;border-radius:20px;margin:60px 16px 40px;padding:24px 20px;" onclick="event.stopPropagation()">
 
