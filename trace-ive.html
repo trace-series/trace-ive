@@ -284,6 +284,9 @@
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    /* カード最下部（元ネタリンク等）が下部ナビ(60px)の裏に隠れて押せない問題の対処：
+       カードはbottom:0固定で下部ナビの下に潜るため、ナビ高さ＋セーフエリア分の余白を確保 */
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
   }
 
   .card-handle {
