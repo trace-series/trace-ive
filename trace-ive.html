@@ -1220,6 +1220,8 @@
     flex-shrink: 0;
   }
 
+  .rsc-icon.has-thumb { background: #e9e9ee; overflow: hidden; }
+  .rsc-icon.has-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .rsc-info { flex: 1; }
 
   .rsc-name {
@@ -6269,7 +6271,9 @@ function renderRouteSpotList() {
         html += '<div class="route-spot-check" data-spot="' + s.name + '" data-region="' + spotRegion2 + '" data-meta="' + meta + '" data-icon="' + icon + '" data-lat="' + s.lat + '" data-lng="' + s.lng + '" data-member="' + getSpotMemberList(s.member).join(',') + '">'
       + '<div class="rsc-left">'
       + '<div class="rsc-check" onclick="toggleRouteSpot(this)">□</div>'
-      + '<div class="rsc-icon">' + icon + '</div>'
+      + (s.image_url
+          ? '<div class="rsc-icon has-thumb" data-fallback="' + icon + '"><img src="' + escHtml(s.image_url) + '" loading="lazy" decoding="async" alt="" onerror="var p=this.parentNode;p.classList.remove(\'has-thumb\');p.textContent=p.dataset.fallback;"></div>'
+          : '<div class="rsc-icon">' + icon + '</div>')
       + '<div class="rsc-info"><div class="rsc-name">' + s.name + '</div><div class="rsc-meta">' + meta + '</div></div>'
       + '</div>'
       + '<div class="rsc-memo-wrap"><input class="rsc-memo" type="text" placeholder="メモ（任意）"></div>'
