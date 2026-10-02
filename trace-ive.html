@@ -1220,7 +1220,7 @@
     flex-shrink: 0;
   }
 
-  .rsc-icon.has-thumb { background: #e9e9ee; overflow: hidden; }
+  .rsc-icon.has-thumb { background: #e9e9ee; overflow: hidden; cursor: zoom-in; }
   .rsc-icon.has-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .rsc-info { flex: 1; }
 
@@ -2044,7 +2044,7 @@
     font-size: 20px;
     flex-shrink: 0;
   }
-  .spot-list-icon.has-thumb { background: #e9e9ee; overflow: hidden; }
+  .spot-list-icon.has-thumb { background: #e9e9ee; overflow: hidden; cursor: zoom-in; }
   .spot-list-icon.has-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .spot-list-info { flex: 1; min-width: 0; }
   .spot-list-name {
@@ -6272,7 +6272,7 @@ function renderRouteSpotList() {
       + '<div class="rsc-left">'
       + '<div class="rsc-check" onclick="toggleRouteSpot(this)">□</div>'
       + (s.image_url
-          ? '<div class="rsc-icon has-thumb" data-fallback="' + icon + '"><img src="' + escHtml(s.image_url) + '" loading="lazy" decoding="async" alt="" onerror="var p=this.parentNode;p.classList.remove(\'has-thumb\');p.textContent=p.dataset.fallback;"></div>'
+          ? '<div class="rsc-icon has-thumb" data-fallback="' + icon + '" data-photos="' + spotPhotosAttr(s) + '" onclick="openPhotoViewerFromEl(event,this)"><img src="' + escHtml(s.image_url) + '" loading="lazy" decoding="async" alt="" onerror="var p=this.parentNode;p.classList.remove(\'has-thumb\');p.removeAttribute(\'onclick\');p.textContent=p.dataset.fallback;"></div>'
           : '<div class="rsc-icon">' + icon + '</div>')
       + '<div class="rsc-info"><div class="rsc-name">' + s.name + '</div><div class="rsc-meta">' + meta + '</div></div>'
       + '</div>'
@@ -6360,6 +6360,72 @@ function updateFloatingButtons() {
   }
 }
 document.addEventListener('DOMContentLoaded', function() { updateFloatingButtons(); });
+// ── 写真ビューア（一覧・ルート保存リストの小さな写真をタップで拡大表示） ──
+// スポットのimage_url〜image_url_4をまとめて表示。複数枚はスワイプ／矢印で切替、背景か×で閉じる
+function spotPhotosAttr(s) {
+  var arr = [s.image_url, s.image_url_2, s.image_url_3, s.image_url_4].filter(function(u) { return !!u; });
+  return encodeURIComponent(JSON.stringify(arr));
+}
+function openPhotoViewerFromEl(e, el) {
+  if (!el || !el.classList.contains('has-thumb')) return;   // 写真が読めず絵文字に戻った場合は何もしない
+  if (e) { e.stopPropagation(); e.preventDefault(); }
+  var urls = [];
+  try { urls = JSON.parse(decodeURIComponent(el.dataset.photos || '')); } catch (err) { urls = []; }
+  if (!urls.length) return;
+  openPhotoViewer(urls, 0);
+}
+var _pv = { urls: [], idx: 0, el: null, sx: 0, sy: 0 };
+function _pvBuild() {
+  if (_pv.el) return _pv.el;
+  var st = document.createElement('style');
+  st.textContent =
+    '#photo-viewer{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.92);display:none;align-items:center;justify-content:center;touch-action:none;}' +
+    '#photo-viewer.open{display:flex;}' +
+    '#pv-img{max-width:100%;max-height:82vh;max-height:82dvh;object-fit:contain;user-select:none;-webkit-user-select:none;}' +
+    '#pv-close{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,0.18);color:#fff;font-size:20px;cursor:pointer;}' +
+    '.pv-nav{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:56px;border:none;border-radius:10px;background:rgba(255,255,255,0.15);color:#fff;font-size:24px;cursor:pointer;}' +
+    '#pv-prev{left:8px;}#pv-next{right:8px;}' +
+    '#pv-count{position:absolute;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;color:#fff;font-size:13px;opacity:0.85;}';
+  document.head.appendChild(st);
+  var ov = document.createElement('div');
+  ov.id = 'photo-viewer';
+  ov.innerHTML = '<img id="pv-img" alt=""><button id="pv-close" aria-label="閉じる">✕</button>' +
+    '<button class="pv-nav" id="pv-prev" aria-label="前の写真">‹</button><button class="pv-nav" id="pv-next" aria-label="次の写真">›</button>' +
+    '<div id="pv-count"></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e) { if (e.target === ov) closePhotoViewer(); });
+  ov.querySelector('#pv-close').addEventListener('click', function(e) { e.stopPropagation(); closePhotoViewer(); });
+  ov.querySelector('#pv-prev').addEventListener('click', function(e) { e.stopPropagation(); _pvShow(_pv.idx - 1); });
+  ov.querySelector('#pv-next').addEventListener('click', function(e) { e.stopPropagation(); _pvShow(_pv.idx + 1); });
+  ov.addEventListener('touchstart', function(e) { var t = e.touches[0]; _pv.sx = t.clientX; _pv.sy = t.clientY; }, { passive: true });
+  ov.addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });  // 背面のスクロールを止める
+  ov.addEventListener('touchend', function(e) {
+    var t = e.changedTouches[0]; var dx = t.clientX - _pv.sx; var dy = t.clientY - _pv.sy;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) _pvShow(_pv.idx + (dx < 0 ? 1 : -1));
+  });
+  _pv.el = ov;
+  return ov;
+}
+function _pvShow(i) {
+  var n = _pv.urls.length;
+  if (!n) return;
+  _pv.idx = (i + n) % n;
+  var ov = _pvBuild();
+  ov.querySelector('#pv-img').src = _pv.urls[_pv.idx];
+  var multi = n > 1;
+  ov.querySelector('#pv-prev').style.display = multi ? '' : 'none';
+  ov.querySelector('#pv-next').style.display = multi ? '' : 'none';
+  ov.querySelector('#pv-count').textContent = multi ? (_pv.idx + 1) + ' / ' + n : '';
+}
+function openPhotoViewer(urls, idx) {
+  _pv.urls = urls || [];
+  _pvBuild().classList.add('open');
+  _pvShow(idx || 0);
+}
+function closePhotoViewer() {
+  if (_pv.el) { _pv.el.classList.remove('open'); _pv.el.querySelector('#pv-img').src = ''; }
+}
+
 function renderSpotList() {
   var container = document.getElementById('spot-list-container');
   var catIcon = {'カフェ・飲食店':'🍜','撮影スポット':'📸','ライブ・イベント会場':'🎤','観光・名所':'🏯','ショップ':'🛍️'};
@@ -6405,7 +6471,7 @@ function renderSpotList() {
     var div = document.createElement('div');
     div.className = 'spot-list-item';
     var iconHtml = s.image_url
-      ? '<div class="spot-list-icon has-thumb" data-fallback="' + icon + '"><img src="' + escHtml(s.image_url) + '" loading="lazy" decoding="async" alt="" onerror="var p=this.parentNode;p.classList.remove(\'has-thumb\');p.textContent=p.dataset.fallback;"></div>'
+      ? '<div class="spot-list-icon has-thumb" data-fallback="' + icon + '" data-photos="' + spotPhotosAttr(s) + '" onclick="openPhotoViewerFromEl(event,this)"><img src="' + escHtml(s.image_url) + '" loading="lazy" decoding="async" alt="" onerror="var p=this.parentNode;p.classList.remove(\'has-thumb\');p.removeAttribute(\'onclick\');p.textContent=p.dataset.fallback;"></div>'
       : '<div class="spot-list-icon">' + icon + '</div>';
     div.innerHTML = iconHtml
       + '<div class="spot-list-info">'
