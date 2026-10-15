@@ -2271,6 +2271,11 @@
             </div>
           </div>
 
+          <!-- 動画（埋め込み。タップで再生） -->
+          <div id="card-video-wrap" style="display:none;margin-top:14px;">
+            <div style="font-size:12px;font-weight:700;color:var(--text-light);margin-bottom:6px;">🎬 動画</div>
+            <div id="card-video-list"></div>
+          </div>
           <!-- 元ネタ写真（ボタン操作の邪魔にならないよう最下部に配置） -->
           <div id="card-source-photo-wrap" style="display:none;margin-top:14px;">
             <div style="font-size:12px;font-weight:700;color:var(--text-light);margin-bottom:6px;">📷 元ネタ写真</div>
@@ -2350,7 +2355,69 @@
   <!-- FEED VIEW -->
   <div id="view-feed">
     <div class="section-title">タイムライン</div>
-    <div class="section-sub">みんなの巡礼レポート</div>
+    <div class="section-sub" id="feed-section-sub">最新の更新とみんなの巡礼レポート</div>
+
+    <style>
+      .feed-seg-wrap { display:flex; gap:6px; background:var(--purple-pale); border-radius:14px; padding:4px; margin:0 0 14px; }
+      .feed-seg { flex:1; border:none; background:transparent; color:var(--text-mid); border-radius:10px; padding:9px 6px; font-size:13px; font-weight:700; cursor:pointer; }
+      .feed-seg.active { background:#fff; color:var(--purple-deep); box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+      .gal-controls { display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+      .gal-search { flex:1; min-width:0; border:1.5px solid var(--border); border-radius:12px; padding:9px 12px; font-size:16px; background:#fff; color:var(--text); }
+      .gal-sort-row { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+      .gal-sort-btn { border:1.5px solid var(--border); background:#fff; color:var(--text-mid); border-radius:20px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; }
+      .gal-sort-btn.active { background:var(--purple-mid); border-color:var(--purple-mid); color:#fff; }
+      #gallery-count { margin-left:auto; font-size:12px; color:var(--text-light); }
+      #gallery-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:3px; }
+      .gal-group { grid-column:1/-1; font-size:13px; font-weight:700; color:var(--purple-deep); padding:12px 2px 6px; }
+      .gal-tile { position:relative; aspect-ratio:1/1; overflow:hidden; border-radius:6px; background:var(--purple-pale); cursor:pointer; }
+      .gal-tile img { width:100%; height:100%; object-fit:cover; display:block; }
+      .gal-tile-ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:28px; }
+      .gal-video-mark { position:absolute; right:4px; top:4px; font-size:12px; background:rgba(0,0,0,0.55); color:#fff; border-radius:6px; padding:1px 4px; }
+      #gallery-lightbox { position:fixed; inset:0; z-index:3000; background:rgba(0,0,0,0.75); display:none; align-items:center; justify-content:center; padding:16px; }
+      #gallery-lightbox-body { background:#fff; border-radius:18px; padding:12px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; }
+    </style>
+
+    <div class="feed-seg-wrap">
+      <button class="feed-seg active" id="feedtab-tl" onclick="switchFeedMode('timeline')">🕒 タイムライン</button>
+      <button class="feed-seg" id="feedtab-gal" onclick="switchFeedMode('gallery')">🖼️ ギャラリー</button>
+    </div>
+
+    <div id="gallery-wrap" style="display:none;">
+      <div class="gal-controls">
+        <input class="gal-search" type="search" placeholder="🔍 スポット名で検索" oninput="onGallerySearch(this)">
+        <button id="gal-search-clear" onclick="clearGallerySearch()" style="display:none;flex-shrink:0;border:none;background:var(--purple-mid);color:#fff;border-radius:12px;padding:10px 12px;font-size:13px;font-weight:700;cursor:pointer;">✕ 解除</button>
+      </div>
+      <div class="gal-sort-row">
+        <button class="gal-sort-btn active" data-sort="activity" onclick="setGallerySort('activity')">📅 活動日順</button>
+        <button class="gal-sort-btn" data-sort="recent" onclick="setGallerySort('recent')">🆕 新しい順</button>
+        <button class="gal-sort-btn" data-sort="unknown" onclick="setGallerySort('unknown')">❓ 日付不明</button>
+        <span id="gallery-count"></span>
+      </div>
+      <details id="gal-note-recent" style="display:none;margin:-4px 2px 10px;font-size:12px;color:var(--text-mid);">
+        <summary style="cursor:pointer;color:var(--purple-mid);font-weight:700;">ⓘ 並び順について</summary>
+        <div style="margin-top:6px;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:10px;line-height:1.7;">
+          ・この並び順は、写真を<b>アプリに登録した順</b>（新しく登録したものが上）です。<br>
+          ・現在も過去の活動の写真を順次追加しているため、<b style="color:#d9363e;">メンバーの活動が新しい順ではありません</b>。<br>
+          ・昔の活動の写真が、最近の活動より上に表示されることがあります。<br>
+          ・活動の時系列で振り返りたいときは「📅 活動日順」をご利用ください。
+        </div>
+      </details>
+      <details id="gal-note-activity" style="margin:-4px 2px 10px;font-size:12px;color:var(--text-mid);">
+        <summary style="cursor:pointer;color:var(--purple-mid);font-weight:700;">ⓘ 活動日について</summary>
+        <div style="margin-top:6px;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:10px;line-height:1.7;">
+          ・活動日は、写真の出典元（YouTube・Instagram・Xなど）が公開された日をもとに自動で表示しています。<br>
+          ・運営が実際の日付を確認できたものは、その日付（または月）を優先して表示しています。<br>
+          ・メンバーが実際に訪れた日とは異なる場合があり、<b style="color:#d9363e;">日付の正確性を保証するものではありません</b>。目安としてご覧ください。<br>
+          ・出典元の日付が確認できないものは「日付不明」として表示しています。
+        </div>
+      </details>
+      <div id="gallery-member-note" style="display:none;font-size:12px;color:#d9363e;font-weight:600;line-height:1.5;margin:-4px 2px 10px;"></div>
+      <div id="gallery-grid"></div>
+    </div>
+
+    <div id="gallery-lightbox" onclick="closeGalleryLightbox(event)">
+      <div id="gallery-lightbox-body"></div>
+    </div>
 
     <div class="feed-list" id="feed-list">
       <div style="text-align:center;padding:40px 20px;color:var(--text-light);">
@@ -4016,16 +4083,23 @@ async function toggleLike(id, btn, table) {
   }
 }
 
+// タイムライン：最初に20件、「もっと見る」で20件ずつ追加（上限100件）
+const FEED_PAGE_SIZE = 20;
+const FEED_MAX_ITEMS = 100;
+let feedItemsCache = [];
+let feedShownCount = 0;
+
 async function loadFeed() {
   const list = document.getElementById('feed-list');
   if (!list) return;
   list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);">読み込み中...</div>';
 
+  const authHeaders = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` };
+
+  // ① ファンの投稿（承認済み）
   let posts = [];
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/submissions?status=eq.approved&type=eq.new_spot&order=created_at.desc&limit=20`, {
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
-    });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/submissions?status=eq.approved&type=eq.new_spot&order=created_at.desc&limit=${FEED_MAX_ITEMS}`, { headers: authHeaders });
     const data = await res.json();
     if (Array.isArray(data)) {
       posts = data.map(s => ({
@@ -4042,6 +4116,53 @@ async function loadFeed() {
     }
   } catch(e) { console.warn('feed submissions取得失敗:', e); }
 
+  // ② 運営が登録したスポット（spotsテーブル）
+  let spotItems = [];
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/spots?select=id,name,member,sub,image_url,source_url,created_at,no&order=created_at.desc,no.desc&limit=${FEED_MAX_ITEMS}`, { headers: authHeaders });
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      // ファンの投稿から承認されたスポットは①と重複するので除外
+      const postNames = new Set(posts.map(p => p.spot_name));
+      spotItems = data
+        .filter(s => !postNames.has(s.name))
+        .map(s => ({
+          feedType: 'spot',
+          id: s.id,
+          spot_name: s.name,
+          member: s.member || '全員',
+          description: s.sub || '',
+          image_url: s.image_url || null,
+          source_url: s.source_url || null,
+          created_at: s.created_at,
+          no: s.no,
+          has_video: false,
+        }));
+    }
+  } catch(e) { console.warn('feed spots取得失敗:', e); }
+
+  // ②の補足：spot_media（サムネイル・動画の有無）
+  if (spotItems.length) {
+    try {
+      const ids = spotItems.map(s => s.id).join(',');
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/spot_media?select=spot_id,media_type,url,thumb_url,sort_order&spot_id=in.(${ids})&order=sort_order.asc`, { headers: authHeaders });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        const bySpot = {};
+        data.forEach(m => { (bySpot[m.spot_id] = bySpot[m.spot_id] || []).push(m); });
+        spotItems.forEach(s => {
+          const media = bySpot[s.id] || [];
+          s.has_video = media.some(m => m.media_type === 'video');
+          const firstPhoto = media.find(m => m.media_type === 'photo');
+          if (firstPhoto) s.image_url = firstPhoto.thumb_url || firstPhoto.url || s.image_url;
+          const firstVideo = media.find(m => m.media_type === 'video');
+          if (!s.image_url && firstVideo) s.image_url = firstVideo.thumb_url || videoThumbFor(firstVideo.url);
+        });
+      }
+    } catch(e) { console.warn('feed spot_media取得失敗:', e); }
+  }
+
+  // ③ 巡礼報告
   let visits = [];
   try {
     const client = getSupabaseClient();
@@ -4049,7 +4170,7 @@ async function loadFeed() {
       .from('visit_log')
       .select('id, user_id, spot_name, visited_at, likes_count')
       .order('visited_at', { ascending: false })
-      .limit(20);
+      .limit(FEED_MAX_ITEMS);
     if (verr) console.warn('visit_log取得エラー:', verr);
     if (Array.isArray(vdata) && vdata.length) {
       const userIds = [...new Set(vdata.map(v => v.user_id).filter(Boolean))];
@@ -4072,50 +4193,573 @@ async function loadFeed() {
     }
   } catch(e) { console.warn('feed visit_log取得失敗:', e); }
 
-  const items = [...posts, ...visits]
+  // ④ お知らせ（表示中のもののみ）
+  let notices = [];
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/notices?select=*&is_active=eq.true&order=created_at.desc&limit=20`, { headers: authHeaders });
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      notices = data.filter(n => n.created_at).map(n => ({
+        feedType: 'notice',
+        id: n.id,
+        title: n.title || 'お知らせ',
+        body: n.body || '',
+        created_at: n.created_at,
+      }));
+    }
+  } catch(e) { console.warn('feed notices取得失敗:', e); }
+
+  feedItemsCache = [...posts, ...spotItems, ...visits, ...notices]
     .filter(i => i.created_at)
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, 30);
+    .slice(0, FEED_MAX_ITEMS);
+  feedShownCount = 0;
 
-  if (!items.length) {
+  if (!feedItemsCache.length) {
     list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);"><div style="font-size:32px;margin-bottom:8px;">📸</div><div style="font-size:14px;">巡礼報告が投稿されると表示されます</div></div>';
     return;
   }
 
-  list.innerHTML = items.map(item => {
-    if (item.feedType === 'visit') {
-      const liked = hasLikedPost('visit_log:' + item.id);
-      return `<div style="background:linear-gradient(135deg,#fff,var(--purple-pale));border-radius:18px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(123,79,166,0.08);border:1px solid var(--border);">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-          <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--purple-mid),var(--purple-deep));display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">🚩</div>
-          <div style="font-size:13px;color:var(--text);line-height:1.4;"><b style="color:var(--purple-deep);">${escHtml(item.display_name)}</b>さんが<br><b>「${escHtml(item.spot_name)}」</b>を巡礼しました 🌸</div>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-          <div style="font-size:11px;color:var(--text-light);">${timeAgoLabel(item.created_at)}</div>
-          <button class="${liked ? 'liked' : ''}" onclick="toggleLike('${item.id}', this, 'visit_log')" ${liked ? 'disabled' : ''} style="border:none;background:${liked ? 'rgba(224,60,110,0.15)' : 'var(--purple-pale)'};color:${liked ? '#e03c6e' : 'var(--purple-mid)'};border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:${liked ? 'default' : 'pointer'};display:flex;align-items:center;gap:5px;">
-            <span>${liked ? '❤️ いいね済み' : '🤍 いいね'}</span><span style="opacity:0.75;">${item.likes_count}件</span>
-          </button>
-        </div>
-      </div>`;
+  list.innerHTML = '';
+  showMoreFeed();
+}
+
+// ── ギャラリー（spot_mediaの写真・動画を一覧表示） ──
+const GALLERY_PAGE_SIZE = 60;
+let galleryMode = false;
+let galleryCache = null;
+let galleryFiltered = [];
+let galleryShownCount = 0;
+let gallerySort = 'activity'; // 'activity'（活動日順・年表） | 'recent'（登録が新しい順）
+let galleryQuery = '';
+let galleryIsEditor = false;
+let galleryCurrent = null;
+
+function switchFeedMode(mode) {
+  galleryMode = (mode === 'gallery');
+  const tl = document.getElementById('feed-list');
+  const gal = document.getElementById('gallery-wrap');
+  const sub = document.getElementById('feed-section-sub');
+  if (tl) tl.style.display = galleryMode ? 'none' : 'block';
+  if (gal) gal.style.display = galleryMode ? 'block' : 'none';
+  if (sub) sub.textContent = galleryMode ? '推しの軌跡を写真で振り返る' : '最新の更新とみんなの巡礼レポート';
+  const btnTl = document.getElementById('feedtab-tl');
+  const btnGal = document.getElementById('feedtab-gal');
+  if (btnTl) btnTl.classList.toggle('active', !galleryMode);
+  if (btnGal) btnGal.classList.toggle('active', galleryMode);
+  if (galleryMode) loadGallery();
+}
+
+async function loadGallery() {
+  const grid = document.getElementById('gallery-grid');
+  if (!grid) return;
+  if (!galleryCache) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--text-light);">読み込み中...</div>';
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/spot_media?select=id,spot_id,media_type,url,thumb_url,embed_provider,source_url,activity_date_manual,activity_date_precision,source_posted_at,created_at,sort_order,spots(name,member,no)&order=created_at.desc&limit=2000`, {
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+      });
+      const data = await res.json();
+      galleryCache = Array.isArray(data) ? data.filter(m => m.spots).map(m => ({
+        ...m,
+        spot_name: m.spots.name,
+        member: m.spots.member || '全員',
+        no: m.spots.no,
+        activity: galleryActivityDate(m),
+      })) : [];
+      // 管理者（media_editorsに登録されたユーザー）だけ活動月の設定UIを出す
+      try {
+        const { data: ed } = await getSupabaseClient().rpc('is_media_editor');
+        galleryIsEditor = ed === true;
+      } catch(e) { galleryIsEditor = false; }
+    } catch(e) {
+      console.warn('ギャラリー取得失敗:', e);
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--text-light);">読み込みに失敗しました</div>';
+      return;
     }
-    const liked = hasLikedPost('submissions:' + item.id);
-    return `<div style="background:linear-gradient(135deg,#fff,var(--purple-pale));border-radius:18px;padding:16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(123,79,166,0.08);border:1px solid var(--border);">
+  }
+  renderGallery();
+}
+
+// 活動日：手入力があれば優先、なければ出典の公開日（日本時間の日付）
+function galleryActivityDate(m) {
+  if (m.activity_date_manual) return m.activity_date_manual;
+  if (m.source_posted_at) {
+    const d = new Date(new Date(m.source_posted_at).getTime() + 9 * 3600 * 1000);
+    return d.toISOString().slice(0, 10);
+  }
+  return null;
+}
+
+function galleryItemDateLabel(m) {
+  if (m.activity_date_manual && m.activity_date_precision === 'month' && m.activity) {
+    const p = m.activity.split('-');
+    return `${p[0]}.${p[1]}`;
+  }
+  return galleryDateLabel(m.activity);
+}
+
+function galleryDateLabel(ymd) {
+  if (!ymd) return '日付不明';
+  const p = ymd.split('-');
+  return `${p[0]}.${p[1]}.${p[2]}`;
+}
+
+function setGallerySort(sort) {
+  gallerySort = sort;
+  document.querySelectorAll('.gal-sort-btn').forEach(b => b.classList.toggle('active', b.dataset.sort === sort));
+  // 並び順に合わせて注釈を切り替え（活動日順＝活動日について／新しい順・日付不明＝並び順について）
+  const noteActivity = document.getElementById('gal-note-activity');
+  const noteRecent = document.getElementById('gal-note-recent');
+  if (noteActivity) noteActivity.style.display = (sort === 'activity') ? '' : 'none';
+  if (noteRecent) noteRecent.style.display = (sort === 'activity') ? 'none' : '';
+  renderGallery();
+}
+
+function onGallerySearch(input) {
+  galleryQuery = (input.value || '').trim().toLowerCase();
+  renderGallery();
+}
+
+function clearGallerySearch() {
+  const input = document.querySelector('#gallery-wrap .gal-search');
+  if (input) input.value = '';
+  galleryQuery = '';
+  renderGallery();
+}
+
+function renderGallery() {
+  const grid = document.getElementById('gallery-grid');
+  const countEl = document.getElementById('gallery-count');
+  if (!grid || !galleryCache) return;
+
+  galleryFiltered = galleryCache.filter(m => {
+    const memberOk = activeMember === 'all' || m.member === '全員' || getSpotMemberList(m.member).includes(activeMember);
+    const queryOk = !galleryQuery || (m.spot_name || '').toLowerCase().includes(galleryQuery) || (m.no != null && ('no.' + m.no) === galleryQuery.replace(/\s/g, ''));
+    const unknownOk = gallerySort !== 'unknown' || !m.activity;
+    return memberOk && queryOk && unknownOk;
+  });
+
+  if (gallerySort === 'activity') {
+    galleryFiltered.sort((a, b) => {
+      if (a.activity && b.activity) return a.activity < b.activity ? 1 : a.activity > b.activity ? -1 : (a.sort_order || 0) - (b.sort_order || 0);
+      if (a.activity) return -1;
+      if (b.activity) return 1;
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+  } else {
+    // 新しい順・日付不明は登録が新しい順
+    galleryFiltered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at) || (a.sort_order || 0) - (b.sort_order || 0));
+  }
+
+  if (countEl) countEl.textContent = `${galleryFiltered.length}件`;
+  const clearBtn = document.getElementById('gal-search-clear');
+  if (clearBtn) clearBtn.style.display = galleryQuery ? 'block' : 'none';
+  const noteEl = document.getElementById('gallery-member-note');
+  if (noteEl) {
+    if (activeMember === 'all') {
+      noteEl.style.display = 'none';
+    } else {
+      noteEl.textContent = `※ メンバー絞り込みは聖地スポット単位です。${activeMember}が訪れたスポットの写真をすべて表示するため、他のメンバーだけが写っている写真や、「全員」で登録されたスポットの写真も含まれます。`;
+      noteEl.style.display = 'block';
+    }
+  }
+  galleryShownCount = 0;
+  grid.innerHTML = '';
+
+  if (!galleryFiltered.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--text-light);"><div style="font-size:28px;margin-bottom:6px;">🖼️</div><div style="font-size:13px;">該当する写真がありません</div></div>';
+    return;
+  }
+  showMoreGallery();
+}
+
+function showMoreGallery() {
+  const grid = document.getElementById('gallery-grid');
+  if (!grid) return;
+  const oldBtn = document.getElementById('gallery-more-btn');
+  if (oldBtn) oldBtn.remove();
+
+  const start = galleryShownCount;
+  const end = Math.min(start + GALLERY_PAGE_SIZE, galleryFiltered.length);
+  let html = '';
+  let prevGroup = start > 0 ? galleryGroupKey(galleryFiltered[start - 1]) : null;
+  for (let i = start; i < end; i++) {
+    const m = galleryFiltered[i];
+    if (gallerySort === 'activity') {
+      const g = galleryGroupKey(m);
+      if (g !== prevGroup) {
+        html += `<div class="gal-group">${g}</div>`;
+        prevGroup = g;
+      }
+    }
+    const src = m.thumb_url || (m.media_type === 'photo' ? m.url : videoThumbFor(m.url));
+    html += `<div class="gal-tile" data-idx="${i}" onclick="openGalleryItem(this)">
+      ${src ? `<img src="${escHtml(src)}" loading="lazy" alt="">` : `<div class="gal-tile-ph">🎬</div>`}
+      ${m.media_type === 'video' ? '<span class="gal-video-mark">🎬</span>' : ''}
+    </div>`;
+  }
+  grid.insertAdjacentHTML('beforeend', html);
+  galleryShownCount = end;
+
+  if (galleryShownCount < galleryFiltered.length) {
+    grid.insertAdjacentHTML('beforeend',
+      `<button id="gallery-more-btn" onclick="showMoreGallery()" style="grid-column:1/-1;border:1.5px solid var(--border);background:#fff;color:var(--purple-deep);border-radius:14px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;margin:8px 0 16px;">もっと見る（あと${galleryFiltered.length - galleryShownCount}件）</button>`);
+  }
+}
+
+function galleryGroupKey(m) {
+  if (!m.activity) return '日付不明';
+  const p = m.activity.split('-');
+  return `${p[0]}年${parseInt(p[1], 10)}月`;
+}
+
+function openGalleryItem(el) {
+  const m = galleryFiltered[parseInt(el.getAttribute('data-idx'), 10)];
+  if (!m) return;
+  galleryCurrent = m;
+  const box = document.getElementById('gallery-lightbox');
+  const body = document.getElementById('gallery-lightbox-body');
+  if (!box || !body) return;
+  const media = m.media_type === 'photo'
+    ? `<img src="${escHtml(m.url)}" style="width:100%;max-height:60vh;object-fit:contain;border-radius:12px;background:#000;display:block;">`
+    : renderVideoBlock(m.url, m.thumb_url);
+  body.innerHTML = `
+    ${media}
+    <div style="padding:12px 4px 0;">
+      <div style="font-size:15px;font-weight:700;color:var(--purple-deep);line-height:1.4;margin-bottom:4px;">${m.no != null ? 'No.' + m.no + ' ' : ''}${escHtml(m.spot_name)}</div>
+      <div style="font-size:12px;color:var(--text-mid);margin-bottom:2px;">👥 ${escHtml(m.member)}</div>
+      <div style="font-size:12px;color:var(--text-mid);margin-bottom:10px;">📅 活動日：${galleryItemDateLabel(m)}${m.activity ? '<span style="font-size:10px;color:var(--text-light);margin-left:4px;">（目安）</span>' : ''}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button data-spot-name="${escHtml(m.spot_name)}" onclick="closeGalleryLightbox();jumpToSpotFromFeed(this)" style="flex:1;min-width:140px;border:none;background:linear-gradient(135deg,var(--purple-mid),var(--purple-deep));color:#fff;border-radius:12px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;">📍 このスポットを見る</button>
+        ${m.source_url ? `<a href="${escHtml(m.source_url)}" target="_blank" rel="noopener" style="flex:1;min-width:110px;text-align:center;border:1.5px solid var(--border);background:#fff;color:var(--purple-deep);border-radius:12px;padding:10px;font-size:13px;font-weight:700;text-decoration:none;">🔗 元ネタ</a>` : ''}
+      </div>
+      ${galleryIsEditor ? galleryEditorHtml(m) : ''}
+    </div>`;
+  box.style.display = 'flex';
+}
+
+function galleryYearOptions(cur) {
+  const sel = cur ? cur.slice(0, 4) : '';
+  const now = new Date().getFullYear();
+  let html = '<option value="">年を選ぶ</option>';
+  for (let y = now + 1; y >= 2021; y--) html += `<option value="${y}"${String(y) === sel ? ' selected' : ''}>${y}年</option>`;
+  return html;
+}
+
+function galleryMonthOptions(cur) {
+  const sel = cur ? cur.slice(5, 7) : '';
+  let html = '<option value="">月を選ぶ</option>';
+  for (let mo = 1; mo <= 12; mo++) {
+    const v = String(mo).padStart(2, '0');
+    html += `<option value="${v}"${v === sel ? ' selected' : ''}>${mo}月</option>`;
+  }
+  return html;
+}
+
+function galleryEditorHtml(m) {
+  const sameSpot = galleryCache.filter(x => x.spot_id === m.spot_id).length;
+  const cur = m.activity_date_manual ? m.activity_date_manual.slice(0, 7) : (m.activity ? m.activity.slice(0, 7) : '');
+  return `<div style="margin-top:14px;padding:12px;border-radius:12px;background:#fff4f4;border:1.5px dashed #e08a8a;">
+    <div style="font-size:12px;font-weight:700;color:#c0392b;margin-bottom:8px;">🔧 管理者：活動月を設定</div>
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <select id="gal-edit-year" style="flex:1;min-width:0;border:1.5px solid var(--border);border-radius:10px;padding:10px;font-size:16px;background:#fff;color:var(--text);">${galleryYearOptions(cur)}</select>
+      <select id="gal-edit-mon" style="flex:1;min-width:0;border:1.5px solid var(--border);border-radius:10px;padding:10px;font-size:16px;background:#fff;color:var(--text);">${galleryMonthOptions(cur)}</select>
+    </div>
+    ${sameSpot > 1 ? `<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-mid);margin-bottom:10px;"><input type="checkbox" id="gal-edit-all" checked> このスポットの写真すべて（${sameSpot}枚）に適用</label>` : ''}
+    <div style="display:flex;gap:8px;">
+      <button onclick="saveGalleryDate(false)" style="flex:2;border:none;background:#c0392b;color:#fff;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">保存</button>
+      <button onclick="saveGalleryDate(true)" style="flex:1;border:1.5px solid var(--border);background:#fff;color:var(--text-mid);border-radius:10px;padding:10px;font-size:12px;font-weight:600;cursor:pointer;">自動に戻す</button>
+    </div>
+    <div id="gal-edit-msg" style="font-size:12px;color:#c0392b;margin-top:6px;"></div>
+  </div>`;
+}
+
+async function saveGalleryDate(clear) {
+  const m = galleryCurrent;
+  if (!m) return;
+  const msg = document.getElementById('gal-edit-msg');
+  const yEl = document.getElementById('gal-edit-year');
+  const mEl = document.getElementById('gal-edit-mon');
+  const allEl = document.getElementById('gal-edit-all');
+  const ym = (yEl && mEl && yEl.value && mEl.value) ? yEl.value + '-' + mEl.value : '';
+  if (!clear && !/^\d{4}-\d{2}$/.test(ym)) {
+    if (msg) msg.textContent = '年と月を選んでください';
+    return;
+  }
+  const applyAll = !!(allEl && allEl.checked);
+  if (msg) msg.textContent = '保存中...';
+  const { data, error } = await getSupabaseClient().rpc('set_media_activity_date', {
+    p_media_id: m.id,
+    p_date: clear ? null : ym + '-01',
+    p_precision: 'month',
+    p_apply_to_spot: applyAll,
+  });
+  if (error) {
+    if (msg) msg.textContent = '保存できませんでした：' + (error.message || '');
+    return;
+  }
+  galleryCache.forEach(x => {
+    if (x.id === m.id || (applyAll && x.spot_id === m.spot_id)) {
+      x.activity_date_manual = clear ? null : ym + '-01';
+      x.activity_date_precision = 'month';
+      x.activity = galleryActivityDate(x);
+    }
+  });
+  const box = document.getElementById('gallery-lightbox');
+  if (box) box.style.display = 'none';
+  renderGallery();
+}
+
+function closeGalleryLightbox(ev) {
+  if (ev && ev.target && ev.target.id !== 'gallery-lightbox') return;
+  const box = document.getElementById('gallery-lightbox');
+  if (box) box.style.display = 'none';
+  const body = document.getElementById('gallery-lightbox-body');
+  if (body) body.innerHTML = ''; // 再生中の動画を止める
+}
+
+// MAP・スポットカードからギャラリーを開く（spotNameを渡すとそのスポットで絞り込み）
+function openGalleryFromMap(spotName) {
+  showView('feed');
+  const input = document.querySelector('#gallery-wrap .gal-search');
+  if (input) input.value = spotName || '';
+  galleryQuery = (spotName || '').trim().toLowerCase();
+  switchFeedMode('gallery');
+  window.scrollTo(0, 0);
+}
+
+function openGalleryForCurrentSpot() {
+  if (!currentSpot) return;
+  const name = currentSpot.name;
+  const card = document.getElementById('map-card');
+  if (card) card.classList.remove('open');
+  cardOpen = false;
+  const closeBtn = document.getElementById('card-fixed-close-btn');
+  if (closeBtn) closeBtn.style.display = 'none';
+  openGalleryFromMap(name);
+}
+
+// ── 動画（埋め込み方式：Supabaseの容量は使わない） ──
+// 対応：YouTube（通常・ショート）／Instagram（投稿・リール）／X／TikTok。Weverse等は埋め込み不可なのでリンクボタン
+function parseVideoUrl(url) {
+  if (!url) return null;
+  let m;
+  // YouTube
+  m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([A-Za-z0-9_-]{11})/);
+  if (m) {
+    const id = m[1];
+    const isShort = /youtube\.com\/shorts\//.test(url);
+    let start = 0;
+    const t = url.match(/[?&](?:t|start)=([0-9hms]+)/);
+    if (t) {
+      const v = t[1];
+      if (/^\d+$/.test(v)) start = parseInt(v, 10);
+      else {
+        const h = v.match(/(\d+)h/), mi = v.match(/(\d+)m/), s = v.match(/(\d+)s/);
+        start = (h ? +h[1] * 3600 : 0) + (mi ? +mi[1] * 60 : 0) + (s ? +s[1] : 0);
+      }
+    }
+    return {
+      provider: 'youtube', label: 'YouTube',
+      embed: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1&rel=0${start ? '&start=' + start : ''}`,
+      thumb: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+      ratio: isShort ? '9/16' : '16/9', height: 0,
+    };
+  }
+  // Instagram
+  m = url.match(/instagram\.com\/(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/);
+  if (m) {
+    const kind = m[1] === 'reels' ? 'reel' : m[1];
+    return { provider: 'instagram', label: 'Instagram', embed: `https://www.instagram.com/${kind}/${m[2]}/embed/`, thumb: '', ratio: '', height: 600 };
+  }
+  // X（旧Twitter）
+  m = url.match(/(?:x|twitter)\.com\/[^/]+\/status\/(\d+)/);
+  if (m) {
+    return { provider: 'x', label: 'X', embed: `https://platform.twitter.com/embed/Tweet.html?id=${m[1]}&lang=ja`, thumb: '', ratio: '', height: 600 };
+  }
+  // TikTok
+  m = url.match(/tiktok\.com\/.+\/video\/(\d+)/);
+  if (m) {
+    return { provider: 'tiktok', label: 'TikTok', embed: `https://www.tiktok.com/embed/v2/${m[1]}`, thumb: '', ratio: '', height: 740 };
+  }
+  // Weverse・その他（埋め込み不可）
+  const label = /weverse\.io/.test(url) ? 'Weverse' : '元の動画';
+  return { provider: /weverse\.io/.test(url) ? 'weverse' : 'link', label, embed: '', thumb: '', ratio: '', height: 0 };
+}
+
+function videoThumbFor(url) {
+  const v = parseVideoUrl(url);
+  return v && v.thumb ? v.thumb : '';
+}
+
+// タップするまでは読み込まない（通信量・表示速度のため）。タップでiframeに差し替え
+function renderVideoBlock(url, thumbUrl) {
+  const v = parseVideoUrl(url);
+  if (!v) return '';
+  if (!v.embed) {
+    return `<a href="${escHtml(url)}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;box-sizing:border-box;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--purple-mid),var(--purple-deep));color:#fff;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;">🎬 ${escHtml(v.label)}で動画を見る ↗</a>`;
+  }
+  const thumb = thumbUrl || v.thumb;
+  const bg = thumb ? `background:#000 url('${escHtml(thumb)}') center/cover no-repeat;` : 'background:linear-gradient(135deg,#2b2b2b,#555);';
+  const sizeCss = v.ratio ? `aspect-ratio:${v.ratio};${v.ratio === '9/16' ? 'max-height:70vh;margin:0 auto 8px;' : 'margin-bottom:8px;'}` : 'height:180px;margin-bottom:8px;';
+  return `<div class="video-embed-ph" data-embed="${escHtml(v.embed)}" data-ratio="${v.ratio}" data-h="${v.height}" data-provider="${v.provider}" onclick="playVideoEmbed(this)" style="position:relative;width:100%;${sizeCss}border-radius:12px;overflow:hidden;cursor:pointer;${bg}">
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(0,0,0,0.25);">
+      <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;font-size:22px;color:#222;padding-left:4px;box-sizing:border-box;">▶</div>
+      <div style="font-size:12px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.6);">${escHtml(v.label)}で再生</div>
+    </div>
+  </div>`;
+}
+
+function playVideoEmbed(el) {
+  const src = el.getAttribute('data-embed');
+  if (!src) return;
+  const ratio = el.getAttribute('data-ratio');
+  const h = parseInt(el.getAttribute('data-h') || '0', 10);
+  const iframe = document.createElement('iframe');
+  iframe.src = src;
+  iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+  iframe.setAttribute('allowfullscreen', '');
+  iframe.setAttribute('loading', 'lazy');
+  iframe.style.cssText = 'width:100%;border:0;border-radius:12px;display:block;background:#000;margin-bottom:8px;' +
+    (ratio ? `aspect-ratio:${ratio};${ratio === '9/16' ? 'max-height:70vh;' : ''}` : `height:${h || 600}px;background:#fff;`);
+  el.replaceWith(iframe);
+}
+
+// スポットカードの「🎬 動画」欄
+let cardVideoReqId = 0;
+async function loadCardVideos(spot) {
+  const wrap = document.getElementById('card-video-wrap');
+  const list = document.getElementById('card-video-list');
+  if (!wrap || !list) return;
+  wrap.style.display = 'none';
+  list.innerHTML = '';
+  if (!spot || !spot.db_id) return;
+  const reqId = ++cardVideoReqId;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/spot_media?select=url,thumb_url,sort_order&spot_id=eq.${spot.db_id}&media_type=eq.video&order=sort_order.asc`, {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    const data = await res.json();
+    if (reqId !== cardVideoReqId) return; // 別のスポットを開き直した場合は破棄
+    if (Array.isArray(data) && data.length) {
+      list.innerHTML = data.map(v => renderVideoBlock(v.url, v.thumb_url)).join('');
+      wrap.style.display = 'block';
+    }
+  } catch(e) { console.warn('動画取得失敗:', e); }
+}
+
+// カードを閉じたら再生中の動画を止める（iframeを外す）
+(function watchCardCloseForVideo() {
+  function attach() {
+    const card = document.getElementById('map-card');
+    if (!card) return;
+    new MutationObserver(function() {
+      if (!card.classList.contains('open')) {
+        const list = document.getElementById('card-video-list');
+        if (list && list.querySelector('iframe')) list.innerHTML = '';
+        const wrap = document.getElementById('card-video-wrap');
+        if (wrap) wrap.style.display = 'none';
+        cardVideoReqId++;
+      }
+    }).observe(card, { attributes: true, attributeFilter: ['class'] });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
+  else attach();
+})();
+
+function showMoreFeed() {
+  const list = document.getElementById('feed-list');
+  if (!list) return;
+  const oldBtn = document.getElementById('feed-more-btn');
+  if (oldBtn) oldBtn.remove();
+
+  const next = feedItemsCache.slice(feedShownCount, feedShownCount + FEED_PAGE_SIZE);
+  list.insertAdjacentHTML('beforeend', next.map(renderFeedItem).join(''));
+  feedShownCount += next.length;
+
+  if (feedShownCount < feedItemsCache.length) {
+    list.insertAdjacentHTML('beforeend',
+      `<button id="feed-more-btn" onclick="showMoreFeed()" style="display:block;width:100%;border:1.5px solid var(--border);background:#fff;color:var(--purple-deep);border-radius:14px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;margin:4px 0 16px;">もっと見る（あと${feedItemsCache.length - feedShownCount}件）</button>`);
+  }
+}
+
+function jumpToSpotFromFeed(el) {
+  const name = el && el.getAttribute('data-spot-name');
+  if (name) jumpToSpot(name);
+}
+
+function feedLikeButton(item, table) {
+  const liked = hasLikedPost(table + ':' + item.id);
+  return `<button class="${liked ? 'liked' : ''}" onclick="toggleLike('${item.id}', this, '${table}')" ${liked ? 'disabled' : ''} style="border:none;background:${liked ? 'rgba(224,60,110,0.15)' : 'var(--purple-pale)'};color:${liked ? '#e03c6e' : 'var(--purple-mid)'};border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:${liked ? 'default' : 'pointer'};display:flex;align-items:center;gap:5px;">
+    <span>${liked ? '❤️ いいね済み' : '🤍 いいね'}</span><span style="opacity:0.75;">${item.likes_count}件</span>
+  </button>`;
+}
+
+function renderFeedItem(item) {
+  // お知らせ
+  if (item.feedType === 'notice') {
+    return `<div style="background:linear-gradient(135deg,var(--purple-deep),var(--purple-mid));color:#fff;border-radius:18px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.12);">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <span style="font-size:10px;background:rgba(255,255,255,0.22);border-radius:8px;padding:2px 8px;">📢 運営からのお知らせ</span>
+        <span style="font-size:11px;opacity:0.8;margin-left:auto;">${timeAgoLabel(item.created_at)}</span>
+      </div>
+      <div style="font-size:14px;font-weight:700;line-height:1.4;margin-bottom:4px;">${escHtml(item.title)}</div>
+      ${item.body ? `<div style="font-size:12px;line-height:1.6;opacity:0.92;white-space:pre-wrap;">${escHtml(item.body)}</div>` : ''}
+    </div>`;
+  }
+  // 巡礼報告
+  if (item.feedType === 'visit') {
+    return `<div style="background:linear-gradient(135deg,#fff,var(--purple-pale));border-radius:18px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(123,79,166,0.08);border:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--purple-mid),var(--purple-deep));display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">🚩</div>
+        <div style="font-size:13px;color:var(--text);line-height:1.4;"><b style="color:var(--purple-deep);">${escHtml(item.display_name)}</b>さんが<br><b>「${escHtml(item.spot_name)}」</b>を巡礼しました 🌸</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+        <div style="font-size:11px;color:var(--text-light);">${timeAgoLabel(item.created_at)}</div>
+        ${feedLikeButton(item, 'visit_log')}
+      </div>
+    </div>`;
+  }
+
+  // 運営が登録したスポット
+  if (item.feedType === 'spot') {
+    const videoBadge = item.has_video ? `<span style="font-size:10px;background:#e0245e;color:#fff;border-radius:8px;padding:2px 8px;">🎬 動画あり</span>` : '';
+    return `<div data-spot-name="${escHtml(item.spot_name)}" onclick="jumpToSpotFromFeed(this)" style="cursor:pointer;background:#fff;border-radius:18px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(123,79,166,0.08);border:${item.has_video ? '2px solid #e0245e' : '1px solid var(--border)'};">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+        <span style="font-size:10px;background:var(--purple-mid);color:#fff;border-radius:8px;padding:2px 8px;">📍 新スポット追加${item.no != null ? ' No.' + item.no : ''}</span>
+        ${videoBadge}
+        <span style="font-size:11px;color:var(--text-light);margin-left:auto;">${timeAgoLabel(item.created_at)}</span>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;">
+        ${item.image_url ? `<img src="${escHtml(item.image_url)}" loading="lazy" style="width:76px;height:76px;object-fit:cover;border-radius:12px;flex-shrink:0;">` : ''}
+        <div style="min-width:0;">
+          <div style="font-size:14px;font-weight:700;color:var(--purple-deep);line-height:1.35;margin-bottom:4px;">${escHtml(item.spot_name)}</div>
+          <div style="font-size:12px;color:var(--text-mid);margin-bottom:2px;">👥 ${escHtml(item.member)}</div>
+          ${item.description ? `<div style="font-size:11px;color:var(--text-light);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${escHtml(item.description)}</div>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // ファンの投稿（承認済み）— 一番目立たせる
+  return `<div style="background:linear-gradient(135deg,#fff8e1,#fff);border-radius:18px;padding:16px;margin-bottom:10px;box-shadow:0 4px 14px rgba(212,160,23,0.25);border:2px solid var(--gold);">
+    <div style="font-size:13px;color:var(--text);margin-bottom:8px;line-height:1.4;">🏆 <b style="color:var(--purple-deep);">${escHtml(item.submitter)}</b> さんが新しい聖地を発見！</div>
+    <div data-spot-name="${escHtml(item.spot_name)}" onclick="jumpToSpotFromFeed(this)" style="cursor:pointer;">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
         <span style="font-size:15px;">📍</span>
         <span style="font-size:14px;font-weight:700;color:var(--purple-deep);">${escHtml(item.spot_name)}</span>
-        <span style="font-size:10px;background:var(--gold);color:#fff;border-radius:8px;padding:2px 8px;margin-left:auto;">🌟 新スポット</span>
+        <span style="font-size:10px;background:var(--gold);color:#fff;border-radius:8px;padding:2px 8px;margin-left:auto;">🌟 発見者</span>
       </div>
       ${item.description ? `<div style="font-size:13px;color:var(--text-mid);margin-bottom:8px;line-height:1.5;">${escHtml(item.description)}</div>` : ''}
-      ${item.image_url ? `<img src="${item.image_url}" style="width:100%;max-height:260px;object-fit:cover;border-radius:12px;margin-bottom:8px;display:block;" loading="lazy">` : ''}
-      ${item.source_url ? `<a href="${escHtml(item.source_url)}" target="_blank" rel="noopener" style="display:inline-block;font-size:11px;color:var(--purple-mid);margin-bottom:8px;text-decoration:underline;">🔗 元ネタを見る</a>` : ''}
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:11px;color:var(--text-light);">👤 ${escHtml(item.submitter)} · ${timeAgoLabel(item.created_at)}</div>
-        <button class="${liked ? 'liked' : ''}" onclick="toggleLike('${item.id}', this, 'submissions')" ${liked ? 'disabled' : ''} style="border:none;background:${liked ? 'rgba(224,60,110,0.15)' : 'var(--purple-pale)'};color:${liked ? '#e03c6e' : 'var(--purple-mid)'};border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:${liked ? 'default' : 'pointer'};display:flex;align-items:center;gap:5px;">
-          <span>${liked ? '❤️ いいね済み' : '🤍 いいね'}</span><span style="opacity:0.75;">${item.likes_count}件</span>
-        </button>
-      </div>
-    </div>`;
-  }).join('');
+      ${item.image_url ? `<img src="${escHtml(item.image_url)}" style="width:100%;max-height:260px;object-fit:cover;border-radius:12px;margin-bottom:8px;display:block;" loading="lazy">` : ''}
+    </div>
+    ${item.source_url ? `<a href="${escHtml(item.source_url)}" target="_blank" rel="noopener" style="display:inline-block;font-size:11px;color:var(--purple-mid);margin-bottom:8px;text-decoration:underline;">🔗 元ネタを見る</a>` : ''}
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:11px;color:var(--text-light);">${timeAgoLabel(item.created_at)}</div>
+      ${feedLikeButton(item, 'submissions')}
+    </div>
+  </div>`;
 }
 
 const SPOTS = [
@@ -5237,6 +5881,17 @@ async function initMap() {
     ]
   });
 
+  // ズームボタン（＋／−）の上にギャラリーへのショートカットを置く
+  const galleryCtl = document.createElement('button');
+  galleryCtl.type = 'button';
+  galleryCtl.title = 'ギャラリー';
+  galleryCtl.setAttribute('aria-label', 'ギャラリーを開く');
+  galleryCtl.style.cssText = 'width:40px;height:48px;margin:0 10px 8px 0;background:#fff;border:none;border-radius:8px;box-shadow:rgba(0,0,0,0.3) 0 1px 4px -1px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:0;';
+  galleryCtl.innerHTML = '<span style="font-size:18px;line-height:1;">🖼️</span><span style="font-size:9px;font-weight:700;color:#555;line-height:1;">写真</span>';
+  galleryCtl.addEventListener('click', function() { openGalleryFromMap(''); });
+  galleryCtl.index = -1; // マイナス値でズームボタンより上に配置
+  map.controls[google.maps.ControlPosition.RIGHT_CENTER].push(galleryCtl);
+
   // ローディング非表示
   document.getElementById('map-loading').style.display = 'none';
 
@@ -5369,6 +6024,7 @@ function openCard(spot) {
             linkWrap.style.display = 'none';
           }
         }
+        loadCardVideos(spot);
   document.getElementById('card-address').textContent = spot.address;
   document.getElementById('card-discoverer').textContent = spot.discoverer;
   document.getElementById('card-likes').textContent = spot.likes + ' 件の巡礼報告';
@@ -6881,6 +7537,9 @@ function filterMember(el, member) {
       item.style.display = m === member ? 'block' : 'none';
     }
   });
+
+  // ギャラリー表示中はメンバーで絞り込み
+  if (galleryMode && galleryCache) renderGallery();
 
   // マップフィルター（ANDフィルター）
   if (map) applyFilters();
