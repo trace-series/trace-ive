@@ -3970,7 +3970,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 async function fetchSpotsFromDB() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/spots?select=*&order=created_at.asc`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/spots?select=*&is_draft=eq.false&order=created_at.asc`, {
       headers: {
         'apikey': SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
@@ -4119,7 +4119,7 @@ async function loadFeed() {
   // ② 運営が登録したスポット（spotsテーブル）
   let spotItems = [];
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/spots?select=id,name,member,sub,image_url,source_url,created_at,no&order=created_at.desc,no.desc&limit=${FEED_MAX_ITEMS}`, { headers: authHeaders });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/spots?select=id,name,member,sub,image_url,source_url,created_at,no&is_draft=eq.false&order=created_at.desc,no.desc&limit=${FEED_MAX_ITEMS}`, { headers: authHeaders });
     const data = await res.json();
     if (Array.isArray(data)) {
       // ファンの投稿から承認されたスポットは①と重複するので除外
