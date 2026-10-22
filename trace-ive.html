@@ -6136,6 +6136,7 @@ const ADMIN_LIST_DEFS = [
   { key: 'nophoto', label: '📷 写真なし', test: s => !s.image_url },
   { key: 'allmember', label: '👥 メンバー全員', test: s => !s.member || s.member === '全員' },
   { key: 'nosource', label: '🔗 出典なし', test: s => !s.source_url },
+  { key: 'hassource', label: '✅ 出典あり', test: s => !!s.source_url },
   { key: 'flagged', label: '🔴 要確認', test: s => s.trustScore < 0 },
   { key: 'memo', label: '📝 メモ', test: s => !!adminMemos[s.db_id] },
 ];
