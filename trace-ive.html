@@ -3806,6 +3806,10 @@ const GROUP_CONFIG = {
     { id: 'tokyodome2026', name: '🏟️ 東京ドーム公演記念', start: '2026-06-21', end: '2026-06-27', multiplier: 1.5 },
   ],
 
+  // — スポット限定のポイントアップ（イルミネーションなど）—
+  //   管理画面の「🎉 イベント」で設定し、Supabase（app_events）から読み込む。読み込めなかったときは空。
+  spotBoosts: [],
+
   // — バージョン管理 —
   appVersion: '1.1.0',
   updateNotes: [
@@ -3936,12 +3940,17 @@ function buildPopupQueue() {
     const key = 'event_' + activeEv.id;
     if (!hasDismissedPopupToday(key)) queue.push({ kind: 'event', data: activeEv, key });
   }
+  for (const item of getSpotBoostPopups()) {
+    const key = 'boost_' + item.boost.id + '_' + item.phase;
+    if (!hasDismissedPopupToday(key)) queue.push({ kind: 'boost', data: item, key });
+  }
   return queue;
 }
 function showNextPopupInQueue() {
   if (!_popupQueue.length) return;
   const next = _popupQueue.shift();
   if (next.kind === 'birthday') showBirthdayPopup(next.data, next.key);
+  else if (next.kind === 'boost') showBoostPopup(next.data, next.key);
   else showEventPopup(next.data, next.key);
 }
 
@@ -3953,6 +3962,92 @@ function getActiveEvent() {
     if (todayStr >= ev.start && todayStr <= ev.end) return ev;
   }
   return null;
+}
+
+// ── スポット限定ポイントアップ（イルミネーションなど）──
+function _todayStr() {
+  const now = new Date();
+  return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+}
+// spots（スポットごとの期間）がある場合は、グループ全体の start/end を自動で出す
+function _boostRange(b) {
+  if (!b.spots || !b.spots.length) return { start: b.start, end: b.end };
+  return { start: b.spots.map(x => x.start).sort()[0], end: b.spots.map(x => x.end).sort().slice(-1)[0] };
+}
+function _boostMatchesSpot(b, spot) {
+  if (!spot) return false;
+  if (b.allSpots) return true;
+  if (b.spotNos && spot.no != null && b.spotNos.includes(Number(spot.no))) return true;
+  if (b.spotNamePattern) { try { if (new RegExp(b.spotNamePattern, 'i').test(spot.name || '')) return true; } catch (e) {} }
+  return false;
+}
+// 今日開催中で、このスポットが対象のポイントアップのうち最大のもの
+function getSpotBoost(spot) {
+  const t = _todayStr();
+  let best = null;
+  for (const b of (GROUP_CONFIG.spotBoosts || [])) {
+    if (b.spots && b.spots.length) {
+      const hit = spot && spot.no != null && b.spots.find(x => x.no === Number(spot.no) && t >= x.start && t <= x.end);
+      if (hit && (!best || b.multiplier > best.multiplier)) best = b;
+      continue;
+    }
+    if (t >= b.start && t <= b.end && _boostMatchesSpot(b, spot)) {
+      if (!best || b.multiplier > best.multiplier) best = b;
+    }
+  }
+  return best;
+}
+// ポップアップに出すもの（予告期間 or 開催中）
+function getSpotBoostPopups() {
+  const t = _todayStr();
+  const list = [];
+  for (const b of (GROUP_CONFIG.spotBoosts || [])) {
+    const r = _boostRange(b);
+    const anyLive = b.spots && b.spots.length ? b.spots.some(x => t >= x.start && t <= x.end) : (t >= r.start && t <= r.end);
+    if (anyLive) list.push({ boost: b, phase: 'live' });
+    else if (b.announceStart && t >= b.announceStart && t < r.start) list.push({ boost: b, phase: 'pre' });
+  }
+  return list;
+}
+function _fmtMD(d) { const p = d.split('-'); return Number(p[1]) + '/' + Number(p[2]); }
+function closeBoostPopup(dismiss, key) {
+  if (dismiss) dismissPopupToday(key);
+  const el = document.getElementById('boost-overlay');
+  if (el) el.remove();
+  showNextPopupInQueue();
+}
+function showBoostPopup(item, dismissKey) {
+  const b = item.boost;
+  const isPre = item.phase === 'pre';
+  const r = _boostRange(b);
+  const t = _todayStr();
+  let periodHtml;
+  if (b.spots && b.spots.length) {
+    periodHtml = b.spots.slice().sort((x, y) => x.start < y.start ? -1 : 1).map(x => {
+      const st = (t >= x.start && t <= x.end) ? '<span style="color:#ffd700;font-weight:700;">点灯中</span>' : (t > x.end ? '<span style="opacity:.5;">終了</span>' : '');
+      return `<div style="display:flex;justify-content:space-between;gap:8px;padding:2px 0;"><span style="text-align:left;">${x.name}</span><span style="white-space:nowrap;">${_fmtMD(x.start)}〜${_fmtMD(x.end)} ${st}</span></div>`;
+    }).join('');
+  } else {
+    periodHtml = (isPre ? 'スタート：' : '') + (r.start === r.end ? _fmtMD(r.start) + ' 限定' : _fmtMD(r.start) + ' 〜 ' + _fmtMD(r.end));
+  }
+  const overlay = document.createElement('div');
+  overlay.id = 'boost-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(61,26,94,0.85);display:flex;align-items:center;justify-content:center;animation:fadeInBd 0.4s ease;';
+  overlay.innerHTML = `
+    <div style="background:linear-gradient(135deg,#0f1b3d,#7b1a3e);border-radius:24px;padding:32px 28px;max-width:320px;width:90%;text-align:center;color:#fff;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+      <button onclick="closeBoostPopup(false,'${dismissKey}')" style="position:absolute;top:14px;right:16px;background:none;border:none;color:rgba(255,255,255,0.6);font-size:22px;cursor:pointer;">×</button>
+      <div style="font-size:40px;margin-bottom:8px;">${b.emoji || '✨'}</div>
+      <div style="font-size:13px;font-weight:700;color:#ffd700;margin-bottom:4px;">${isPre ? '📣 予告' : '✨ 開催中 ✨'}</div>
+      <div style="font-size:19px;font-weight:700;margin-bottom:14px;">${b.name}</div>
+      <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:13px;line-height:1.6;">
+        ${b.desc}<br>
+        <span style="font-size:20px;font-weight:700;color:#ffd700;">${b.multiplier}倍</span> ポイント！
+      </div>
+      <div style="background:rgba(255,255,255,0.1);border-radius:10px;padding:8px 12px;font-size:12px;color:#ececec;line-height:1.6;">${periodHtml}</div>
+      <div onclick="closeBoostPopup(true,'${dismissKey}')" style="margin-top:14px;font-size:12px;color:rgba(255,255,255,0.5);cursor:pointer;text-decoration:underline;">今日は表示しない</div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeBoostPopup(false, dismissKey); });
 }
 
 function getEventMultiplier() {
@@ -5264,7 +5359,7 @@ function openAdminSpotEditor() {
     ${admLabel('メンバー（「全員」か、個別に複数選択）')}${admMemberChipsHtml(spot.member)}
     ${admLabel('カテゴリ')}${admCategoryHtml(spot.category)}
     ${admLabel('説明文')}<textarea id="adm-sub" rows="4" style="${ADM_INPUT}resize:vertical;">${escHtml(spot.sub || '')}</textarea>
-    ${admLabel('出典リンク（YouTube・X・Instagramなど）')}<input id="adm-source" type="url" inputmode="url" style="${ADM_INPUT}" value="${escHtml(spot.source_url || '')}">
+    ${admLabel('出典リンク（YouTube・X・Instagramなど）')}<div style="display:flex;gap:6px;"><input id="adm-source" type="url" inputmode="url" style="${ADM_INPUT}flex:1;" value="${escHtml(spot.source_url || '')}">${admSourceFetchBtnHtml()}</div>
     ${admSeriesFieldHtml(spot.series)}
     ${admLabel('住所')}<input id="adm-address" type="text" style="${ADM_INPUT}" value="${escHtml(spot.address || '')}">
     ${admLabel('期間限定の終了日（期間限定スポットのみ。過ぎると「開催終了」表示）')}
@@ -6139,6 +6234,7 @@ const ADMIN_LIST_DEFS = [
   { key: 'hassource', label: '✅ 出典あり', test: s => !!s.source_url },
   { key: 'flagged', label: '🔴 要確認', test: s => s.trustScore < 0 },
   { key: 'memo', label: '📝 メモ', test: s => !!adminMemos[s.db_id] },
+  { key: 'provisional', label: '🟡 【仮】', test: s => admIsProvisional(s) },
 ];
 async function openAdminListPanel(tab) {
   if (tab) adminListTab = tab;
@@ -6179,6 +6275,7 @@ async function openAdminListPanel(tab) {
       <div style="min-width:0;flex:1;">
         <div style="font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(s.name)}</div>
         <div style="font-size:11px;color:var(--text-light);">👥 ${escHtml(s.member || '全員')}</div>
+        ${cur.key === 'provisional' ? `<div style="font-size:11px;color:#6b5500;background:#fffbe6;border-radius:6px;padding:2px 6px;margin-top:2px;white-space:pre-wrap;">📝 ${escHtml(adminMemos[s.db_id] || '')}</div><button onclick="admConfirmProvisional(event,'${s.db_id}')" style="margin-top:4px;border:none;background:#1a7f3c;color:#fff;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">✅ 確認済みにする（【仮】を外す）</button>` : ''}
         ${cur.key === 'memo' ? `<div style="font-size:11px;color:#6b5500;background:#fffbe6;border-radius:6px;padding:2px 6px;margin-top:2px;white-space:pre-wrap;">📝 ${escHtml(adminMemos[s.db_id] || '')}</div>` : ''}
       </div>
       <div style="color:var(--text-light);">›</div>
@@ -6192,6 +6289,10 @@ async function openAdminListPanel(tab) {
     <div style="display:flex;gap:6px;margin-bottom:10px;">
       <button onclick="closeAdminSheet('admin-list-modal');openAdminVisits(7)" style="flex:1;border:1.5px solid var(--border);background:#fff;color:var(--purple-deep);border-radius:12px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">📊 アクセス元</button>
       <button onclick="closeAdminSheet('admin-list-modal');openAdminHistory(null)" style="flex:1;border:1.5px solid var(--border);background:#fff;color:var(--purple-deep);border-radius:12px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">🕘 変更履歴</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:10px;">
+      <button onclick="closeAdminSheet('admin-list-modal');openAdminInbox()" style="flex:1;border:1.5px solid var(--border);background:#fff;color:var(--purple-deep);border-radius:12px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">📥 候補箱</button>
+      <button onclick="closeAdminSheet('admin-list-modal');openAdminEvents()" style="flex:1;border:1.5px solid var(--border);background:#fff;color:var(--purple-deep);border-radius:12px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">🎉 イベント</button>
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">${tabs}${cur.key === 'reports' ? `<button onclick="adminReportsCache=null;openAdminListPanel('reports');refreshAdminListCtl()" style="border:none;background:none;font-size:12px;color:var(--purple-mid);cursor:pointer;">↻ 更新</button>` : ''}</div>
     <div>${body}</div>`);
@@ -6248,6 +6349,7 @@ function addSpotMarker(spot) {
   markers.push(marker);
 }
 function openAdminNewSpot() {
+  admInboxPending = null;
   const c = map ? map.getCenter() : null;
   const start = c ? { lat: c.lat(), lng: c.lng() } : { lat: 35.681, lng: 139.767 };
   adminSheet('admin-new-modal', `${adminSheetHeader('➕ 新規スポットを登録', 'admin-new-modal')}
@@ -6259,15 +6361,17 @@ function openAdminNewSpot() {
     ${adminMapsUrlRowHtml('new')}
     <div id="adm-new-map" style="width:100%;height:260px;border-radius:12px;background:#ececec;"></div>
     <div id="adm-new-coord" style="font-size:11px;color:var(--text-light);margin:6px 2px;">${start.lat.toFixed(6)}, ${start.lng.toFixed(6)}</div>
+    <div id="adm-nearby" style="display:none;font-size:12px;color:#8a4b00;background:#fff3e0;border:1.5px solid #f0b46a;border-radius:10px;padding:8px 10px;margin-bottom:4px;line-height:1.5;"></div>
     ${admLabel('スポット名')}<input id="adm-name" type="text" style="${ADM_INPUT}">
     ${admLabel('メンバー')}${admMemberChipsHtml('全員')}
     ${admLabel('カテゴリ')}${admCategoryHtml('観光・名所')}
     ${admLabel('説明文')}<textarea id="adm-sub" rows="3" style="${ADM_INPUT}resize:vertical;"></textarea>
-    ${admLabel('出典リンク')}<input id="adm-source" type="url" inputmode="url" style="${ADM_INPUT}">
+    ${admLabel('出典リンク')}<div style="display:flex;gap:6px;"><input id="adm-source" type="url" inputmode="url" style="${ADM_INPUT}flex:1;">${admSourceFetchBtnHtml()}</div>
     ${admSeriesFieldHtml('')}
     ${admLabel('住所')}<div style="display:flex;gap:6px;"><input id="adm-address" type="text" style="${ADM_INPUT}flex:1;"><button type="button" onclick="adminNewFillAddress()" style="flex-shrink:0;border:1.5px solid var(--border);background:#fff;border-radius:10px;padding:0 10px;font-size:12px;cursor:pointer;">ピンから入力</button></div>
     ${admLabel('期間限定の終了日（任意）')}<input id="adm-end" type="date" style="${ADM_INPUT}">
     <label style="display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px;border-radius:10px;background:#fff7e6;font-size:13px;color:var(--text);"><input id="adm-draft" type="checkbox" checked style="width:20px;height:20px;"> 🚧 仮登録で保存（一般ユーザーには表示しない）</label>
+    ${admLabel('📝 管理メモ（自分だけに見える。出典元・見つけた場所など）')}<textarea id="adm-memo" rows="2" style="${ADM_INPUT}resize:vertical;background:#fffbe6;"></textarea>
     <div id="adm-msg" style="font-size:12px;color:#c0392b;margin-top:10px;min-height:16px;"></div>
     <div style="display:flex;gap:8px;margin-top:6px;">
       <button onclick="closeAdminSheet('admin-new-modal')" style="flex:1;border:1.5px solid var(--border);background:#fff;color:var(--text-mid);border-radius:12px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;">キャンセル</button>
@@ -6278,7 +6382,7 @@ function openAdminNewSpot() {
     if (!el || typeof google === 'undefined' || !google.maps) return;
     adminNewMap = new google.maps.Map(el, { center: start, zoom: 16, disableDefaultUI: true, zoomControl: true, mapTypeControl: true, gestureHandling: 'greedy' });
     adminNewMarker = new google.maps.Marker({ position: start, map: adminNewMap, draggable: true });
-    const show = () => { const p = adminNewMarker.getPosition(); document.getElementById('adm-new-coord').textContent = p.lat().toFixed(6) + ', ' + p.lng().toFixed(6); };
+    const show = () => { const p = adminNewMarker.getPosition(); document.getElementById('adm-new-coord').textContent = p.lat().toFixed(6) + ', ' + p.lng().toFixed(6); admUpdateNearbyWarn(); };
     adminNewMarker.addListener('dragend', show);
     adminNewMap.addListener('click', e => { adminNewMarker.setPosition(e.latLng); show(); });
   }, 60);
@@ -6292,6 +6396,7 @@ function adminNewSearch() {
     const loc = res[0].geometry.location;
     adminNewMap.setCenter(loc); adminNewMap.setZoom(17); adminNewMarker.setPosition(loc);
     document.getElementById('adm-new-coord').textContent = loc.lat().toFixed(6) + ', ' + loc.lng().toFixed(6);
+    admUpdateNearbyWarn();
     const nm = document.getElementById('adm-name'); if (nm && !nm.value) nm.value = q;
     const ad = document.getElementById('adm-address'); if (ad && !ad.value) ad.value = res[0].formatted_address || '';
     msg.textContent = '';
@@ -6315,6 +6420,9 @@ async function saveAdminNewSpot() {
   if (!adminNewMarker) { msg.textContent = '地図が読み込めていません'; return; }
   const p = adminNewMarker.getPosition();
   const lat = Math.round(p.lat() * 1e6) / 1e6, lng = Math.round(p.lng() * 1e6) / 1e6;
+  const nearList = admNearbySpots(lat, lng, 50).filter(x => x.s.name !== name);
+  if (nearList.length && !confirm('50m以内に「' + nearList.map(x => (x.s.no != null ? 'No.' + x.s.no + ' ' : '') + x.s.name).slice(0, 3).join('」「') + '」があります。別のスポットとして登録しますか？')) return;
+  const newMemo = (document.getElementById('adm-memo') || {}).value || '';
   const member = admSelectedMember();
   const category = document.getElementById('adm-category').value;
   const sub = document.getElementById('adm-sub').value.trim();
@@ -6347,6 +6455,11 @@ async function saveAdminNewSpot() {
     if (seriesErr) alert('スポットは登録しましたが、シリーズ名を保存できませんでした：' + seriesErr.message);
     else spot.series = newSeries;
   }
+  if (newMemo.trim()) {
+    const memoErr = await saveAdminMemo(row.id, newMemo);
+    if (memoErr) alert('スポットは登録しましたが、管理メモを保存できませんでした：' + memoErr.message);
+  }
+  try { await admInboxMarkDone(row.id); } catch(e) {}
   SPOTS.push(spot);
   addSpotMarker(spot);
   closeAdminSheet('admin-new-modal');
@@ -6881,6 +6994,11 @@ function adminApplyMapsUrl(target) {
     gmap.setCenter(pos); gmap.setZoom(18); marker.setPosition(pos);
     coordEl.textContent = (typeof pos.lat === 'function' ? pos.lat() : pos.lat).toFixed(6) + ', ' + (typeof pos.lng === 'function' ? pos.lng() : pos.lng).toFixed(6);
     if (isNew && r.name) { const nm = document.getElementById('adm-name'); if (nm && !nm.value) nm.value = r.name; }
+    if (isNew) {
+      admUpdateNearbyWarn();
+      const ad = document.getElementById('adm-address');
+      if (ad && !ad.value) new google.maps.Geocoder().geocode({ location: pos }, (res, st) => { if (st === 'OK' && res && res[0] && !ad.value) ad.value = res[0].formatted_address || ''; });
+    }
     msg.style.color = '#1a7f3c'; msg.textContent = label; setTimeout(() => { msg.style.color = '#c0392b'; }, 4000);
   };
   if (r.lat !== null) { apply({ lat: r.lat, lng: r.lng }, '✅ URLの位置にピンを置きました。ずれていたら手で合わせてください'); return; }
@@ -6888,6 +7006,388 @@ function adminApplyMapsUrl(target) {
     if (status !== 'OK' || !res || !res[0]) { msg.textContent = '場所名「' + r.name + '」から位置を探せませんでした'; return; }
     apply(res[0].geometry.location, '✅ 場所名「' + r.name + '」から位置を探しました。ずれていたら手で合わせてください');
   });
+}
+
+// ════════════════════════════════════════════════════════════
+// ── v6 管理者：便利機能（近くの重複警告・【仮】確認・出典の自動取得・イベント設定・候補箱）──
+// ════════════════════════════════════════════════════════════
+
+// ① 近くに同じスポットがないか（新規登録用）
+function admDistanceM(a, b) {
+  const R = 6371000, toR = x => x * Math.PI / 180;
+  const dLat = toR(b.lat - a.lat), dLng = toR(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toR(a.lat)) * Math.cos(toR(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+function admNearbySpots(lat, lng, radius) {
+  radius = radius || 50;
+  return SPOTS.filter(s => typeof s.lat === 'number' && typeof s.lng === 'number')
+    .map(s => ({ s, d: admDistanceM({ lat, lng }, { lat: s.lat, lng: s.lng }) }))
+    .filter(x => x.d <= radius).sort((a, b) => a.d - b.d);
+}
+function admUpdateNearbyWarn() {
+  const box = document.getElementById('adm-nearby');
+  if (!box || !adminNewMarker) return;
+  const p = adminNewMarker.getPosition();
+  const near = admNearbySpots(p.lat(), p.lng(), 50);
+  if (!near.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = 'block';
+  box.innerHTML = '⚠️ 50m以内に登録済みのスポットがあります。同じ場所ではありませんか？' + near.slice(0, 5).map(x =>
+    `<div style="margin-top:4px;">・${x.s.no != null ? 'No.' + x.s.no + ' ' : ''}${escHtml(x.s.name)}（約${Math.round(x.d)}m${x.s.is_draft ? '・仮登録' : ''}）</div>`).join('');
+}
+
+// ② 【仮】の出典元を確認済みにする
+function admIsProvisional(s) { return !!(adminMemos[s.db_id] && adminMemos[s.db_id].includes('【仮】')); }
+async function admConfirmProvisional(ev, dbId) {
+  if (ev) ev.stopPropagation();
+  const memo = adminMemos[dbId] || '';
+  const next = memo.replace(/【仮】/g, '【確認済】');
+  const err = await saveAdminMemo(dbId, next);
+  if (err) { alert('保存できませんでした：' + err.message); return; }
+  openAdminListPanel('provisional');
+}
+
+// ③ 出典URLから、タイトル・投稿者・日付を取ってくる
+function admPostedDateFromUrl(url) {
+  try {
+    let m = url.match(/(?:x|twitter)\.com\/[^/]+\/status(?:es)?\/(\d{6,})/i);
+    if (m) return new Date(Number((BigInt(m[1]) >> 22n) + 1288834974657n));
+    m = url.match(/tiktok\.com\/.*\/(?:video|photo)\/(\d{6,})/i);
+    if (m) return new Date(Number(BigInt(m[1]) >> 32n) * 1000);
+    m = url.match(/instagram\.com\/(?:[^/]+\/)?(?:p|reel|reels|tv)\/([A-Za-z0-9_-]{6,})/i);
+    if (m) {
+      const abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+      let id = 0n; for (const ch of m[1].slice(0, 11)) id = id * 64n + BigInt(abc.indexOf(ch));
+      const d = new Date(Number((id >> 23n) + 1314220021721n));
+      if (d.getFullYear() > 2010 && d.getFullYear() < 2100) return d;
+    }
+  } catch(e) {}
+  return null;
+}
+function admFmtDate(d) { return d ? d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate() : ''; }
+function admJsonp(url, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const cb = '__admjsonp' + Date.now() + Math.floor(Math.random() * 1000);
+    const sc = document.createElement('script');
+    const t = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, timeoutMs || 8000);
+    function cleanup() { clearTimeout(t); try { delete window[cb]; } catch(e) { window[cb] = undefined; } sc.remove(); }
+    window[cb] = data => { cleanup(); resolve(data); };
+    sc.onerror = () => { cleanup(); reject(new Error('load error')); };
+    sc.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cb;
+    document.head.appendChild(sc);
+  });
+}
+async function admFetchSourceInfo(url) {
+  const info = { title: '', author: '', date: admPostedDateFromUrl(url), site: '' };
+  const tryJson = async u => { const r = await fetch(u); if (!r.ok) throw new Error(r.status); return r.json(); };
+  try {
+    if (/youtube\.com|youtu\.be/i.test(url)) {
+      info.site = 'YouTube';
+      let j; try { j = await tryJson('https://www.youtube.com/oembed?format=json&url=' + encodeURIComponent(url)); }
+      catch(e) { j = await tryJson('https://noembed.com/embed?url=' + encodeURIComponent(url)); }
+      info.title = j.title || ''; info.author = j.author_name || '';
+    } else if (/tiktok\.com/i.test(url)) {
+      info.site = 'TikTok';
+      const j = await tryJson('https://www.tiktok.com/oembed?url=' + encodeURIComponent(url));
+      info.title = j.title || ''; info.author = j.author_name || '';
+    } else if (/(?:x|twitter)\.com\//i.test(url)) {
+      info.site = 'X';
+      const j = await admJsonp('https://publish.twitter.com/oembed?omit_script=1&url=' + encodeURIComponent(url.replace('x.com', 'twitter.com')));
+      info.author = j.author_name || '';
+      const tmp = document.createElement('div'); tmp.innerHTML = j.html || '';
+      const p = tmp.querySelector('p'); info.title = p ? p.textContent.trim().slice(0, 80) : '';
+    } else if (/instagram\.com/i.test(url)) {
+      info.site = 'Instagram';
+      const m = url.match(/instagram\.com\/([^/?#]+)\/(?:p|reel)\//i); if (m) info.author = m[1];
+    } else {
+      const j = await tryJson('https://noembed.com/embed?url=' + encodeURIComponent(url));
+      info.title = j.title || ''; info.author = j.author_name || ''; info.site = j.provider_name || '';
+    }
+  } catch(e) { info.error = true; }
+  return info;
+}
+function admSourceFetchBtnHtml() {
+  return `<button type="button" onclick="admFillFromSource()" style="flex-shrink:0;border:1.5px solid var(--purple-mid);background:#fff;color:var(--purple-deep);border-radius:10px;padding:0 10px;font-size:12px;font-weight:700;cursor:pointer;">🔎 情報取得</button>`;
+}
+async function admFillFromSource() {
+  const src = (document.getElementById('adm-source') || {}).value || '';
+  const msg = document.getElementById('adm-msg');
+  const memoEl = document.getElementById('adm-memo');
+  if (!/^https?:\/\//.test(src.trim())) { msg.textContent = '先に出典リンク（http〜）を入れてください'; return; }
+  msg.style.color = 'var(--text-mid)'; msg.textContent = '取得中...';
+  const i = await admFetchSourceInfo(src.trim());
+  const parts = [];
+  if (i.site || i.title) parts.push((i.site ? i.site : '') + (i.title ? '「' + i.title + '」' : ''));
+  if (i.author) parts.push(i.author);
+  if (i.date) parts.push(admFmtDate(i.date) + '投稿');
+  if (!parts.length) { msg.style.color = '#c0392b'; msg.textContent = '情報を取れませんでした（このサイトは自動取得に対応していません）'; return; }
+  const line = '出典元：' + parts.join('・');
+  if (memoEl) {
+    const cur = memoEl.value.trim();
+    if (!cur.includes(line)) memoEl.value = cur ? cur + '\n' + line : line;
+  }
+  const nm = document.getElementById('adm-name');
+  msg.style.color = '#1a7f3c';
+  msg.textContent = '✅ 管理メモに「' + line + '」を入れました' + (i.error ? '（一部だけ取得）' : '');
+  setTimeout(() => { msg.style.color = '#c0392b'; }, 5000);
+}
+
+// ④ イベント・ポイントアップを管理画面から設定（Supabase：app_events）
+let appEventsLoaded = false;
+let appEventsPromise = null;
+function loadAppEvents() {
+  if (appEventsPromise) return appEventsPromise;
+  appEventsPromise = (async () => {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/app_events?select=*&order=sort_order.asc`, {
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY },
+      });
+      if (!res.ok) return;
+      const rows = await res.json();
+      GROUP_CONFIG.spotBoosts = rows.filter(r => r.is_active !== false).map(appEventToBoost);
+      GROUP_CONFIG._appEventRows = rows;
+      appEventsLoaded = true;
+    } catch(e) {}
+  })();
+  return appEventsPromise;
+}
+function appEventToBoost(r) {
+  const b = {
+    id: r.id, emoji: r.emoji || '✨', name: r.name, label: r.label || r.emoji || '', desc: r.description || '',
+    multiplier: Number(r.multiplier) || 1, announceStart: r.announce_start || null,
+    start: r.start_date || null, end: r.end_date || null,
+  };
+  if (r.target === 'all') b.allSpots = true;
+  else if (r.target === 'pattern') b.spotNamePattern = r.spot_name_pattern || '';
+  else b.spots = (Array.isArray(r.spots) ? r.spots : []).map(x => ({ no: Number(x.no), name: x.name || '', start: x.start, end: x.end }));
+  return b;
+}
+let adminEventEditing = null;
+async function openAdminEvents(msgText) {
+  appEventsPromise = null; await loadAppEvents();
+  const rows = GROUP_CONFIG._appEventRows || [];
+  const t = _todayStr();
+  const list = rows.map((r, k) => {
+    const b = appEventToBoost(r), rg = _boostRange(b);
+    const state = r.is_active === false ? '⏸ 停止中' : (rg.start && t >= rg.start && t <= rg.end ? '✨ 開催中' : (rg.end && t > rg.end ? '終了' : (b.announceStart && t >= b.announceStart ? '📣 予告中' : '開始前')));
+    return `<div onclick="openAdminEventEdit(${k})" style="padding:10px 4px;border-bottom:1px solid var(--border);cursor:pointer;">
+      <div style="display:flex;gap:6px;align-items:center;"><span style="font-size:18px;">${escHtml(b.emoji)}</span><span style="font-size:13px;font-weight:700;color:var(--text);flex:1;">${escHtml(b.name)}</span><span style="font-size:11px;color:var(--purple-mid);font-weight:700;">${state}</span></div>
+      <div style="font-size:11px;color:var(--text-light);margin-top:2px;">×${b.multiplier}・${rg.start ? _fmtMD(rg.start) + '〜' + _fmtMD(rg.end) : '期間未設定'}${b.announceStart ? '（予告 ' + _fmtMD(b.announceStart) + '〜）' : ''}・${r.target === 'all' ? '全スポット' : r.target === 'pattern' ? '名前「' + escHtml(r.spot_name_pattern || '') + '」' : (b.spots || []).length + 'か所'}</div>
+    </div>`;
+  }).join('') || '<div style="padding:20px;text-align:center;color:var(--text-light);font-size:13px;">まだありません</div>';
+  adminSheet('admin-events-modal', `${adminSheetHeader('🎉 イベント・ポイントアップ', 'admin-events-modal')}
+    <div style="font-size:12px;color:var(--text-mid);line-height:1.6;margin-bottom:8px;">期間中は対象スポットへの巡礼報告・評価のポイントが倍になり、アプリを開いたときにポップアップが出ます。予告開始日を入れると、開始前から予告ポップアップを出します。</div>
+    ${msgText ? `<div style="font-size:12px;color:#1a7f3c;margin-bottom:6px;">${escHtml(msgText)}</div>` : ''}
+    <button onclick="openAdminEventEdit(-1)" style="width:100%;border:none;background:#c0392b;color:#fff;border-radius:12px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;">➕ 新しいイベント</button>
+    <div>${list}</div>`);
+}
+function admEventSpotRowHtml(x) {
+  x = x || {};
+  return `<div class="adm-ev-spot" style="display:flex;gap:4px;align-items:center;margin-bottom:6px;">
+    <input type="number" inputmode="numeric" placeholder="No." value="${x.no != null ? escHtml(String(x.no)) : ''}" oninput="admEventSpotName(this)" style="${ADM_INPUT}width:64px;flex-shrink:0;padding:8px 6px;">
+    <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;">
+      <div class="adm-ev-spotname" style="font-size:11px;color:var(--text-mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(x.name || '')}</div>
+      <div style="display:flex;gap:3px;"><input type="date" value="${escHtml(x.start || '')}" style="${ADM_INPUT}padding:6px;font-size:13px;"><input type="date" value="${escHtml(x.end || '')}" style="${ADM_INPUT}padding:6px;font-size:13px;"></div>
+    </div>
+    <button type="button" onclick="this.parentNode.remove()" style="flex-shrink:0;border:none;background:none;color:#c0392b;font-size:18px;cursor:pointer;">×</button>
+  </div>`;
+}
+function admEventSpotName(inp) {
+  const s = SPOTS.find(z => String(z.no) === inp.value.trim());
+  inp.parentNode.querySelector('.adm-ev-spotname').textContent = s ? s.name : (inp.value ? '（該当なし）' : '');
+}
+function admEventTargetChanged() {
+  const v = document.getElementById('adm-ev-target').value;
+  document.getElementById('adm-ev-spots-wrap').style.display = v === 'spots' ? 'block' : 'none';
+  document.getElementById('adm-ev-pattern-wrap').style.display = v === 'pattern' ? 'block' : 'none';
+  document.getElementById('adm-ev-period-wrap').style.display = v === 'spots' ? 'none' : 'block';
+}
+function openAdminEventEdit(k) {
+  const rows = GROUP_CONFIG._appEventRows || [];
+  const r = k >= 0 ? rows[k] : { id: '', emoji: '🎉', name: '', label: '', description: '', multiplier: 1.5, target: 'spots', spots: [], is_active: true };
+  adminEventEditing = r;
+  const target = r.target || 'spots';
+  adminSheet('admin-event-edit-modal', `${adminSheetHeader(k >= 0 ? '✏️ イベントを編集' : '➕ 新しいイベント', 'admin-event-edit-modal')}
+    <div style="display:flex;gap:6px;">
+      <div style="width:70px;">${admLabel('絵文字')}<input id="adm-ev-emoji" type="text" value="${escHtml(r.emoji || '')}" style="${ADM_INPUT}text-align:center;"></div>
+      <div style="flex:1;">${admLabel('名前（ポップアップの見出し）')}<input id="adm-ev-name" type="text" value="${escHtml(r.name || '')}" placeholder="例：イルミネーション聖地 ポイントアップ" style="${ADM_INPUT}"></div>
+    </div>
+    ${admLabel('説明（「〜が ○倍ポイント！」の前に入る文）')}<textarea id="adm-ev-desc" rows="2" style="${ADM_INPUT}resize:vertical;">${escHtml(r.description || '')}</textarea>
+    <div style="display:flex;gap:6px;">
+      <div style="flex:1;">${admLabel('倍率')}<input id="adm-ev-mult" type="number" step="0.1" min="1" value="${escHtml(String(r.multiplier || 1.5))}" style="${ADM_INPUT}"></div>
+      <div style="flex:1;">${admLabel('カードの印（短く）')}<input id="adm-ev-label" type="text" value="${escHtml(r.label || '')}" placeholder="例：🎄イルミ" style="${ADM_INPUT}"></div>
+    </div>
+    ${admLabel('予告ポップアップの開始日（任意）')}<input id="adm-ev-announce" type="date" value="${escHtml(r.announce_start || '')}" style="${ADM_INPUT}">
+    ${admLabel('対象')}<select id="adm-ev-target" onchange="admEventTargetChanged()" style="${ADM_INPUT}">
+      <option value="spots" ${target === 'spots' ? 'selected' : ''}>スポットを指定（1か所ずつ期間を決める）</option>
+      <option value="pattern" ${target === 'pattern' ? 'selected' : ''}>スポット名で指定（あとで追加するスポットも対象）</option>
+      <option value="all" ${target === 'all' ? 'selected' : ''}>全スポット</option>
+    </select>
+    <div id="adm-ev-spots-wrap" style="margin-top:8px;">
+      <div style="font-size:11px;color:var(--text-light);margin-bottom:6px;">No.を入れるとスポット名が出ます。日付は「開始日・終了日」です。</div>
+      <div id="adm-ev-spots">${(r.spots || []).map(admEventSpotRowHtml).join('')}</div>
+      <button type="button" onclick="document.getElementById('adm-ev-spots').insertAdjacentHTML('beforeend', admEventSpotRowHtml())" style="width:100%;border:1.5px dashed var(--border);background:#fff;color:var(--purple-deep);border-radius:10px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;">＋ スポットを追加</button>
+    </div>
+    <div id="adm-ev-pattern-wrap" style="margin-top:8px;">${admLabel('スポット名に含まれる言葉（「|」で区切ると複数）')}<input id="adm-ev-pattern" type="text" value="${escHtml(r.spot_name_pattern || '')}" placeholder="例：ユニバーサル|USJ" style="${ADM_INPUT}"></div>
+    <div id="adm-ev-period-wrap"><div style="display:flex;gap:6px;">
+      <div style="flex:1;">${admLabel('開始日')}<input id="adm-ev-start" type="date" value="${escHtml(r.start_date || '')}" style="${ADM_INPUT}"></div>
+      <div style="flex:1;">${admLabel('終了日')}<input id="adm-ev-end" type="date" value="${escHtml(r.end_date || '')}" style="${ADM_INPUT}"></div>
+    </div></div>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--text);"><input id="adm-ev-active" type="checkbox" ${r.is_active !== false ? 'checked' : ''} style="width:20px;height:20px;"> 有効（チェックを外すと止まる）</label>
+    <div id="adm-msg" style="font-size:12px;color:#c0392b;margin-top:10px;min-height:16px;"></div>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      ${k >= 0 ? `<button onclick="deleteAdminEvent()" style="flex-shrink:0;border:1.5px solid #c0392b;background:#fff;color:#c0392b;border-radius:12px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;">削除</button>` : ''}
+      <button onclick="closeAdminSheet('admin-event-edit-modal')" style="flex:1;border:1.5px solid var(--border);background:#fff;color:var(--text-mid);border-radius:12px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;">キャンセル</button>
+      <button id="adm-save-btn" onclick="saveAdminEvent()" style="flex:2;border:none;background:#c0392b;color:#fff;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">保存</button>
+    </div>`);
+  document.getElementById('admin-event-edit-modal').style.zIndex = '3100';
+  admEventTargetChanged();
+}
+async function saveAdminEvent() {
+  const msg = document.getElementById('adm-msg');
+  const v = id => (document.getElementById(id).value || '').trim();
+  const name = v('adm-ev-name');
+  if (!name) { msg.textContent = '名前を入れてください'; return; }
+  const target = v('adm-ev-target');
+  const row = {
+    emoji: v('adm-ev-emoji') || '🎉', name, label: v('adm-ev-label') || null, description: v('adm-ev-desc') || null,
+    multiplier: Number(v('adm-ev-mult')) || 1, announce_start: v('adm-ev-announce') || null, target,
+    spot_name_pattern: target === 'pattern' ? v('adm-ev-pattern') : null,
+    start_date: null, end_date: null, spots: [], is_active: document.getElementById('adm-ev-active').checked,
+    updated_at: new Date().toISOString(),
+  };
+  if (target === 'spots') {
+    for (const el of document.querySelectorAll('#adm-ev-spots .adm-ev-spot')) {
+      const ins = el.querySelectorAll('input');
+      const no = Number(ins[0].value), start = ins[1].value, end = ins[2].value;
+      if (!ins[0].value) continue;
+      if (!start || !end) { msg.textContent = 'No.' + no + ' の開始日・終了日を入れてください'; return; }
+      if (end < start) { msg.textContent = 'No.' + no + ' の終了日が開始日より前です'; return; }
+      const s = SPOTS.find(z => z.no === no);
+      row.spots.push({ no, name: s ? s.name : '', start, end });
+    }
+    if (!row.spots.length) { msg.textContent = '対象スポットを1つ以上入れてください'; return; }
+  } else {
+    row.start_date = v('adm-ev-start') || null; row.end_date = v('adm-ev-end') || null;
+    if (!row.start_date || !row.end_date) { msg.textContent = '開始日と終了日を入れてください'; return; }
+    if (row.end_date < row.start_date) { msg.textContent = '終了日が開始日より前です'; return; }
+    if (target === 'pattern' && !row.spot_name_pattern) { msg.textContent = 'スポット名に含まれる言葉を入れてください'; return; }
+  }
+  if (row.multiplier < 1 || row.multiplier > 5) { msg.textContent = '倍率は1〜5の間にしてください'; return; }
+  msg.textContent = '保存中...';
+  const client = getSupabaseClient();
+  const editing = adminEventEditing && adminEventEditing.id;
+  const { error } = editing
+    ? await client.from('app_events').update(row).eq('id', adminEventEditing.id)
+    : await client.from('app_events').insert({ ...row, id: 'ev' + Date.now(), sort_order: (GROUP_CONFIG._appEventRows || []).length });
+  if (error) { msg.textContent = '保存できませんでした：' + error.message; return; }
+  closeAdminSheet('admin-event-edit-modal');
+  openAdminEvents('✅ 保存しました');
+}
+async function deleteAdminEvent() {
+  if (!adminEventEditing || !adminEventEditing.id) return;
+  if (!confirm('「' + adminEventEditing.name + '」を削除しますか？')) return;
+  const { error } = await getSupabaseClient().from('app_events').delete().eq('id', adminEventEditing.id);
+  if (error) { document.getElementById('adm-msg').textContent = '削除できませんでした：' + error.message; return; }
+  closeAdminSheet('admin-event-edit-modal');
+  openAdminEvents('🗑 削除しました');
+}
+
+// ⑤ 候補箱（見つけた投稿のURLをとりあえず入れておく場所。Supabase：spot_inbox）
+let adminInbox = null;
+async function loadAdminInbox() {
+  const { data, error } = await getSupabaseClient().from('spot_inbox').select('*').order('created_at', { ascending: false }).limit(300);
+  if (error) { adminInbox = []; return error; }
+  adminInbox = data || [];
+  return null;
+}
+async function openAdminInbox(prefillUrl, msgText) {
+  const err = await loadAdminInbox();
+  const open = adminInbox.filter(r => r.status === 'open');
+  const done = adminInbox.filter(r => r.status !== 'open');
+  const item = r => {
+    const d = r.source_url ? admPostedDateFromUrl(r.source_url) : null;
+    const spot = r.spot_id ? SPOTS.find(s => s.db_id === r.spot_id) : null;
+    return `<div style="padding:10px 4px;border-bottom:1px solid var(--border);${r.status !== 'open' ? 'opacity:.55;' : ''}">
+      ${r.title ? `<div style="font-size:13px;font-weight:700;color:var(--text);">${escHtml(r.title)}</div>` : ''}
+      ${r.source_url ? `<a href="${escHtml(r.source_url)}" target="_blank" rel="noopener" style="display:block;font-size:12px;color:var(--purple-mid);word-break:break-all;">${escHtml(r.source_url)}</a>` : ''}
+      ${r.note ? `<div style="font-size:12px;color:var(--text-mid);white-space:pre-wrap;margin-top:2px;">${escHtml(r.note)}</div>` : ''}
+      <div style="font-size:11px;color:var(--text-light);margin-top:2px;">${r.found_at ? '見つけた場所：' + escHtml(r.found_at) + '・' : ''}入れた日 ${escHtml(String(r.created_at || '').slice(0, 10))}${d ? '・投稿 ' + admFmtDate(d) : ''}${spot ? '・→ No.' + spot.no + ' で登録済み' : ''}</div>
+      <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+        ${r.status === 'open' ? `<button onclick="admInboxToSpot('${r.id}')" style="border:none;background:#c0392b;color:#fff;border-radius:10px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;">➕ この候補で登録</button>
+        <button onclick="admInboxSetStatus('${r.id}','skip')" style="border:1.5px solid var(--border);background:#fff;color:var(--text-mid);border-radius:10px;padding:6px 10px;font-size:12px;cursor:pointer;">見送り</button>` :
+        `<button onclick="admInboxSetStatus('${r.id}','open')" style="border:1.5px solid var(--border);background:#fff;color:var(--text-mid);border-radius:10px;padding:6px 10px;font-size:12px;cursor:pointer;">↩︎ 戻す</button>`}
+        <button onclick="admInboxDelete('${r.id}')" style="border:none;background:none;color:#c0392b;font-size:12px;cursor:pointer;margin-left:auto;">削除</button>
+      </div>
+    </div>`;
+  };
+  adminSheet('admin-inbox-modal', `${adminSheetHeader('📥 候補箱（未処理 ' + open.length + '）', 'admin-inbox-modal')}
+    <div style="font-size:12px;color:var(--text-mid);line-height:1.6;margin-bottom:6px;">XやTikTokで見つけた投稿のURLを、とりあえず入れておけます。あとで「この候補で登録」を押すと、出典リンクとメモが入った状態で新規スポット登録が開きます。</div>
+    ${err ? `<div style="font-size:12px;color:#c0392b;margin-bottom:6px;">読み込めませんでした（SQLを実行済みか確認してください）：${escHtml(err.message)}</div>` : ''}
+    ${msgText ? `<div style="font-size:12px;color:#1a7f3c;margin-bottom:6px;">${escHtml(msgText)}</div>` : ''}
+    <input id="adm-ib-url" type="url" inputmode="url" placeholder="出典のURL（X・TikTok・YouTube・Instagramなど）" value="${escHtml(prefillUrl || '')}" style="${ADM_INPUT}margin-bottom:6px;">
+    <input id="adm-ib-found" type="text" placeholder="どこで見つけたか（例：○○さんのX、まとめサイト）" style="${ADM_INPUT}margin-bottom:6px;">
+    <textarea id="adm-ib-note" rows="2" placeholder="メモ（場所の手がかり・メンバーなど）" style="${ADM_INPUT}resize:vertical;margin-bottom:6px;"></textarea>
+    <div id="adm-msg" style="font-size:12px;color:#c0392b;min-height:16px;"></div>
+    <button id="adm-ib-add" onclick="admInboxAdd()" style="width:100%;border:none;background:var(--purple-mid);color:#fff;border-radius:12px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;margin:4px 0 10px;">📥 候補箱に入れる</button>
+    <div>${open.map(item).join('') || '<div style="padding:16px;text-align:center;color:var(--text-light);font-size:13px;">未処理の候補はありません 🎉</div>'}</div>
+    ${done.length ? `<details style="margin-top:10px;"><summary style="font-size:12px;color:var(--text-mid);cursor:pointer;">処理済み・見送り（${done.length}）</summary>${done.map(item).join('')}</details>` : ''}`);
+}
+async function admInboxAdd() {
+  const url = (document.getElementById('adm-ib-url').value || '').trim();
+  const found = (document.getElementById('adm-ib-found').value || '').trim();
+  const note = (document.getElementById('adm-ib-note').value || '').trim();
+  const msg = document.getElementById('adm-msg');
+  if (!url && !note) { msg.textContent = 'URLかメモを入れてください'; return; }
+  if (url && !/^https?:\/\//.test(url)) { msg.textContent = 'URLは http から始めてください'; return; }
+  const btn = document.getElementById('adm-ib-add'); btn.disabled = true; msg.textContent = '追加中...';
+  let title = '';
+  if (url) { const i = await admFetchSourceInfo(url); title = [i.site, i.title ? '「' + i.title + '」' : '', i.author].filter(Boolean).join(' '); }
+  const { error } = await getSupabaseClient().from('spot_inbox').insert({ source_url: url || null, found_at: found || null, note: note || null, title: title || null, status: 'open' });
+  if (error) { btn.disabled = false; msg.textContent = '追加できませんでした：' + error.message; return; }
+  openAdminInbox('', '✅ 候補箱に入れました');
+}
+async function admInboxSetStatus(id, status) {
+  const { error } = await getSupabaseClient().from('spot_inbox').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) { alert('保存できませんでした：' + error.message); return; }
+  openAdminInbox();
+}
+async function admInboxDelete(id) {
+  if (!confirm('この候補を削除しますか？')) return;
+  const { error } = await getSupabaseClient().from('spot_inbox').delete().eq('id', id);
+  if (error) { alert('削除できませんでした：' + error.message); return; }
+  openAdminInbox();
+}
+let admInboxPending = null;
+function admInboxToSpot(id) {
+  const r = (adminInbox || []).find(x => String(x.id) === String(id));
+  if (!r) return;
+  closeAdminSheet('admin-inbox-modal');
+  openAdminNewSpot();
+  admInboxPending = r;
+  setTimeout(() => {
+    const src = document.getElementById('adm-source'); if (src && r.source_url) src.value = r.source_url;
+    const memo = document.getElementById('adm-memo');
+    if (memo) memo.value = [r.title ? '出典元：' + r.title : '', r.found_at ? '見つけた場所：' + r.found_at : '', r.note || ''].filter(Boolean).join('\n');
+  }, 80);
+}
+async function admInboxMarkDone(spotId) {
+  const r = admInboxPending; admInboxPending = null;
+  if (!r) return;
+  await getSupabaseClient().from('spot_inbox').update({ status: 'done', spot_id: spotId, updated_at: new Date().toISOString() }).eq('id', r.id);
+}
+// アプリのURLに ?inbox=URL を付けて開くと、候補箱にそのURLを入れる画面が開く（iPhoneのショートカット用）
+function admHandleInboxParam() {
+  try {
+    const u = new URL(location.href);
+    const v = u.searchParams.get('inbox');
+    if (!v) return;
+    checkAdminEditor().then(ok => {
+      if (!ok) return;
+      u.searchParams.delete('inbox'); history.replaceState(null, '', u.toString());
+      openAdminInbox(v);
+    });
+  } catch(e) {}
 }
 
 // ── v5 管理者：写真の切り抜き ──
@@ -7065,6 +7565,14 @@ function openCard(spot) {
     noEl.className = 'card-no';
     noEl.textContent = 'No.' + spot.no;
     cardTitleEl.prepend(noEl);
+  }
+  const boostNow = (typeof getSpotBoost === 'function') ? getSpotBoost(spot) : null;
+  if (boostNow) {
+    const bEl = document.createElement('span');
+    bEl.className = 'card-no';
+    bEl.style.cssText = 'background:#c9a227;margin-left:6px;margin-right:0;';
+    bEl.textContent = (boostNow.label || boostNow.emoji) + ' ' + boostNow.multiplier + '倍';
+    cardTitleEl.appendChild(bEl);
   }
   document.getElementById('card-sub').innerHTML = linkifyText(spot.sub);
         if (spot.image_url) {
@@ -8540,7 +9048,9 @@ async function incrementSpotLikes(dbId) {
       const eventMultiplier = (typeof getEventMultiplier === 'function') ? getEventMultiplier() : 1;
       const oshiMultiplier = (typeof getOshiMultiplier === 'function') ? getOshiMultiplier(currentSpot.member) : 1;
       const basePoints = 100;
-      const earned = Math.round(basePoints * multiplier * eventMultiplier * oshiMultiplier);
+      const spotBoostForVisit = (typeof getSpotBoost === 'function') ? getSpotBoost(currentSpot) : null;
+      const spotBoostMultiplier = spotBoostForVisit ? spotBoostForVisit.multiplier : 1;
+      const earned = Math.round(basePoints * multiplier * eventMultiplier * oshiMultiplier * spotBoostMultiplier);
       const newPoints = (profile.points || 0) + earned;
       const newVisited = [...visited, spotId];
       const { error: updateError } = await client.from('profiles').update({ points: newPoints, visited_spots: newVisited }).eq('id', userId);
@@ -9353,12 +9863,17 @@ function showLangComingSoon() {
     const oshiMult = getOshiMultiplier(currentSpot.member);
     multiplier *= oshiMult;
 
+    // スポット限定ポイントアップ（イルミネーションなど）
+    const spotBoost = getSpotBoost(currentSpot);
+    if (spotBoost) multiplier *= spotBoost.multiplier;
+
     const finalPt = Math.round(basePt * multiplier);
     const notes = [];
     if (isBdMember) {
       notes.push(`誕生${bdEvent.type === 'day' ? '日' : '日前'}`);
     }
     if (oshiMult > 1) notes.push((oshi1 && spotMembers.includes(oshi1)) ? '💜1推し' : '🩷2推し');
+    if (spotBoost) notes.push(spotBoost.label || spotBoost.emoji);
     const multiplierNote = multiplier > 1 ? ` (×${multiplier.toFixed(1)} ${notes.join('・')})` : '';
     // 現地系（GPS確認済み）は即時付与。リモート確認・誤情報報告系は引き続き確定待ち。
     addPendingPoint(currentSpot.name, labelMap[type] + multiplierNote, finalPt, ONSITE_TYPES.has(type));
@@ -9718,9 +10233,11 @@ function filterRouteRegion(el, region) {
     })();
 
     // 誕生日（複数人可）・イベントのポップアップを順番に表示（500ms遅延でページ表示後に出す）
-    setTimeout(() => {
+    setTimeout(async () => {
+      try { await Promise.race([loadAppEvents(), new Promise(r => setTimeout(r, 2500))]); } catch(e) {}
       _popupQueue = buildPopupQueue();
       showNextPopupInQueue();
+      admHandleInboxParam();
     }, 500);
     // 推し設定を読み込む
     loadOshiSettings();
