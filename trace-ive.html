@@ -4224,6 +4224,7 @@ function mapSpotRow(s) {
       no: s.no != null ? s.no : null,
       // 写真・出典は最初の取得でそのまま持たせる（後から名前で合わせる方式だと、名前を変えたスポットで取りこぼすため）
       image_url: s.image_url || null,
+      thumb_url: s.image_thumb_url || null, // 一覧用の小さい写真（通信量を減らすため）
       image_url_2: s.image_url_2 || null,
       image_url_3: s.image_url_3 || null,
       image_url_4: s.image_url_4 || null,
@@ -5499,7 +5500,7 @@ function renderCardSeries(spot) {
   const tiles = list.map(s => {
     const me = s === spot;
     const img = s.image_url
-      ? `<img src="${escHtml(s.image_url)}" loading="lazy" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.replaceWith(document.createTextNode('${escHtml(s.icon || '📍')}'))">`
+      ? `<img src="${escHtml(spotThumb(s))}" loading="lazy" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.replaceWith(document.createTextNode('${escHtml(s.icon || '📍')}'))">`
       : escHtml(s.icon || '📍');
     return `<div ${me ? '' : `onclick="openSeriesSpot('${escHtml(String(s.db_id))}')"`} style="flex:0 0 96px;scroll-snap-align:start;${me ? '' : 'cursor:pointer;'}">
       <div style="position:relative;width:96px;height:72px;border-radius:10px;overflow:hidden;background:var(--purple-pale);display:flex;align-items:center;justify-content:center;font-size:26px;border:${me ? '3px solid var(--purple-mid)' : '1px solid var(--border)'};box-sizing:border-box;">
@@ -5813,7 +5814,7 @@ function renderCardNearby(spot) {
   const tiles = list.map(({ s, km }) => {
     const walk = Math.max(1, Math.round(km * 1000 / 80));
     const img = s.image_url
-      ? `<img src="${escHtml(s.image_url)}" loading="lazy" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.replaceWith(document.createTextNode('${escHtml(s.icon || '📍')}'))">`
+      ? `<img src="${escHtml(spotThumb(s))}" loading="lazy" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.replaceWith(document.createTextNode('${escHtml(s.icon || '📍')}'))">`
       : escHtml(s.icon || '📍');
     return `<div onclick="openSeriesSpot('${escHtml(String(s.db_id))}')" style="flex:0 0 96px;scroll-snap-align:start;cursor:pointer;">
       <div style="position:relative;width:96px;height:72px;border-radius:10px;overflow:hidden;background:var(--purple-pale);display:flex;align-items:center;justify-content:center;font-size:26px;border:1px solid var(--border);box-sizing:border-box;">
@@ -6206,25 +6207,37 @@ async function saveAdminMedia() {
     });
   });
   const newOnes = adminMediaItems.filter(m => m.file);
+  const thumbPairs = [];
   for (let k = 0; k < newOnes.length; k++) {
     const m = newOnes[k];
     msg.textContent = `アップロード中...（${k + 1}/${newOnes.length}）`;
     n++;
     let name = `${base}_${String(n).padStart(2, '0')}.jpg`;
-    let { error } = await client.storage.from('spot-photos').upload(name, m.file, { contentType: 'image/jpeg', cacheControl: '3600', upsert: false });
+    let { error } = await client.storage.from('spot-photos').upload(name, m.file, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false });
     if (error && /exist|duplicate/i.test(error.message || '')) {
       name = `${base}_${String(n).padStart(2, '0')}-${Date.now()}.jpg`;
-      ({ error } = await client.storage.from('spot-photos').upload(name, m.file, { contentType: 'image/jpeg', cacheControl: '3600', upsert: false }));
+      ({ error } = await client.storage.from('spot-photos').upload(name, m.file, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false }));
     }
     if (error) { btn.disabled = false; msg.textContent = 'アップロードできませんでした：' + error.message; return; }
     m.url = client.storage.from('spot-photos').getPublicUrl(name).data.publicUrl;
+    if (m.media_type === 'photo') {
+      try {
+        const t = await adminMakeThumb(m.file);
+        const tname = name.replace(/\.jpe?g$/i, '') + '_t.jpg';
+        const up = await client.storage.from('spot-photos').upload(tname, t, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false });
+        if (!up.error || /exist|duplicate/i.test(up.error.message || '')) thumbPairs.push({ url: m.url, thumb_url: client.storage.from('spot-photos').getPublicUrl(tname).data.publicUrl });
+      } catch(e) {}
+    }
     m.file = null;
   }
   msg.textContent = '保存中...';
   const items = adminMediaItems.map(m => ({ id: m.id, media_type: m.media_type, url: m.url, embed_provider: m.embed_provider || null, source_url: m.source_url || '' }));
   const { data, error } = await client.rpc('admin_save_spot_media_v2', { p_spot_id: spot.db_id, p_items: items });
   if (error) { btn.disabled = false; msg.textContent = '保存できませんでした：' + error.message; return; }
+  try { await client.rpc('admin_set_media_thumbs', { p_items: thumbPairs }); } catch(e) {}
   const photos = adminMediaItems.filter(m => m.media_type === 'photo').map(m => m.url);
+  const tp = thumbPairs.find(x => x.url === photos[0]);
+  if (tp) spot.thumb_url = tp.thumb_url; else if (spot.image_url !== photos[0]) spot.thumb_url = null;
   spot.image_url = photos[0] || null; spot.image_url_2 = photos[1] || null; spot.image_url_3 = photos[2] || null; spot.image_url_4 = photos[3] || null;
   closeAdminSheet('admin-media-modal');
   if (typeof galleryCache !== 'undefined') galleryCache = null; seriesActivityMap = null;
@@ -6341,6 +6354,7 @@ async function openAdminListPanel(tab) {
       <button onclick="closeAdminSheet('admin-list-modal');openAdminInbox()" style="flex:1;border:1.5px solid var(--border);background:#fff;color:var(--purple-deep);border-radius:12px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">📥 候補箱</button>
       <button onclick="closeAdminSheet('admin-list-modal');openAdminEvents()" style="flex:1;border:1.5px solid var(--border);background:#fff;color:var(--purple-deep);border-radius:12px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">🎉 イベント</button>
     </div>
+    <button onclick="closeAdminSheet('admin-list-modal');openAdminThumbs()" style="width:100%;border:1.5px solid var(--border);background:#fff;color:var(--purple-deep);border-radius:12px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;">🖼️ 一覧用の小さい写真を作る（通信量の節約）</button>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">${tabs}${cur.key === 'reports' ? `<button onclick="adminReportsCache=null;openAdminListPanel('reports');refreshAdminListCtl()" style="border:none;background:none;font-size:12px;color:var(--purple-mid);cursor:pointer;">↻ 更新</button>` : ''}</div>
     <div>${body}</div>`);
 }
@@ -7055,6 +7069,77 @@ function adminApplyMapsUrl(target) {
   });
 }
 
+// ── 一覧用の小さい写真（サムネイル）。通信量を減らすため、一覧・ギャラリーではこちらを使う ──
+function spotThumb(s) { return (s && (s.thumb_url || s.image_url)) || ''; }
+function adminMakeThumb(blob) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 640 / Math.max(img.naturalWidth, img.naturalHeight));
+      const w = Math.round(img.naturalWidth * scale), h = Math.round(img.naturalHeight * scale);
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => b ? resolve(b) : reject(new Error('変換に失敗しました')), 'image/jpeg', 0.7);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('読み込めません')); };
+    img.src = url;
+  });
+}
+let adminThumbRunning = false;
+async function openAdminThumbs(msgText) {
+  const client = getSupabaseClient();
+  const { data: media } = await client.from('spot_media').select('url,thumb_url').eq('media_type', 'photo');
+  const { data: done } = await client.from('photo_thumbs').select('url');
+  const doneSet = new Set((done || []).map(r => r.url));
+  (media || []).forEach(m => { if (m.thumb_url) doneSet.add(m.url); });
+  const all = new Set((media || []).map(m => m.url));
+  SPOTS.forEach(s => ['image_url', 'image_url_2', 'image_url_3', 'image_url_4'].forEach(k => { if (s[k]) all.add(s[k]); }));
+  try { (window._adminDraftSpots || []).forEach(s => s.image_url && all.add(s.image_url)); } catch(e) {}
+  const todo = [...all].filter(u => u && !doneSet.has(u) && u.includes('/storage/v1/object/public/'));
+  window._adminThumbTodo = todo;
+  adminSheet('admin-thumbs-modal', `${adminSheetHeader('🖼️ 一覧用の小さい写真', 'admin-thumbs-modal')}
+    <div style="font-size:12px;color:var(--text-mid);line-height:1.7;margin-bottom:10px;">スポット一覧やギャラリーで、大きな写真の代わりに小さい写真（横640px）を使うようにします。写真の通信量（Supabaseの Cached Egress）が大きく減ります。新しく登録する写真は自動で作られるので、これは今ある写真のために1回だけ実行すれば大丈夫です。</div>
+    ${msgText ? `<div style="font-size:12px;color:#1a7f3c;margin-bottom:8px;">${escHtml(msgText)}</div>` : ''}
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;">まだ作っていない写真：${todo.length}枚</div>
+    <div id="adm-thumb-msg" style="font-size:12px;color:var(--text-mid);min-height:16px;margin-bottom:8px;"></div>
+    <button id="adm-thumb-run" onclick="runAdminThumbs()" ${todo.length ? '' : 'disabled'} style="width:100%;border:none;background:${todo.length ? '#c0392b' : '#ccc'};color:#fff;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">${todo.length ? '▶︎ 作り始める' : '✅ すべて作成済みです'}</button>
+    <div style="font-size:11px;color:var(--text-light);margin-top:8px;">途中で閉じても、次に開けば続きから作れます。</div>`);
+}
+async function runAdminThumbs() {
+  if (adminThumbRunning) return;
+  adminThumbRunning = true;
+  const client = getSupabaseClient();
+  const todo = (window._adminThumbTodo || []).slice();
+  const msg = document.getElementById('adm-thumb-msg');
+  const btn = document.getElementById('adm-thumb-run'); if (btn) btn.disabled = true;
+  let ok = 0, ng = 0, batch = [];
+  const flush = async () => { if (!batch.length) return; const b = batch; batch = []; await client.rpc('admin_set_media_thumbs', { p_items: b }); };
+  for (let i = 0; i < todo.length; i++) {
+    const url = todo[i];
+    if (msg) msg.textContent = `作成中... ${i + 1} / ${todo.length}（成功 ${ok}・失敗 ${ng}）`;
+    try {
+      const res = await fetch(url, { mode: 'cors', cache: 'no-store' });
+      if (!res.ok) throw new Error(res.status);
+      const t = await adminMakeThumb(await res.blob());
+      const file = decodeURIComponent(url.split('/storage/v1/object/public/spot-photos/')[1] || ('x' + Date.now() + '.jpg')).split('?')[0];
+      const tname = 'thumbs/' + file.replace(/\.[a-z0-9]+$/i, '') + '_t.jpg';
+      const up = await client.storage.from('spot-photos').upload(tname, t, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false });
+      if (up.error && !/exist|duplicate/i.test(up.error.message || '')) throw up.error;
+      batch.push({ url, thumb_url: client.storage.from('spot-photos').getPublicUrl(tname).data.publicUrl });
+      ok++;
+      if (batch.length >= 10) await flush();
+    } catch(e) { ng++; }
+  }
+  await flush();
+  adminThumbRunning = false;
+  try { const { data } = await client.from('spots').select('id,image_thumb_url'); (data || []).forEach(r => { const s = SPOTS.find(z => z.db_id === r.id); if (s) s.thumb_url = r.image_thumb_url || null; }); } catch(e) {}
+  if (typeof galleryCache !== 'undefined') galleryCache = null;
+  try { renderSpotList(); } catch(e) {}
+  openAdminThumbs(`✅ ${ok}枚作りました${ng ? `（${ng}枚は読み込めず作れませんでした）` : ''}`);
+}
+
 // ── 要確認（ユーザーのマイナス評価。Supabase：spot_flags）──
 const SPOT_FLAG_LABELS = { wrong: '場所が違う', unclear: '特定できない', closed: '立入不可', outdated: '情報が古い' };
 let adminFlags = {};
@@ -7654,7 +7739,7 @@ function openCard(spot) {
           const thumb = document.getElementById('card-thumb');
           thumb.innerHTML = '';
           const img = document.createElement('img');
-          img.src = spot.image_url;
+          img.src = spotThumb(spot);
           img.style.width = '100%';
           img.style.height = '100%';
           img.style.objectFit = 'cover';
@@ -8265,7 +8350,7 @@ async function uploadSpotPhoto(blob) {
   const fileName = 'spot_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.jpg';
   const { error } = await client.storage.from('spot-photos').upload(fileName, blob, {
     contentType: 'image/jpeg',
-    cacheControl: '3600',
+    cacheControl: '31536000',
   });
   if (error) { console.warn('photo upload error:', error); return null; }
   const { data } = client.storage.from('spot-photos').getPublicUrl(fileName);
@@ -8695,7 +8780,7 @@ function renderRouteSpotList() {
       + '<div class="rsc-left">'
       + '<div class="rsc-check" onclick="toggleRouteSpot(this)">□</div>'
       + (s.image_url
-          ? '<div class="rsc-icon has-thumb" data-fallback="' + icon + '" data-photos="' + spotPhotosAttr(s) + '" onclick="openPhotoViewerFromEl(event,this)"><img src="' + escHtml(s.image_url) + '" loading="lazy" decoding="async" alt="" onerror="var p=this.parentNode;p.classList.remove(\'has-thumb\');p.removeAttribute(\'onclick\');p.textContent=p.dataset.fallback;"></div>'
+          ? '<div class="rsc-icon has-thumb" data-fallback="' + icon + '" data-photos="' + spotPhotosAttr(s) + '" onclick="openPhotoViewerFromEl(event,this)"><img src="' + escHtml(spotThumb(s)) + '" loading="lazy" decoding="async" alt="" onerror="var p=this.parentNode;p.classList.remove(\'has-thumb\');p.removeAttribute(\'onclick\');p.textContent=p.dataset.fallback;"></div>'
           : '<div class="rsc-icon">' + icon + '</div>')
       + '<div class="rsc-info"><div class="rsc-name">' + s.name + '</div><div class="rsc-meta">' + meta + '</div></div>'
       + '</div>'
@@ -8925,7 +9010,7 @@ function renderSpotList() {
     var div = document.createElement('div');
     div.className = 'spot-list-item';
     var iconHtml = s.image_url
-      ? '<div class="spot-list-icon has-thumb" data-fallback="' + icon + '" data-photos="' + spotPhotosAttr(s) + '" onclick="openPhotoViewerFromEl(event,this)"><img src="' + escHtml(s.image_url) + '" loading="lazy" decoding="async" alt="" onerror="var p=this.parentNode;p.classList.remove(\'has-thumb\');p.removeAttribute(\'onclick\');p.textContent=p.dataset.fallback;"></div>'
+      ? '<div class="spot-list-icon has-thumb" data-fallback="' + icon + '" data-photos="' + spotPhotosAttr(s) + '" onclick="openPhotoViewerFromEl(event,this)"><img src="' + escHtml(spotThumb(s)) + '" loading="lazy" decoding="async" alt="" onerror="var p=this.parentNode;p.classList.remove(\'has-thumb\');p.removeAttribute(\'onclick\');p.textContent=p.dataset.fallback;"></div>'
       : '<div class="spot-list-icon">' + icon + '</div>';
     div.innerHTML = iconHtml
       + '<div class="spot-list-info">'
