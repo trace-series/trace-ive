@@ -5323,7 +5323,49 @@ function refreshAdminEditRow() {
     const box = document.getElementById('admin-memo-box');
     const memo = ok && currentSpot ? adminMemos[currentSpot.db_id] : '';
     if (box) { box.textContent = memo ? '📝 ' + memo : ''; box.style.display = memo ? 'block' : 'none'; }
+    if (box && ok && currentSpot && currentSpot.db_id) {
+      let btn = document.getElementById('admin-prov-btn');
+      if (!btn) {
+        btn = document.createElement('button');
+        btn.id = 'admin-prov-btn'; btn.type = 'button';
+        btn.onclick = admToggleProvisionalCard;
+        box.insertAdjacentElement('afterend', btn);
+      }
+      const on = admMemoHasProv(memo);
+      btn.textContent = on ? '🟡 【仮】を外す（確認済みにする）' : '🟡 【仮】にする';
+      btn.style.cssText = 'margin-top:6px;border:1.5px solid ' + (on ? '#1a7f3c' : '#c9a227') + ';background:#fff;color:' + (on ? '#1a7f3c' : '#8a6d00') + ';border-radius:10px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;';
+    }
   });
+}
+// ── 🟡【仮】の付け外し（管理メモの先頭に【仮】を付ける）──
+function admMemoHasProv(memo) { return !!(memo && memo.includes('【仮】')); }
+function admProvMemo(memo, on) {
+  memo = (memo || '').trim();
+  if (on) {
+    if (memo.includes('【仮】')) return memo;
+    if (memo.includes('【確認済】')) return memo.replace(/【確認済】/g, '【仮】');
+    return memo ? '【仮】' + memo : '【仮】';
+  }
+  if (memo === '【仮】') return '';
+  return memo.replace(/【仮】/g, '【確認済】');
+}
+async function admToggleProvisionalCard() {
+  if (!currentSpot || !currentSpot.db_id) return;
+  const cur = adminMemos[currentSpot.db_id] || '';
+  const err = await saveAdminMemo(currentSpot.db_id, admProvMemo(cur, !admMemoHasProv(cur)));
+  if (err) { alert('保存できませんでした：' + err.message); return; }
+  refreshAdminEditRow();
+}
+function admProvBtnHtml(memo) {
+  const on = admMemoHasProv(memo);
+  return `<button type="button" id="adm-prov-toggle" onclick="admToggleProvisionalForm()" style="margin-top:6px;border:1.5px solid ${on ? '#1a7f3c' : '#c9a227'};background:#fff;color:${on ? '#1a7f3c' : '#8a6d00'};border-radius:10px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer;">${on ? '🟡 【仮】を外す（確認済みにする）' : '🟡 【仮】にする'}</button>`;
+}
+function admToggleProvisionalForm() {
+  const ta = document.getElementById('adm-memo');
+  if (!ta) return;
+  ta.value = admProvMemo(ta.value, !admMemoHasProv(ta.value));
+  const b = document.getElementById('adm-prov-toggle');
+  if (b) b.outerHTML = admProvBtnHtml(ta.value);
 }
 
 function spotStatusLabel(spot) {
@@ -5368,7 +5410,7 @@ function openAdminSpotEditor() {
     <div style="display:flex;gap:6px;"><input id="adm-end" type="date" style="${ADM_INPUT}flex:1;" value="${escHtml(spot.end_date || '')}"><button type="button" onclick="document.getElementById('adm-end').value=''" style="flex-shrink:0;border:1.5px solid var(--border);background:#fff;border-radius:10px;padding:0 12px;font-size:12px;cursor:pointer;">クリア</button></div>
     <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--text);"><input id="adm-closed" type="checkbox" ${spot.is_closed ? 'checked' : ''} style="width:20px;height:20px;"> 閉業・閉校している（カードに「🚫 閉業・閉校」と表示）</label>
     <label style="display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px;border-radius:10px;background:#fff7e6;font-size:13px;color:var(--text);"><input id="adm-draft" type="checkbox" ${spot.is_draft ? 'checked' : ''} style="width:20px;height:20px;"> 🚧 仮登録（一般ユーザーには表示しない）<br><span style="font-size:11px;color:var(--text-light);">チェックを外して保存すると公開され、タイムラインに新スポットとして載ります</span></label>
-    ${admLabel('📝 管理メモ（自分だけに見える。「住所要確認」など）')}<textarea id="adm-memo" rows="2" style="${ADM_INPUT}resize:vertical;background:#fffbe6;">${escHtml(adminMemos[spot.db_id] || '')}</textarea>
+    ${admLabel('📝 管理メモ（自分だけに見える。「住所要確認」など）')}<textarea id="adm-memo" rows="2" style="${ADM_INPUT}resize:vertical;background:#fffbe6;">${escHtml(adminMemos[spot.db_id] || '')}</textarea>${admProvBtnHtml(adminMemos[spot.db_id] || '')}
     <div id="adm-msg" style="font-size:12px;color:#c0392b;margin-top:10px;min-height:16px;"></div>
     <div style="display:flex;gap:8px;margin-top:6px;">
       <button onclick="closeAdminSheet('admin-edit-modal')" style="flex:1;border:1.5px solid var(--border);background:#fff;color:var(--text-mid);border-radius:12px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;">キャンセル</button>
@@ -6211,6 +6253,7 @@ function refreshAdminListCtl() {
     if (!ok) return;
     loadAdminDrafts();
     if (!adminMemosLoaded) loadAdminMemos();
+    await loadAdminFlags();
     const reports = await fetchAdminReports();
     let dot = document.getElementById('admin-report-dot');
     if (!dot) {
@@ -6220,8 +6263,9 @@ function refreshAdminListCtl() {
       ctl.style.position = 'relative';
       ctl.appendChild(dot);
     }
-    dot.textContent = reports.length > 99 ? '99+' : String(reports.length);
-    dot.style.display = reports.length ? 'block' : 'none';
+    const nAlert = reports.length + Object.keys(adminFlags).length;
+    dot.textContent = nAlert > 99 ? '99+' : String(nAlert);
+    dot.style.display = nAlert ? 'block' : 'none';
   });
 }
 // 5分ごとに報告件数を確認し直す（管理者のみ）
@@ -6234,7 +6278,7 @@ const ADMIN_LIST_DEFS = [
   { key: 'allmember', label: '👥 メンバー全員', test: s => !s.member || s.member === '全員' },
   { key: 'nosource', label: '🔗 出典なし', test: s => !s.source_url },
   { key: 'hassource', label: '✅ 出典あり', test: s => !!s.source_url },
-  { key: 'flagged', label: '🔴 要確認', test: s => s.trustScore < 0 },
+  { key: 'flagged', label: '🔴 要確認', test: s => s.trustScore < 0 || !!(adminFlags[s.db_id] && adminFlags[s.db_id].length) },
   { key: 'memo', label: '📝 メモ', test: s => !!adminMemos[s.db_id] },
   { key: 'provisional', label: '🟡 【仮】', test: s => admIsProvisional(s) },
 ];
@@ -6278,6 +6322,7 @@ async function openAdminListPanel(tab) {
         <div style="font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(s.name)}</div>
         <div style="font-size:11px;color:var(--text-light);">👥 ${escHtml(s.member || '全員')}</div>
         ${cur.key === 'provisional' ? `<div style="font-size:11px;color:#6b5500;background:#fffbe6;border-radius:6px;padding:2px 6px;margin-top:2px;white-space:pre-wrap;">📝 ${escHtml(adminMemos[s.db_id] || '')}</div><button onclick="admConfirmProvisional(event,'${s.db_id}')" style="margin-top:4px;border:none;background:#1a7f3c;color:#fff;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">✅ 確認済みにする（【仮】を外す）</button>` : ''}
+        ${cur.key === 'flagged' && adminFlags[s.db_id] ? `<div style="font-size:11px;color:#8a1c1c;background:#fdecea;border-radius:6px;padding:2px 6px;margin-top:2px;">🔴 ${adminFlags[s.db_id].map(f => (SPOT_FLAG_LABELS[f.flag_type] || f.flag_type) + '（' + String(f.created_at || '').slice(5, 10).replace('-', '/') + '）').join('、')}</div><button onclick="resolveSpotFlags(event,'${s.db_id}')" style="margin-top:4px;border:none;background:#1a7f3c;color:#fff;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">✅ 確認済み（要確認を外す）</button>` : ''}
         ${cur.key === 'memo' ? `<div style="font-size:11px;color:#6b5500;background:#fffbe6;border-radius:6px;padding:2px 6px;margin-top:2px;white-space:pre-wrap;">📝 ${escHtml(adminMemos[s.db_id] || '')}</div>` : ''}
       </div>
       <div style="color:var(--text-light);">›</div>
@@ -6373,7 +6418,7 @@ function openAdminNewSpot() {
     ${admLabel('住所')}<div style="display:flex;gap:6px;"><input id="adm-address" type="text" style="${ADM_INPUT}flex:1;"><button type="button" onclick="adminNewFillAddress()" style="flex-shrink:0;border:1.5px solid var(--border);background:#fff;border-radius:10px;padding:0 10px;font-size:12px;cursor:pointer;">ピンから入力</button></div>
     ${admLabel('期間限定の終了日（任意）')}<input id="adm-end" type="date" style="${ADM_INPUT}">
     <label style="display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px;border-radius:10px;background:#fff7e6;font-size:13px;color:var(--text);"><input id="adm-draft" type="checkbox" checked style="width:20px;height:20px;"> 🚧 仮登録で保存（一般ユーザーには表示しない）</label>
-    ${admLabel('📝 管理メモ（自分だけに見える。出典元・見つけた場所など）')}<textarea id="adm-memo" rows="2" style="${ADM_INPUT}resize:vertical;background:#fffbe6;"></textarea>
+    ${admLabel('📝 管理メモ（自分だけに見える。出典元・見つけた場所など）')}<textarea id="adm-memo" rows="2" style="${ADM_INPUT}resize:vertical;background:#fffbe6;"></textarea>${admProvBtnHtml('')}
     <div id="adm-msg" style="font-size:12px;color:#c0392b;margin-top:10px;min-height:16px;"></div>
     <div style="display:flex;gap:8px;margin-top:6px;">
       <button onclick="closeAdminSheet('admin-new-modal')" style="flex:1;border:1.5px solid var(--border);background:#fff;color:var(--text-mid);border-radius:12px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;">キャンセル</button>
@@ -7010,6 +7055,34 @@ function adminApplyMapsUrl(target) {
   });
 }
 
+// ── 要確認（ユーザーのマイナス評価。Supabase：spot_flags）──
+const SPOT_FLAG_LABELS = { wrong: '場所が違う', unclear: '特定できない', closed: '立入不可', outdated: '情報が古い' };
+let adminFlags = {};
+async function sendSpotFlag(spot, type) {
+  try {
+    if (!spot || !spot.db_id) return;
+    await getSupabaseClient().from('spot_flags').insert({ spot_id: spot.db_id, flag_type: type });
+  } catch(e) {}
+}
+async function loadAdminFlags() {
+  try {
+    const { data, error } = await getSupabaseClient().from('spot_flags').select('id,spot_id,flag_type,created_at').is('resolved_at', null).order('created_at', { ascending: true });
+    if (error) return;
+    adminFlags = {};
+    (data || []).forEach(r => { (adminFlags[r.spot_id] = adminFlags[r.spot_id] || []).push(r); });
+  } catch(e) {}
+}
+async function resolveSpotFlags(ev, dbId) {
+  if (ev) ev.stopPropagation();
+  const { error } = await getSupabaseClient().from('spot_flags').update({ resolved_at: new Date().toISOString() }).eq('spot_id', dbId).is('resolved_at', null);
+  if (error) { alert('保存できませんでした：' + error.message); return; }
+  delete adminFlags[dbId];
+  const s = SPOTS.find(z => z.db_id === dbId);
+  if (s && s.trustScore < 0) s.trustScore = 8;
+  openAdminListPanel('flagged');
+  refreshAdminListCtl();
+}
+
 // ════════════════════════════════════════════════════════════
 // ── v6 管理者：便利機能（近くの重複警告・【仮】確認・出典の自動取得・イベント設定・候補箱）──
 // ════════════════════════════════════════════════════════════
@@ -7043,7 +7116,7 @@ function admIsProvisional(s) { return !!(adminMemos[s.db_id] && adminMemos[s.db_
 async function admConfirmProvisional(ev, dbId) {
   if (ev) ev.stopPropagation();
   const memo = adminMemos[dbId] || '';
-  const next = memo.replace(/【仮】/g, '【確認済】');
+  const next = admProvMemo(memo, false);
   const err = await saveAdminMemo(dbId, next);
   if (err) { alert('保存できませんでした：' + err.message); return; }
   openAdminListPanel('provisional');
@@ -9799,6 +9872,8 @@ function showLangComingSoon() {
     }
 
     // フラグ判定
+    // マイナス評価は1回でも運営に届ける（管理画面の「🔴 要確認」に出る）
+    if (weight < 0 && typeof sendSpotFlag === 'function') sendSpotFlag(currentSpot, type);
     if (currentSpot.badCount >= 5 && currentSpot.trustScore < 0) {
       currentSpot.adminLevel = 'flagged';
       alert('⚠️ このスポットに「要確認」フラグが立ちました。管理者の確認をお待ちください。');
