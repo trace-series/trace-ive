@@ -6687,6 +6687,7 @@ function handleSpotDeepLink() {
   if (!v) return false;
   const spot = /^\d+$/.test(v) ? SPOTS.find(s => s.no === parseInt(v, 10)) : SPOTS.find(s => s.name === v);
   if (!spot || !map) return false;
+  trackSpotOpen(spot.no, 'link', true);
   setTimeout(() => {
     map.setCenter({ lat: spot.lat, lng: spot.lng });
     map.setZoom(16);
@@ -6711,10 +6712,24 @@ function showTikTokWelcome() {
     <div id="tt-welcome-msg" style="font-size:11px;color:#c0392b;min-height:14px;margin-top:4px;"></div>`;
   document.body.appendChild(el);
 }
+// ── GA4：どのNo.のスポットが開かれたかを記録（TikTok動画ごとの流入を測る） ──
+function trackSpotOpen(no, method, found) {
+  try {
+    if (typeof gtag !== 'function') return;
+    gtag('event', 'spot_open', {
+      spot_no: String(no),
+      open_method: method,
+      visit_source: getVisitSource(),
+      found: found === false ? 'no' : 'yes'
+    });
+  } catch (e) {}
+}
+
 function ttWelcomeJump() {
   const v = parseInt((document.getElementById('tt-welcome-no') || {}).value, 10);
   const spot = SPOTS.find(s => s.no === v);
-  if (!spot) { document.getElementById('tt-welcome-msg').textContent = 'そのNo.のスポットは見つかりませんでした'; return; }
+  if (!spot) { trackSpotOpen(v, 'tiktok_welcome', false); document.getElementById('tt-welcome-msg').textContent = 'そのNo.のスポットは見つかりませんでした'; return; }
+  trackSpotOpen(spot.no, 'tiktok_welcome', true);
   const el = document.getElementById('tt-welcome'); if (el) el.remove();
   jumpToSpot(spot.name);
 }
