@@ -8631,7 +8631,6 @@ async function submitNewSpot() {
           client.from('profiles').upsert({
             id: user.id,
             display_name: xName,
-            x_id: isGoogle ? null : (meta.user_name || null),
             x_provider_id: isGoogle ? null : xProviderId,
           }, { onConflict: 'id' }).then(function(res) {
             if (res && res.error) {
