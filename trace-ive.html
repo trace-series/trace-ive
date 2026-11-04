@@ -9,6 +9,7 @@
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
 
+  try { if (localStorage.getItem('trace_dont_count') === '1') window['ga-disable-G-JPPW9G8WCV'] = true; } catch(e) {}
   gtag('config', 'G-JPPW9G8WCV');
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -5255,6 +5256,7 @@ async function initMap() {
     marker.spotData = spot;
 
     marker.addListener('click', () => {
+      setOpenVia('map');
       openCard(spot);
       map.panTo({ lat: spot.lat, lng: spot.lng });
     });
@@ -5696,7 +5698,7 @@ function closeSeriesPicker() {
 }
 // 旅・シリーズの利用を記録（BtoB向けの集計用。個人は特定しない。同じ操作は1セッション1回まで）
 function logSeriesEvent(event, series, via) {
-  if (!series) return;
+  if (!series || traceDontCount()) return;
   try {
     const key = 'trace_se_' + event + '_' + series;
     if (sessionStorage.getItem(key)) return;
@@ -5835,6 +5837,7 @@ function renderCardNearby(spot) {
   </div>`;
 }
 function openSeriesSpot(dbId) {
+  defaultOpenVia('series');
   const spot = SPOTS.find(s => String(s.db_id) === String(dbId));
   if (!spot) return;
   if (map) { map.panTo({ lat: spot.lat, lng: spot.lng }); map.setZoom(16); }
@@ -6406,7 +6409,7 @@ function addSpotMarker(spot) {
     label: { text: spot.is_draft ? '🚧' : spot.icon, fontSize: '14px' },
   });
   marker.spotData = spot;
-  marker.addListener('click', () => { openCard(spot); map.panTo({ lat: spot.lat, lng: spot.lng }); });
+  marker.addListener('click', () => { setOpenVia('map'); openCard(spot); map.panTo({ lat: spot.lat, lng: spot.lng }); });
   markers.push(marker);
 }
 function openAdminNewSpot() {
@@ -6656,7 +6659,28 @@ function getVisitSource() {
   return 'other';
 }
 const VISIT_SOURCE_LABEL = { tiktok: '🎵 TikTok', x: '𝕏 X', instagram: '📷 Instagram', youtube: '▶️ YouTube', line: '💬 LINE', threads: '🧵 Threads', search: '🔍 検索', direct: '🔖 直接・ブックマーク', other: '🌐 その他' };
+// ── v6：自分の端末を数えない／スポットを開いた・道案内の記録 ──
+function traceDontCount() { try { return localStorage.getItem('trace_dont_count') === '1'; } catch(e) { return false; } }
+function traceSessionId() {
+  try { let s = sessionStorage.getItem('trace_sid'); if (!s) { s = Math.random().toString(36).slice(2, 12); sessionStorage.setItem('trace_sid', s); } return s; } catch(e) { return null; }
+}
+let _openVia = null;
+function setOpenVia(v) { _openVia = v; }
+function defaultOpenVia(v) { if (!_openVia) _openVia = v; }
+function logAppEvent(event, spotNo, method) {
+  if (traceDontCount() || spotNo == null) return;
+  try { const k = 'trace_ev_' + event + '_' + spotNo; if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch(e) {}
+  try {
+    fetch(`${SUPABASE_URL}/rest/v1/app_spot_events`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ event, spot_no: Number(spotNo), method: method || null, source: getVisitSource(), session_id: traceSessionId() }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch(e) {}
+}
 function logAppVisit() {
+  if (traceDontCount()) return;
   try {
     if (sessionStorage.getItem('trace_visit_logged')) return;
     sessionStorage.setItem('trace_visit_logged', '1');
@@ -6688,6 +6712,7 @@ function handleSpotDeepLink() {
   const spot = /^\d+$/.test(v) ? SPOTS.find(s => s.no === parseInt(v, 10)) : SPOTS.find(s => s.name === v);
   if (!spot || !map) return false;
   trackSpotOpen(spot.no, 'link', true);
+  setOpenVia('link');
   setTimeout(() => {
     map.setCenter({ lat: spot.lat, lng: spot.lng });
     map.setZoom(16);
@@ -6731,6 +6756,7 @@ function ttWelcomeJump() {
   if (!spot) { trackSpotOpen(v, 'tiktok_welcome', false); document.getElementById('tt-welcome-msg').textContent = 'そのNo.のスポットは見つかりませんでした'; return; }
   trackSpotOpen(spot.no, 'tiktok_welcome', true);
   const el = document.getElementById('tt-welcome'); if (el) el.remove();
+  setOpenVia('tiktok_welcome');
   jumpToSpot(spot.name);
 }
 
@@ -7001,34 +7027,60 @@ async function restoreAdminHistory(k) {
 // ── v5 管理者：アクセス元 ──
 async function openAdminVisits(days) {
   const d = days || 7;
-  adminSheet('admin-visit-modal', `${adminSheetHeader('📊 アクセス元', 'admin-visit-modal')}<div style="text-align:center;padding:30px;color:var(--text-light);">読み込み中...</div>`);
-  const { data, error } = await getSupabaseClient().rpc('admin_visit_stats', { p_days: d });
+  try { if (!localStorage.getItem('trace_dont_count_set')) { localStorage.setItem('trace_dont_count', '1'); localStorage.setItem('trace_dont_count_set', '1'); } } catch(e) {}
+  const H = (t) => adminSheetHeader(t, 'admin-visit-modal');
+  adminSheet('admin-visit-modal', `${H('📊 アクセス元')}<div style="text-align:center;padding:30px;color:var(--text-light);">読み込み中...</div>`);
+  const { data, error } = await getSupabaseClient().rpc('admin_visit_stats_v2', { p_days: d });
   if (error || !data) {
-    adminSheet('admin-visit-modal', `${adminSheetHeader('📊 アクセス元', 'admin-visit-modal')}<div style="padding:20px;font-size:13px;color:#c0392b;">読み込めませんでした（SQLを実行済みか確認してください）：${escHtml(error ? error.message : '')}</div>`);
+    adminSheet('admin-visit-modal', `${H('📊 アクセス元')}<div style="padding:20px;font-size:13px;color:#c0392b;">読み込めませんでした（v6のSQLを実行済みか確認してください）：${escHtml(error ? error.message : '')}</div>`);
     return;
   }
   const bySource = data.by_source || [], bySpot = data.by_spot || [], byDay = data.by_day || [];
+  const evSrc = data.events_by_source || [], topSpots = data.top_spots || [], byHour = data.by_hour || [], tot = data.event_totals || {};
   const total = bySource.reduce((a, r) => a + r.visits, 0);
   const max = Math.max(1, ...bySource.map(r => r.visits));
+  const lbl = s => VISIT_SOURCE_LABEL[s] || escHtml(s);
+  const sub = 'font-size:12px;font-weight:700;color:var(--text-mid);margin:18px 0 4px;';
+  const row = 'display:flex;gap:8px;padding:5px 2px;border-bottom:1px solid var(--border);font-size:12px;';
+  const dont = traceDontCount();
   const periodBtn = n => `<button onclick="openAdminVisits(${n})" style="border:1.5px solid ${n === d ? '#c0392b' : 'var(--border)'};background:${n === d ? '#c0392b' : '#fff'};color:${n === d ? '#fff' : 'var(--text-mid)'};border-radius:16px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">${n === 1 ? '24時間' : n + '日'}</button>`;
-  const srcRows = bySource.map(r => `<div style="margin:8px 0;">
-      <div style="display:flex;font-size:13px;"><span style="font-weight:700;">${VISIT_SOURCE_LABEL[r.source] || escHtml(r.source)}</span><span style="margin-left:auto;color:var(--text-mid);">${r.visits}回<span style="font-size:11px;color:var(--text-light);">（初めて ${r.new_visitors}）</span></span></div>
+  const evMap = {}; evSrc.forEach(r => { evMap[r.source] = r; });
+  const srcRows = bySource.map(r => { const ev = evMap[r.source] || {}; return `<div style="margin:8px 0;">
+      <div style="display:flex;font-size:13px;"><span style="font-weight:700;">${lbl(r.source)}</span><span style="margin-left:auto;color:var(--text-mid);">${r.visits}回<span style="font-size:11px;color:var(--text-light);">（初めて ${r.new_visitors}）</span></span></div>
       <div style="height:8px;background:#eee;border-radius:4px;margin-top:4px;"><div style="height:8px;width:${Math.round(r.visits / max * 100)}%;background:${r.source === 'tiktok' ? '#e0245e' : 'var(--purple-mid)'};border-radius:4px;"></div></div>
-    </div>`).join('');
-  const spotRows = bySpot.map(r => {
+      <div style="font-size:11px;color:var(--text-light);margin-top:3px;">スポットを開いた ${ev.opens || 0}件・道案内 <b style="color:#1a7f3c;">${ev.navis || 0}</b>件</div>
+    </div>`; }).join('');
+  const srcShort = o => Object.keys(o || {}).sort((a, b) => o[b] - o[a]).map(k => `${(VISIT_SOURCE_LABEL[k] || k).split(' ')[0]}${o[k]}`).join(' ');
+  const spotRows = topSpots.map(r => {
     const s = SPOTS.find(x => x.no === r.spot_no);
-    return `<div style="display:flex;gap:8px;padding:6px 2px;border-bottom:1px solid var(--border);font-size:12px;"><span style="width:52px;font-weight:700;color:var(--purple-mid);">No.${r.spot_no}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(s ? s.name : '')}</span><span>${r.visits}回${r.tiktok ? `<span style="color:#e0245e;">（TikTok ${r.tiktok}）</span>` : ''}</span></div>`;
+    return `<div style="${row}flex-wrap:wrap;"><span style="width:52px;font-weight:700;color:var(--purple-mid);">No.${r.spot_no}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(s ? s.name : '')}</span><span>開${r.opens}・<b style="color:#1a7f3c;">道${r.navis}</b></span><span style="width:100%;padding-left:60px;font-size:11px;color:var(--text-light);">${srcShort(r.sources)}</span></div>`;
   }).join('');
-  const dayRows = byDay.slice(-14).map(r => `<div style="display:flex;padding:4px 2px;font-size:12px;border-bottom:1px solid var(--border);"><span style="width:60px;color:var(--text-mid);">${escHtml(r.day)}</span><span style="flex:1;">${r.visits}回</span><span style="color:#e0245e;">TikTok ${r.tiktok}</span></div>`).join('');
-  adminSheet('admin-visit-modal', `${adminSheetHeader('📊 アクセス元', 'admin-visit-modal')}
+  const linkRows = bySpot.map(r => {
+    const s = SPOTS.find(x => x.no === r.spot_no);
+    return `<div style="${row}"><span style="width:52px;font-weight:700;color:var(--purple-mid);">No.${r.spot_no}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(s ? s.name : '')}</span><span>${r.visits}回${r.tiktok ? `<span style="color:#e0245e;">（TikTok ${r.tiktok}）</span>` : ''}</span></div>`;
+  }).join('');
+  const hMax = Math.max(1, ...byHour.map(r => r.visits));
+  const hourRows = byHour.map(r => `<div style="display:flex;align-items:center;gap:6px;font-size:11px;margin:2px 0;"><span style="width:34px;color:var(--text-mid);">${r.hour}時</span><div style="flex:1;height:8px;background:#eee;border-radius:4px;"><div style="height:8px;width:${Math.round(r.visits / hMax * 100)}%;background:${r.hour >= 20 && r.hour <= 23 ? '#e0245e' : 'var(--purple-mid)'};border-radius:4px;"></div></div><span style="width:34px;text-align:right;">${r.visits}</span></div>`).join('');
+  const dayRows = byDay.slice(-14).map(r => `<div style="${row}"><span style="width:60px;color:var(--text-mid);">${escHtml(r.day)}</span><span style="flex:1;">${r.visits}回</span><span style="color:#e0245e;">TikTok ${r.tiktok}</span></div>`).join('');
+  adminSheet('admin-visit-modal', `${H('📊 アクセス元')}
     <div style="display:flex;gap:6px;margin-bottom:6px;">${[1, 7, 30].map(periodBtn).join('')}</div>
-    <div style="font-size:11px;color:var(--text-light);line-height:1.6;">アプリを開いた回数（同じ人が続けて開いた分は1回）。合計 <b>${total}</b> 回。自分で開いた分も含みます。</div>
+    <div style="display:flex;align-items:center;gap:8px;background:${dont ? '#eef8f0' : '#fff4f2'};border-radius:12px;padding:8px 10px;margin:6px 0 4px;font-size:12px;">
+      <span style="flex:1;">${dont ? '✅ この端末は数えていません' : '⚠️ この端末も数えています'}</span>
+      <button onclick="toggleTraceDontCount()" style="border:1.5px solid var(--border);background:#fff;color:var(--purple-deep);border-radius:10px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;">${dont ? '数えるに戻す' : '数えない'}</button>
+    </div>
+    <div style="font-size:11px;color:var(--text-light);line-height:1.6;">アプリを開いた回数（同じ人が続けて開いた分は1回）。合計 <b>${total}</b> 回。スポットを開いた <b>${tot.opens || 0}</b>件・道案内 <b style="color:#1a7f3c;">${tot.navis || 0}</b>件（スポット・道案内は同じ人の同じスポットは1回）。使う端末ごとに一度この画面を開くと、その端末は数えなくなります。</div>
     ${srcRows || '<div style="padding:20px;text-align:center;color:var(--text-light);font-size:13px;">まだ記録がありません</div>'}
-    ${spotRows ? `<div style="font-size:12px;font-weight:700;color:var(--text-mid);margin:16px 0 4px;">No.リンクから開かれたスポット</div>${spotRows}` : ''}
-    ${dayRows ? `<div style="font-size:12px;font-weight:700;color:var(--text-mid);margin:16px 0 4px;">日ごと</div>${dayRows}` : ''}
+    ${spotRows ? `<div style="${sub}">開かれたスポット（開＝開いた・道＝道案内）</div>${spotRows}` : ''}
+    ${linkRows ? `<div style="${sub}">No.リンクから開かれたスポット</div>${linkRows}` : ''}
+    ${hourRows ? `<div style="${sub}">来た時間帯（日本時間・赤は20〜23時）</div>${hourRows}` : ''}
+    ${dayRows ? `<div style="${sub}">日ごと</div>${dayRows}` : ''}
     <div style="font-size:11px;color:var(--text-light);line-height:1.6;margin-top:12px;">TikTokのプロフィールには <b>?from=tt</b> 付きのリンクを置くと確実に数えられます（TikTokのアプリ内ブラウザは自動でも判定します）。</div>
     <button onclick="copyAdminPlain('${APP_URL}?from=tt','adm-visit-msg')" style="width:100%;margin-top:8px;border:1.5px solid var(--border);background:#fff;color:var(--purple-deep);border-radius:12px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">🔗 TikTokプロフィール用のリンクをコピー</button>
     <div id="adm-visit-msg" style="font-size:12px;color:#1a7f3c;min-height:16px;margin-top:4px;text-align:center;"></div>`);
+}
+function toggleTraceDontCount() {
+  try { localStorage.setItem('trace_dont_count_set', '1'); if (traceDontCount()) localStorage.removeItem('trace_dont_count'); else localStorage.setItem('trace_dont_count', '1'); } catch(e) {}
+  openAdminVisits(7);
 }
 
 // ── v5 管理者：GoogleマップのURL・座標の貼り付け ──
@@ -7733,6 +7785,7 @@ async function applyAdminCrop() {
 
 function openCard(spot) {
   currentSpot = spot;
+  try { const via = _openVia || 'other'; _openVia = null; if (spot && spot.no != null) { logAppEvent('spot_open', spot.no, via); if (via !== 'link' && via !== 'tiktok_welcome') trackSpotOpen(spot.no, via, true); } } catch(e) {}
   const cardTitleEl = document.getElementById('card-title');
   cardTitleEl.textContent = spot.name;
   if (spot.no != null) {
@@ -9063,6 +9116,7 @@ function renderListSortBar() {
   return bar;
 }
 function selectSpotFromList(dbId) {
+  defaultOpenVia('list');
   var spot = SPOTS.find(function(s) { return s.db_id === dbId; });
   if (!spot) return;
   listViewOpen = false;
@@ -9120,6 +9174,7 @@ function renderSearchResults() {
   container.appendChild(frag);
 }
 function selectSearchResult(dbId) {
+  setOpenVia('search');
   toggleSearch();
   selectSpotFromList(dbId);
 }
@@ -9135,6 +9190,7 @@ function filterPins(btn, cat) {
 
 // ── ランキングからジャンプ ──
 function jumpToSpot(name) {
+  defaultOpenVia('jump');
   const spot = SPOTS.find(s => s.name === name);
   if (!spot) return;
   showView('map');
@@ -9253,6 +9309,7 @@ async function incrementSpotLikes(dbId) {
 // ── ナビ ──
 function openNavi() {
   if (!currentSpot) return;
+  try { if (currentSpot.no != null) { logAppEvent('navi', currentSpot.no, 'card'); if (typeof gtag === 'function') gtag('event', 'navi_open', { spot_no: String(currentSpot.no), visit_source: getVisitSource() }); } } catch(e) {}
   const url = `https://www.google.com/maps/dir/?api=1&destination=${currentSpot.lat},${currentSpot.lng}`;
   window.open(url, '_blank');
 }
