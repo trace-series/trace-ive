@@ -4369,7 +4369,7 @@ async function loadFeed() {
   // ② 運営が登録したスポット（spotsテーブル）
   let spotItems = [];
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/spots?select=id,name,member,sub,image_url,source_url,created_at,no&is_draft=not.is.true&order=created_at.desc,no.desc&limit=${FEED_MAX_ITEMS}`, { headers: authHeaders });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/spots?select=id,name,member,sub,image_url,source_url,created_at,no,is_trace_original&is_draft=not.is.true&order=created_at.desc,no.desc&limit=${FEED_MAX_ITEMS}`, { headers: authHeaders });
     const data = await res.json();
     if (Array.isArray(data)) {
       // ファンの投稿から承認されたスポットは①と重複するので除外
@@ -4387,6 +4387,7 @@ async function loadFeed() {
           created_at: s.created_at,
           no: s.no,
           has_video: false,
+          is_trace_original: s.is_trace_original === true,
         }));
     }
   } catch(e) { console.warn('feed spots取得失敗:', e); }
@@ -4982,6 +4983,7 @@ function renderFeedItem(item) {
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
         <span style="font-size:10px;background:var(--purple-mid);color:#fff;border-radius:8px;padding:2px 8px;">📍 新スポット追加${item.no != null ? ' No.' + item.no : ''}</span>
         ${videoBadge}
+        ${item.is_trace_original ? `<span style="font-size:10px;background:linear-gradient(135deg,#ffb347,#f57c00);color:#fff;border-radius:8px;padding:2px 8px;font-weight:700;">🔍 Trace独自特定</span>` : ''}
         <span style="font-size:11px;color:var(--text-light);margin-left:auto;">${timeAgoLabel(item.created_at)}</span>
       </div>
       <div style="display:flex;gap:12px;align-items:center;">
@@ -7800,7 +7802,7 @@ function openCard(spot) {
   if (spot.is_trace_original) {
     const oEl = document.createElement('span');
     oEl.className = 'card-no';
-    oEl.style.cssText = 'background:linear-gradient(135deg,#ff7a59,#e0245e);margin-left:6px;margin-right:0;';
+    oEl.style.cssText = 'background:linear-gradient(135deg,#ffb347,#f57c00);margin-left:6px;margin-right:0;';
     oEl.textContent = '🔍 Trace独自特定';
     cardTitleEl.appendChild(oEl);
   }
