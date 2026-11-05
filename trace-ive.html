@@ -4235,6 +4235,9 @@ function mapSpotRow(s) {
       is_draft: s.is_draft === true,
       series: s.series || null,
       created_at: s.created_at || null,
+      is_trace_original: s.is_trace_original === true, // Traceが自分で特定したスポット（バッジ表示用）
+      identified_at: s.identified_at || null,
+      source_published_at: s.source_published_at || null, // 元ネタ（動画・投稿）の公開日時
   };
 }
 
@@ -7794,6 +7797,13 @@ function openCard(spot) {
     noEl.textContent = 'No.' + spot.no;
     cardTitleEl.prepend(noEl);
   }
+  if (spot.is_trace_original) {
+    const oEl = document.createElement('span');
+    oEl.className = 'card-no';
+    oEl.style.cssText = 'background:linear-gradient(135deg,#ff7a59,#e0245e);margin-left:6px;margin-right:0;';
+    oEl.textContent = '🔍 Trace独自特定';
+    cardTitleEl.appendChild(oEl);
+  }
   const boostNow = (typeof getSpotBoost === 'function') ? getSpotBoost(spot) : null;
   if (boostNow) {
     const bEl = document.createElement('span');
@@ -7803,6 +7813,27 @@ function openCard(spot) {
     cardTitleEl.appendChild(bEl);
   }
   document.getElementById('card-sub').innerHTML = linkifyText(spot.sub);
+  if (spot.is_trace_original) {
+    let dTxt = '';
+    try { if (spot.identified_at) { const d = new Date(new Date(spot.identified_at).toLocaleString('en-US', { timeZone: 'Asia/Tokyo' })); dTxt = '（' + d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0') + ' 特定）'; } } catch(e) {}
+    const oNote = document.createElement('div');
+    oNote.style.cssText = 'margin:0 0 6px;padding:6px 10px;border-radius:8px;background:#fff1ec;color:#c2410c;font-size:12px;font-weight:700;line-height:1.5;';
+    let gapTxt = '';
+    try {
+      if (spot.identified_at && spot.source_published_at) {
+        const mins = Math.round((new Date(spot.identified_at) - new Date(spot.source_published_at)) / 60000);
+        if (mins > 0) {
+          if (mins < 60) gapTxt = mins + '分';
+          else if (mins < 48 * 60) gapTxt = Math.floor(mins / 60) + '時間' + (mins % 60 ? (mins % 60) + '分' : '');
+          else gapTxt = Math.floor(mins / 1440) + '日';
+          gapTxt = '元ネタの公開から' + gapTxt + 'で特定。';
+        }
+      }
+    } catch(e) {}
+    oNote.textContent = '🔍 Traceが動画や写真から場所を割り出した、独自の聖地です。' + gapTxt + dTxt;
+    const subEl = document.getElementById('card-sub');
+    subEl.insertBefore(oNote, subEl.firstChild);
+  }
         if (spot.image_url) {
           const thumb = document.getElementById('card-thumb');
           thumb.innerHTML = '';
