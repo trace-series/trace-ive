@@ -5418,6 +5418,7 @@ function openAdminSpotEditor() {
     <div style="display:flex;gap:6px;"><input id="adm-end" type="date" style="${ADM_INPUT}flex:1;" value="${escHtml(spot.end_date || '')}"><button type="button" onclick="document.getElementById('adm-end').value=''" style="flex-shrink:0;border:1.5px solid var(--border);background:#fff;border-radius:10px;padding:0 12px;font-size:12px;cursor:pointer;">クリア</button></div>
     <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--text);"><input id="adm-closed" type="checkbox" ${spot.is_closed ? 'checked' : ''} style="width:20px;height:20px;"> 閉業・閉校している（カードに「🚫 閉業・閉校」と表示）</label>
     <label style="display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px;border-radius:10px;background:#fff7e6;font-size:13px;color:var(--text);"><input id="adm-draft" type="checkbox" ${spot.is_draft ? 'checked' : ''} style="width:20px;height:20px;"> 🚧 仮登録（一般ユーザーには表示しない）<br><span style="font-size:11px;color:var(--text-light);">チェックを外して保存すると公開され、タイムラインに新スポットとして載ります</span></label>
+    ${admOriginalFields(spot)}
     ${admLabel('📝 管理メモ（自分だけに見える。「住所要確認」など）')}<textarea id="adm-memo" rows="2" style="${ADM_INPUT}resize:vertical;background:#fffbe6;">${escHtml(adminMemos[spot.db_id] || '')}</textarea>${admProvBtnHtml(adminMemos[spot.db_id] || '')}
     <div id="adm-msg" style="font-size:12px;color:#c0392b;margin-top:10px;min-height:16px;"></div>
     <div style="display:flex;gap:8px;margin-top:6px;">
@@ -5862,6 +5863,72 @@ function admSeriesValue() {
   const v = el ? el.value.replace(/\s+/g, ' ').trim() : '';
   return v || null;
 }
+// ── 管理者：Trace独自特定 ──
+function admToLocalInput(iso) {
+  if (!iso) return '';
+  const d = new Date(iso); if (isNaN(d)) return '';
+  const p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+function admOriginalFields(spot) {
+  const on = !!(spot && spot.is_trace_original);
+  const src = admToLocalInput(spot && spot.source_published_at);
+  const idt = admToLocalInput(spot && spot.identified_at);
+  return `<div style="margin-top:10px;padding:10px;border-radius:10px;background:#fff3e0;font-size:13px;color:var(--text);">
+    <label style="display:flex;align-items:center;gap:8px;font-weight:700;"><input id="adm-original" type="checkbox" ${on ? 'checked' : ''} onchange="admOriginalPreview()" style="width:20px;height:20px;"> 🔍 Trace独自特定のバッジを付ける</label>
+    <div id="adm-original-box" style="display:${on ? 'block' : 'none'};margin-top:8px;">
+      <div style="font-size:12px;color:var(--text-mid);margin-bottom:2px;">元ネタの公開日時（YouTube・Weverse・Instagramなど）</div>
+      <input id="adm-src-pub" type="datetime-local" value="${src}" oninput="admOriginalPreview()" style="${ADM_INPUT}">
+      <div style="font-size:12px;color:var(--text-mid);margin:8px 0 2px;">特定した日時（空欄なら保存した時刻が自動で入ります）</div>
+      <input id="adm-identified" type="datetime-local" value="${idt}" oninput="admOriginalPreview()" style="${ADM_INPUT}">
+      <div id="adm-original-preview" style="margin-top:8px;padding:6px 10px;border-radius:8px;background:#fff;color:#c2410c;font-size:12px;font-weight:700;line-height:1.5;">${on ? 'カードの表示：' + admOriginalNoteText(spot.identified_at, spot.source_published_at) : ''}</div>
+    </div>
+  </div>`;
+}
+function admOriginalNoteText(identifiedIso, sourceIso) {
+  let dTxt = '', gapTxt = '';
+  try {
+    if (identifiedIso) { const d = new Date(new Date(identifiedIso).toLocaleString('en-US', { timeZone: 'Asia/Tokyo' })); dTxt = '（' + d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0') + ' 特定）'; }
+    if (identifiedIso && sourceIso) {
+      const mins = Math.round((new Date(identifiedIso) - new Date(sourceIso)) / 60000);
+      if (mins > 0) {
+        if (mins < 60) gapTxt = mins + '分';
+        else if (mins < 48 * 60) gapTxt = Math.floor(mins / 60) + '時間' + (mins % 60 ? (mins % 60) + '分' : '');
+        else gapTxt = Math.floor(mins / 1440) + '日';
+        gapTxt = '元ネタの公開から' + gapTxt + 'で特定。';
+      }
+    }
+  } catch(e) {}
+  return '🔍 Traceが動画や写真から場所を割り出した、独自の聖地です。' + gapTxt + dTxt;
+}
+function admOriginalValues() {
+  const cb = document.getElementById('adm-original');
+  if (!cb) return null;
+  const on = cb.checked;
+  const sv = (document.getElementById('adm-src-pub') || {}).value || '';
+  const iv = (document.getElementById('adm-identified') || {}).value || '';
+  return {
+    on,
+    source: on && sv ? new Date(sv).toISOString() : null,
+    identified: on ? (iv ? new Date(iv).toISOString() : new Date().toISOString()) : null,
+  };
+}
+function admOriginalPreview() {
+  const cb = document.getElementById('adm-original'); if (!cb) return;
+  const box = document.getElementById('adm-original-box'); if (box) box.style.display = cb.checked ? 'block' : 'none';
+  const pv = document.getElementById('adm-original-preview'); if (!pv) return;
+  const v = admOriginalValues();
+  pv.textContent = 'カードの表示：' + admOriginalNoteText(v.identified, v.source);
+}
+async function saveAdminOriginal(spotId, v) {
+  const { data, error } = await getSupabaseClient().rpc('admin_set_spot_original', {
+    p_spot_id: spotId, p_is_original: v.on, p_identified_at: v.identified, p_source_published_at: v.source,
+  });
+  if (error) return error;
+  if (data !== 1) return { message: '対象のスポットが見つかりません' };
+  return null;
+}
+
 async function saveAdminSeries(spotId, series) {
   const { data, error } = await getSupabaseClient().rpc('admin_set_spot_series', { p_spot_id: spotId, p_series: series });
   if (error) return error;
@@ -5905,6 +5972,12 @@ async function saveAdminSpotEdit() {
   if (series !== (spot.series || null)) {
     const seriesErr = await saveAdminSeries(spot.db_id, series);
     if (seriesErr) { btn.disabled = false; msg.textContent = 'シリーズ名を保存できませんでした：' + seriesErr.message; return; }
+  }
+  const origV = admOriginalValues();
+  if (origV && (origV.on || spot.is_trace_original)) {
+    const origErr = await saveAdminOriginal(spot.db_id, origV);
+    if (origErr) { btn.disabled = false; msg.textContent = '独自特定を保存できませんでした：' + origErr.message; return; }
+    Object.assign(spot, { is_trace_original: origV.on, identified_at: origV.identified, source_published_at: origV.source });
   }
   const draftChanged = spot.is_draft !== draft;
   Object.assign(spot, { name, member, category, sub, source_url: source || null, address, end_date: endDate, is_closed: closed, is_draft: draft, series, badges: [category] });
@@ -6440,6 +6513,7 @@ function openAdminNewSpot() {
     ${admLabel('住所')}<div style="display:flex;gap:6px;"><input id="adm-address" type="text" style="${ADM_INPUT}flex:1;"><button type="button" onclick="adminNewFillAddress()" style="flex-shrink:0;border:1.5px solid var(--border);background:#fff;border-radius:10px;padding:0 10px;font-size:12px;cursor:pointer;">ピンから入力</button></div>
     ${admLabel('期間限定の終了日（任意）')}<input id="adm-end" type="date" style="${ADM_INPUT}">
     <label style="display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px;border-radius:10px;background:#fff7e6;font-size:13px;color:var(--text);"><input id="adm-draft" type="checkbox" checked style="width:20px;height:20px;"> 🚧 仮登録で保存（一般ユーザーには表示しない）</label>
+    ${admOriginalFields(null)}
     ${admLabel('📝 管理メモ（自分だけに見える。出典元・見つけた場所など）')}<textarea id="adm-memo" rows="2" style="${ADM_INPUT}resize:vertical;background:#fffbe6;"></textarea>${admProvBtnHtml('')}
     <div id="adm-msg" style="font-size:12px;color:#c0392b;margin-top:10px;min-height:16px;"></div>
     <div style="display:flex;gap:8px;margin-top:6px;">
@@ -6518,6 +6592,12 @@ async function saveAdminNewSpot() {
     image_url: null, image_url_2: null, image_url_3: null, image_url_4: null, source_url: source || null,
     end_date: endDate, is_closed: false, is_draft: draft, series: null,
   };
+  const newOrigV = admOriginalValues();
+  if (newOrigV && newOrigV.on) {
+    const origErr = await saveAdminOriginal(row.id, newOrigV);
+    if (origErr) alert('スポットは登録しましたが、独自特定を保存できませんでした：' + origErr.message);
+    else Object.assign(spot, { is_trace_original: true, identified_at: newOrigV.identified, source_published_at: newOrigV.source });
+  }
   const newSeries = admSeriesValue();
   if (newSeries) {
     const seriesErr = await saveAdminSeries(row.id, newSeries);
@@ -7816,23 +7896,9 @@ function openCard(spot) {
   }
   document.getElementById('card-sub').innerHTML = linkifyText(spot.sub);
   if (spot.is_trace_original) {
-    let dTxt = '';
-    try { if (spot.identified_at) { const d = new Date(new Date(spot.identified_at).toLocaleString('en-US', { timeZone: 'Asia/Tokyo' })); dTxt = '（' + d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0') + ' 特定）'; } } catch(e) {}
     const oNote = document.createElement('div');
     oNote.style.cssText = 'margin:0 0 6px;padding:6px 10px;border-radius:8px;background:#fff1ec;color:#c2410c;font-size:12px;font-weight:700;line-height:1.5;';
-    let gapTxt = '';
-    try {
-      if (spot.identified_at && spot.source_published_at) {
-        const mins = Math.round((new Date(spot.identified_at) - new Date(spot.source_published_at)) / 60000);
-        if (mins > 0) {
-          if (mins < 60) gapTxt = mins + '分';
-          else if (mins < 48 * 60) gapTxt = Math.floor(mins / 60) + '時間' + (mins % 60 ? (mins % 60) + '分' : '');
-          else gapTxt = Math.floor(mins / 1440) + '日';
-          gapTxt = '元ネタの公開から' + gapTxt + 'で特定。';
-        }
-      }
-    } catch(e) {}
-    oNote.textContent = '🔍 Traceが動画や写真から場所を割り出した、独自の聖地です。' + gapTxt + dTxt;
+    oNote.textContent = admOriginalNoteText(spot.identified_at, spot.source_published_at);
     const subEl = document.getElementById('card-sub');
     subEl.insertBefore(oNote, subEl.firstChild);
   }
