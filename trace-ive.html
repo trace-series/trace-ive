@@ -2398,6 +2398,16 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
     background:rgba(255,255,255,.92); color:var(--purple-deep); font-size:22px; font-weight:800; line-height:40px; padding:0;
     box-shadow:0 2px 8px rgba(20,49,74,.22); cursor:pointer; -webkit-tap-highlight-color:transparent; }
   #sb-arrows button:disabled { opacity:.3; }
+  .sb-share-row { text-align:center; margin:-2px 0 12px; }
+  .sb-share { border:none; border-radius:999px; padding:9px 18px; font-size:13px; font-weight:800; color:#fff; background:var(--sb-ink); box-shadow:0 2px 8px rgba(0,0,0,.15); cursor:pointer; }
+  #sb-share-sheet { position:fixed; inset:0; z-index:3000; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; padding:16px; }
+  #sb-share-sheet .box { background:#fff; border-radius:18px; padding:14px; width:100%; max-width:420px; max-height:92vh; overflow-y:auto; text-align:center; }
+  #sb-share-sheet img { width:100%; border-radius:10px; display:block; box-shadow:0 2px 10px rgba(0,0,0,.12); }
+  #sb-share-sheet .acts { display:flex; gap:8px; margin-top:12px; }
+  #sb-share-sheet .acts button, #sb-share-sheet .acts a { flex:1; border:none; border-radius:12px; padding:12px 8px; font-size:14px; font-weight:800; text-decoration:none; cursor:pointer; }
+  #sb-share-sheet .go { background:var(--purple-deep); color:#fff; }
+  #sb-share-sheet .sub { background:var(--purple-pale); color:var(--purple-deep); }
+  #sb-share-sheet .note { font-size:11px; color:var(--text-light); margin-top:8px; line-height:1.6; }
   /* 旅（シリーズ）の制覇：先端にモチーフが付いたバー（金色は使わない） */
   .tr-row { background:#fff; border:1px solid var(--border); border-radius:12px; padding:9px 12px 11px; margin-bottom:8px; cursor:default; }
   .tr-row.done { border:2px solid var(--sb-ink); }
@@ -13409,7 +13419,7 @@ function stampMotif(kind, c) {
   const heart = 'M0 0 C-4 -4 -12 -9 -12 -15 C-12 -20 -7 -23 -3.5 -21 C-1.8 -20 -.6 -18.8 0 -17.5 C.6 -18.8 1.8 -20 3.5 -21 C7 -23 12 -20 12 -15 C12 -9 4 -4 0 0Z';
   if (kind === 'star-heart') {
     return `<path d="M44 22 L49.5 34 L62 35.5 L52.5 44 L55.5 57 L44 50 L32.5 57 L35.5 44 L26 35.5 L38.5 34Z" fill="none" stroke="${c}" stroke-width="3" stroke-linejoin="round"/>
-      <g transform="translate(60 60) scale(.55) rotate(180)"><path d="${heart}" fill="none" stroke="${c}" stroke-width="5"/></g>`;
+      <g transform="translate(66 37) scale(.5)"><path d="${heart}" fill="${c}"/></g>`;
   }
   if (kind === 'heart') {
     // 大きなハートひとつ（ILLIT・2026-11-17）
@@ -13525,6 +13535,120 @@ function stampPlaceArrows() {
   const nav2 = document.getElementById('sb-nav');
   if (nav2) nav2.textContent = (i + 1) + ' ／ ' + book.children.length + ' ページ';
 }
+// ── エリア制覇の共有画像（スタンプ帳 Phase 2・2026-11-17）──
+//   原則A：金色を使うのはこの画像だけ。メンバー名は入れない。印はアプリごとの GROUP_CONFIG.stamp
+// 確認用：URLの最後に ?stamp_preview=1 を付けると、まだ制覇していないエリアでも画像を試せる（データは何も変わらない）
+function stampPreviewMode() {
+  try { return new URLSearchParams(location.search).has('stamp_preview'); } catch (e) { return false; }
+}
+function stampSealStandalone(label, size) {
+  // 画像に描くための、フィルター込みで単体で使える印のSVG
+  const c = STAMP_STYLE.ink, gold = '#c9a227';
+  const short = String(label || '').length > 11 ? String(label).slice(0, 10) + '…' : String(label || '');
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="-8 -8 116 116">
+    <defs><filter id="ink" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="1" seed="7" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -4 3.1" result="m"/>
+      <feComposite in="SourceGraphic" in2="m" operator="in" result="s"/>
+      <feDisplacementMap in="s" in2="n" scale="1" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+    <circle cx="50" cy="50" r="53" fill="none" stroke="${gold}" stroke-width="3"/>
+    <circle cx="50" cy="50" r="49.5" fill="none" stroke="${gold}" stroke-width="1" stroke-dasharray="1.5 2.2"/>
+    <g transform="rotate(-6 50 50)" filter="url(#ink)">
+      <circle cx="50" cy="50" r="45" fill="#fff" stroke="${c}" stroke-width="3.2"/>
+      <circle cx="50" cy="50" r="39.5" fill="none" stroke="${c}" stroke-width="1.2"/>
+      ${stampMotif(STAMP_STYLE.motif, c)}
+      <path id="arc" d="M17 58 A34 34 0 0 0 83 58" fill="none"/>
+      <text font-size="10" font-weight="700" fill="${c}" letter-spacing=".5" font-family="'Noto Sans JP','Hiragino Sans',sans-serif"><textPath href="#arc" startOffset="50%" text-anchor="middle">${escHtml(short)}</textPath></text>
+    </g></svg>`;
+}
+function stampLoadSvg(svg) {
+  return new Promise(resolve => {
+    const im = new Image();
+    im.onload = () => resolve(im); im.onerror = () => resolve(null);
+    im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  });
+}
+async function stampShareArea(label, total) {
+  try { uxLog('area_share_image', label); } catch (e) {}
+  try { if (typeof gtag === 'function') gtag('event', 'area_share_image', { app_name: GROUP_CONFIG.slug, area: label }); } catch (e) {}
+  const rec = (compMine || []).find(c => c.kind === 'area' && c.key === label);
+  const dt = stampFmtDate(rec && rec.completed_at ? rec.completed_at : new Date().toISOString());
+  const W = 1080, H = 1350;
+  const cs = getComputedStyle(document.documentElement);
+  const v = n => (cs.getPropertyValue(n) || '').trim();
+  const ink = STAMP_STYLE.ink, gold = '#c9a227', text = v('--text') || '#222', mid = v('--text-mid') || '#555', pale = v('--purple-pale') || '#f3f3f3', cream = v('--cream') || '#fafafa';
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  try { await document.fonts.ready; } catch (e) {}
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, cream); g.addColorStop(1, '#ffffff');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // 帳面の罫線
+  ctx.strokeStyle = 'rgba(0,0,0,.04)'; ctx.lineWidth = 2;
+  for (let y = 60; y < H; y += 56) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  // 金の細い枠
+  ctx.strokeStyle = gold; ctx.lineWidth = 6; ctx.strokeRect(36, 36, W - 72, H - 72);
+  ctx.lineWidth = 2; ctx.strokeRect(50, 50, W - 100, H - 100);
+  const font = (w, px) => `${w} ${px}px "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = mid; ctx.font = font(700, 34);
+  ctx.fillText('📖 ' + GROUP_CONFIG.appName + ' ・ 巡礼スタンプ帳', W / 2, 140);
+  // 印
+  const seal = await stampLoadSvg(stampSealStandalone(label + ' 制覇', 640));
+  if (seal) ctx.drawImage(seal, (W - 640) / 2, 190, 640, 640);
+  // 金の帯「COMPLETE」
+  ctx.save(); ctx.translate(W / 2, 860);
+  ctx.fillStyle = gold; const bw = 420, bh = 64;
+  ctx.beginPath(); ctx.moveTo(-bw / 2 - 26, -bh / 2); ctx.lineTo(bw / 2 + 26, -bh / 2); ctx.lineTo(bw / 2 + 6, 0); ctx.lineTo(bw / 2 + 26, bh / 2); ctx.lineTo(-bw / 2 - 26, bh / 2); ctx.lineTo(-bw / 2 - 6, 0); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = font(900, 36); ctx.textBaseline = 'middle'; ctx.fillText('✦ COMPLETE ✦', 0, 2);
+  ctx.restore();
+  // エリア名と日付
+  ctx.textBaseline = 'alphabetic';
+  let size = 84; ctx.font = font(900, size);
+  const title = label + ' 制覇！';
+  while (ctx.measureText(title).width > W - 180 && size > 44) { size -= 4; ctx.font = font(900, size); }
+  ctx.fillStyle = text; ctx.fillText(title, W / 2, 1010);
+  ctx.fillStyle = ink; ctx.font = font(800, 40);
+  ctx.fillText(total + 'か所 すべて巡礼', W / 2, 1080);
+  ctx.fillStyle = mid; ctx.font = font(700, 32);
+  ctx.fillText(dt + ' 制覇', W / 2, 1132);
+  // フッター
+  ctx.fillStyle = pale; ctx.fillRect(56, H - 172, W - 112, 116);
+  ctx.fillStyle = ink; ctx.font = font(800, 34);
+  ctx.fillText(GROUP_CONFIG.appName, W / 2, H - 112);
+  ctx.fillStyle = mid; ctx.font = font(700, 26);
+  ctx.fillText((GROUP_CONFIG.pilgrimHashtag || '') + '  ・  推しが立った場所が、地図になる。', W / 2, H - 72);
+  const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+  if (!blob) { alert('画像を作れませんでした。時間をおいてもう一度お試しください'); return; }
+  const fname = 'trace-' + GROUP_CONFIG.slug + '-complete-' + dt.replace(/\./g, '') + '.png';
+  const file = new File([blob], fname, { type: 'image/png' });
+  const url = URL.createObjectURL(blob);
+  let canShare = false;
+  try { canShare = !!(navigator.canShare && navigator.canShare({ files: [file] })); } catch (e) {}
+  const old = document.getElementById('sb-share-sheet'); if (old) old.remove();
+  const sh = document.createElement('div');
+  sh.id = 'sb-share-sheet';
+  sh.innerHTML = `<div class="box"><img src="${url}" alt="${escHtml(label)} 制覇の画像">
+    <div class="acts">${canShare ? '<button type="button" class="go" id="sb-share-go">📤 共有する</button>' : ''}<a class="${canShare ? 'sub' : 'go'}" href="${url}" download="${fname}">💾 保存する</a><button type="button" class="sub" id="sb-share-close">閉じる</button></div>
+    <div class="note">共有するときは ${escHtml(tpShareTags())} を付けると、ほかのファンに見つけてもらいやすくなります。<br>保存がうまくいかないときは、画像を長押しして保存してください。</div></div>`;
+  document.body.appendChild(sh);
+  const close = () => { sh.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000); };
+  sh.addEventListener('click', e => { if (e.target === sh) close(); });
+  document.getElementById('sb-share-close').addEventListener('click', close);
+  const go = document.getElementById('sb-share-go');
+  if (go) go.addEventListener('click', async () => {
+    try { await navigator.share({ files: [file], text: label + ' 制覇！｜' + GROUP_CONFIG.appName + '\n' + tpShareTags() + '\n' + APP_URL }); try { uxLog('area_share_sent', label); } catch (e) {} } catch (e) {}
+  });
+}
+// Safariの上下の帯の色を、アプリの色（:root の --cream）に合わせる（2026-11-17）
+(function () {
+  try {
+    const col = (getComputedStyle(document.documentElement).getPropertyValue('--cream') || '').trim();
+    if (!col) return;
+    let m = document.querySelector('meta[name="theme-color"]');
+    if (!m) { m = document.createElement('meta'); m.name = 'theme-color'; document.head.appendChild(m); }
+    m.content = col;
+  } catch (e) {}
+})();
 function compRenderMyPage() {
   // 段階バッジ
   const n = compMine.length;
@@ -13579,7 +13703,7 @@ function compRenderMyPage() {
       ${p.complete ? '<div class="sb-band">制覇</div>' : ''}
       <div class="sb-head"><span class="sb-area">${escHtml(p.a.label)}</span><span class="sb-prog"><b>${p.done}</b> ／ ${p.total} か所${p.complete ? '' : '・あと' + left + 'か所'}</span></div>
       ${leftMsg}
-      ${p.complete ? `<div class="sb-seal">${stampSvg({ id: 'area-' + p.a.label, on: true, label: p.a.label + ' 制覇', big: true })}</div>` : ''}
+      ${p.complete ? `<div class="sb-seal">${stampSvg({ id: 'area-' + p.a.label, on: true, label: p.a.label + ' 制覇', big: true })}</div><div class="sb-share-row"><button type="button" class="sb-share" data-area="${escHtml(p.a.label)}" data-total="${p.total}" onclick="stampShareArea(this.dataset.area, Number(this.dataset.total))">🖼️ 制覇の画像を作る</button></div>` : (stampPreviewMode() ? `<div class="sb-share-row"><button type="button" class="sb-share" style="opacity:.75" data-area="${escHtml(p.a.label)}" data-total="${p.total}" onclick="stampShareArea(this.dataset.area, Number(this.dataset.total))">🧪 制覇の画像を試す（確認用）</button></div>` : '')}
       <div class="sb-grid">${cells}</div>
     </div>`;
   }).join('') + `</div>`;
