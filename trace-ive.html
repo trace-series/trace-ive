@@ -2826,7 +2826,7 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
     <!-- メンバー別空表示 -->
     <div id="ranking-empty" style="display:none;text-align:center;padding:40px 20px;color:var(--text-light);">
       <div style="font-size:32px;margin-bottom:8px;">🔍</div>
-      <div style="font-size:14px;">このメンバーのスポットはまだありません</div>
+      <div style="font-size:14px;line-height:1.7;">このメンバーのスポットはまだありません。<br>知っている場所があれば「＋投稿する」から教えてください</div>
     </div>
 
     <!-- 推しメン熱量ランキング -->
@@ -3070,7 +3070,7 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
 
     <div class="profile-section-title">📍 投稿したスポット</div>
     <div class="my-spots-list" id="my-spots-list">
-      <div style="text-align:center;padding:20px;color:var(--text-light);font-size:12px;">投稿したスポットはまだありません</div>
+      <div style="text-align:center;padding:20px;color:var(--text-light);font-size:12px;line-height:1.7;">まだ投稿したスポットはありません。<br>見つけた聖地を「＋投稿する」から送ると、あなたの名前が発見者として残ります</div>
     </div>
 
     <div class="x-connect-card" onclick="startWithX()">
@@ -3114,7 +3114,7 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
       </div>
       <div class="settings-item" onclick="showView('route')">
         <div class="settings-item-icon">🗺️</div>
-        <div class="settings-item-text">巡礼プランナー（ルート作成・保存）</div>
+        <div class="settings-item-text">巡礼プランナー（コース作り・巡礼のしおり）</div>
         <div class="settings-item-arrow">›</div>
       </div>
       <div class="settings-item" onclick="showView('pointrules')">
@@ -3855,7 +3855,7 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
       <div class="tp-rank-row">
         <div><span class="flabel">現在のランク</span><b id="route-rank-name">🥉 ブロンズ</b></div>
         <div><span class="flabel">最適化 残り</span><b id="route-opt-remaining">0 / 0回</b><span class="tp-small" id="tp-opt-reset">毎月1日にリセット</span></div>
-        <div><span class="flabel">保存できるルート</span><b id="route-save-limit">読み込み中</b></div>
+        <div><span class="flabel">保存できるしおり</span><b id="route-save-limit">読み込み中</b></div>
       </div>
       <button type="button" class="tp-link" onclick="tpGoRankTable()">ランクと特典を見る →</button>
     </section>
@@ -3938,20 +3938,20 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
         <input type="text" id="route-name-input" placeholder="ルート名（例：東京IVE遠征）">
         <textarea id="route-memo-input" placeholder="メモ（持ち物・注意点など）"></textarea>
         <div class="actions" style="margin-top:4px">
-          <button type="button" class="primary" onclick="tpSave()">💾 ルートを保存</button>
+          <button type="button" class="primary" onclick="tpSave()">📒 しおりに保存</button>
           <button type="button" onclick="tpPrint()">🖨️ 印刷</button>
         </div>
       </div>
     </section>
 
     <section class="panel" aria-labelledby="tp-h-saved">
-      <h2 id="tp-h-saved">📂 保存済みルート</h2>
+      <h2 id="tp-h-saved">📒 わたしの巡礼のしおり</h2>
       <div id="saved-routes-list">
-        <div id="saved-routes-empty" style="font-size:12px;color:var(--muted);padding:14px 4px;">まだ保存したルートはありません</div>
+        <div id="saved-routes-empty" style="font-size:12px;color:var(--muted);padding:14px 4px;">まだ巡礼のしおりはありません。上でコースを作って「📒 しおりに保存」すると、ここに並びます</div>
       </div>
       <div class="tp-premium-tease" id="tp-premium-tease" role="button" tabindex="0" onclick="tpTeaser('saved_routes')">
         <b>🌟 プレミアム（準備中）</b>
-        <span>ルートの保存も最適化も無制限。時間割を最後まで表示できます</span>
+        <span>しおりの保存も最適化も無制限。時間割を最後まで表示できます</span>
       </div>
       <div class="rankup-banner" id="rankup-banner" style="display:none;">
         <div class="rankup-title">🔒 最適化回数を増やすには</div>
@@ -4113,7 +4113,7 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
             <button type="button" data-kind="こんな機能がほしい" aria-pressed="false" onclick="faqPickKind(this)">💡 こんな機能がほしい</button>
             <button type="button" data-kind="その他" aria-pressed="false" onclick="faqPickKind(this)">💬 その他</button>
           </div>
-          <textarea id="fb-text" maxlength="1000" placeholder="（任意）例：ルートの保存ボタンが見つからなかった"></textarea>
+          <textarea id="fb-text" maxlength="1000" placeholder="（任意）例：しおりの保存ボタンが見つからなかった"></textarea>
           <button type="button" id="fb-send" class="fb-send" onclick="sendFeedback()">送信する</button>
           <div class="fb-note">お返事が必要なご相談は、下の「お問い合わせ窓口（X）」へどうぞ。</div>
         </div>
@@ -4131,7 +4131,7 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
       <div id="faq-main">
         <section class="faq-cat" id="faq-cat-planner">
           <div class="faq-cat-title">巡礼プランナー・行きたい・コンプリート</div>
-          <details><summary>巡礼プランナーはどう使うの？</summary><div>My Page の「🗺️ 巡礼プランナー（ルート作成・保存）」か、スポットカードの旅の「📍 ルートを作る」から開きます。①日付や移動手段を決める → ②エリアと行きたいスポットを選ぶ → ③「コースを作る」を押すと、まわる順番と時刻つきのモデルコースができます。各区間の「Googleマップで確認」で、そのまま道案内できます。</div></details>
+          <details><summary>巡礼プランナーはどう使うの？</summary><div>My Page の「🗺️ 巡礼プランナー（コース作り・巡礼のしおり）」か、スポットカードの旅の「📍 ルートを作る」から開きます。①日付や移動手段を決める → ②エリアと行きたいスポットを選ぶ → ③「コースを作る」を押すと、まわる順番と時刻つきのモデルコースができます。各区間の「Googleマップで確認」で、そのまま道案内できます。</div></details>
           <details><summary>「最適な順番」と「選んだ順」の違いは？</summary><div>「最適な順番」は移動が短くなるように自動で並べ替えます（ゴールドランク以上で、月の回数に制限があります）。「選んだ順」は並べ替えずに、選んだ順のままコースを作ります（誰でも使えます）。同じスポットの組み合わせなら、作り直しても回数は減りません。</div></details>
           <details><summary>移動時間は正確ですか？</summary><div>スポット間の直線距離から計算した目安です。電車の時間や運賃は、各区間の「Googleマップで確認」から正確なものを見てください。</div></details>
           <details><summary>「☆ 行きたい」とは？</summary><div>スポットカード・タイムライン・ギャラリーで「☆ 行きたい」を押すと、行きたい場所として保存されます。巡礼プランナーでエリアを開くと、行きたいスポットが最初から選ばれた状態になります。ログイン中はアカウントに保存されるので、機種変更しても残ります。</div></details>
@@ -9478,10 +9478,27 @@ async function submitNewSpot() {
   }
   const ANON_FIRST_KEY = 'traceive_anon_first_v1';
 
+  // 「出典つき ○○スポット収録中」（2026-11-17 優先6：今あるデータから数える）
+  function sourcedSpotCount() {
+    try { return SPOTS.filter(s => !s.is_draft && s.source_url && String(s.source_url).trim()).length; } catch (e) { return 0; }
+  }
+  function obLeadFill(tries) {
+    tries = tries || 0;
+    try {
+      const ms = (GROUP_CONFIG.members || []).map(m => m.name).filter(Boolean);
+      const el = document.getElementById('ob-lead-member');
+      if (el && ms.length && el.textContent === '推し') el.textContent = ms[Math.floor(Math.random() * ms.length)] + 'ちゃん';
+      const n = sourcedSpotCount();
+      const c = document.getElementById('ob-lead-count');
+      if (c && n) { c.textContent = '📍 出典つき ' + n + 'スポット収録中'; c.style.display = 'inline-block'; return; }
+    } catch (e) {}
+    if (tries < 20) setTimeout(() => obLeadFill(tries + 1), 1000);
+  }
   function checkOnboarding() {
     if (getUrlParam('spot')) return; // スポットのリンクから来た人には、まずスポットを見せる
     const done = localStorage.getItem(OB_KEY);
     if (!done) {
+      try { obLeadFill(); } catch (e) {}
       document.getElementById('onboarding-modal').style.display = 'block';
       document.body.style.overflow = 'hidden';
     }
@@ -10483,7 +10500,7 @@ async function loadSavedRoutes() {
   if (!box) return;
   const st = window.routeStatus || await refreshRouteStatus();
   if (!st || !st.login) {
-    box.innerHTML = '<div style="font-size:12px;color:var(--text-light);padding:14px 4px;">ルートの保存は、X または Google でログインすると使えます。保存したルートはどの端末からでも見られます。</div>';
+    box.innerHTML = '<div style="font-size:12px;color:var(--text-light);padding:14px 4px;">巡礼のしおりは、X または Google でログインすると保存できます。保存したしおりはどの端末からでも見られます。</div>';
     return;
   }
   box.innerHTML = '<div style="font-size:12px;color:var(--text-light);padding:14px 4px;">読み込み中...</div>';
@@ -10492,7 +10509,7 @@ async function loadSavedRoutes() {
   if (error) { box.innerHTML = '<div style="font-size:12px;color:#c0392b;padding:14px 4px;">読み込めませんでした</div>'; return; }
   window.savedRoutesCache = data || [];
   if (!window.savedRoutesCache.length) {
-    box.innerHTML = '<div id="saved-routes-empty" style="font-size:12px;color:var(--text-light);padding:14px 4px;">まだ保存したルートはありません</div>';
+    box.innerHTML = '<div id="saved-routes-empty" style="font-size:12px;color:var(--text-light);padding:14px 4px;">まだ巡礼のしおりはありません。上でコースを作って「📒 しおりに保存」すると、ここに並びます</div>';
     return;
   }
   box.innerHTML = window.savedRoutesCache.map(r => {
@@ -10573,7 +10590,7 @@ async function deleteSavedRoute(id) {
   await loadSavedRoutes();
 }
 async function saveRoute() {
-  if (!(await ensureRouteLogin('ルートの保存'))) return;
+  if (!(await ensureRouteLogin('しおりの保存'))) return;
   const name = document.getElementById('route-name-input').value.trim() || '名称未設定ルート';
   const memo = document.getElementById('route-memo-input').value.trim();
   const selected = [...document.querySelectorAll('.route-spot-check.selected')];
@@ -10593,7 +10610,7 @@ async function saveRoute() {
   if (error) {
     if (String(error.message).includes('save_limit')) {
       const st = window.routeStatus || {};
-      alert(`保存できるのは${st.save_max || ''}件までです。保存済みルートを削除するか、ランクを上げると保存できる件数が増えます。`);
+      alert(`保存できるのは${st.save_max || ''}件までです。保存したしおりを削除するか、ランクを上げると保存できる件数が増えます。`);
     } else alert('保存できませんでした：' + error.message);
     return;
   }
@@ -11958,7 +11975,7 @@ function renderOshiRankingList(member, period) {
   const list = document.getElementById('oshi-ranking-modal-list');
   if (!list) return;
   const medals = ['🥇','🥈','🥉'];
-  const emptyHtml = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);"><div style="font-size:32px;margin-bottom:8px;">🌸</div><div style="font-size:14px;">この期間の巡礼データはまだありません</div></div>';
+  const emptyHtml = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);"><div style="font-size:32px;margin-bottom:8px;">🌸</div><div style="font-size:14px;line-height:1.7;">この期間の巡礼データはまだありません。<br>一番乗りのチャンスです</div></div>';
   list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light);">読み込み中...</div>';
   const cutoff = getPeriodCutoffISO(period);
   const client = getSupabaseClient();
@@ -12065,7 +12082,7 @@ function renderSpotRanking(period) {
       .sort(function(a, b) { return b.count - a.count; })
       .slice(0, 20);
     if (!ranked.length) {
-      list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);"><div style="font-size:32px;margin-bottom:8px;">🗺️</div><div style="font-size:14px;">この期間の巡礼報告はまだありません</div></div>';
+      list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);"><div style="font-size:32px;margin-bottom:8px;">🗺️</div><div style="font-size:14px;line-height:1.7;">この期間の巡礼報告はまだありません。<br>一番乗りのチャンスです</div></div>';
       return;
     }
     var html = '';
@@ -12153,7 +12170,7 @@ function renderAchievementRanking() {
       .sort(function(a, b) { return b.rate - a.rate || b.count - a.count; })
       .slice(0, 20);
     if (!ranked.length) {
-      list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);"><div style="font-size:32px;margin-bottom:8px;">🏆</div><div style="font-size:14px;">まだ巡礼報告データがありません</div></div>';
+      list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-light);"><div style="font-size:32px;margin-bottom:8px;">🏆</div><div style="font-size:14px;line-height:1.7;">まだ巡礼報告がありません。<br>現地で「📸 巡礼した！」を押すと、ここに載ります</div></div>';
       return;
     }
     var html = '';
@@ -13086,7 +13103,7 @@ function updateOptimizeBtn() {
 // ── 保存・印刷・保存済みを開く ──
 async function tpSave() {
   if (!TP.last) { alert('先にコースを作ってください。'); return; }
-  if (!(await ensureRouteLogin('ルートの保存'))) return;
+  if (!(await ensureRouteLogin('しおりの保存'))) return;
   const name = tp$('route-name-input').value.trim() || ((TP.area || '') + ' 巡礼ルート');
   const memo = tp$('route-memo-input').value.trim();
   const ids = TP.last.ordered.map(s => String(s.db_id));
@@ -13096,7 +13113,7 @@ async function tpSave() {
   if (error) {
     if (String(error.message).includes('save_limit')) {
       const st = window.routeStatus || {};
-      alert(`保存できるのは${st.save_max || ''}件までです。保存済みルートを削除するか、ランクを上げると保存できる件数が増えます。\n🌟 プレミアム（準備中）なら無制限で保存できます。`);
+      alert(`保存できるのは${st.save_max || ''}件までです。保存したしおりを削除するか、ランクを上げると保存できる件数が増えます。\n🌟 プレミアム（準備中）なら無制限で保存できます。`);
     } else alert('保存できませんでした：' + error.message);
     return;
   }
@@ -13330,6 +13347,31 @@ function compSchedule() {
   }, 800);
 }
 
+
+// 地図を開いたとき、出典つきのスポット数を少しだけ出す（1回の訪問につき1回・2026-11-17 優先6）
+(function () {
+  function show(tries) {
+    tries = tries || 0;
+    let n = 0;
+    try { n = SPOTS.filter(s => !s.is_draft && s.source_url && String(s.source_url).trim()).length; } catch (e) {}
+    if (!n) { if (tries < 25) setTimeout(() => show(tries + 1), 800); return; }
+    try { if (typeof uxCurView !== 'undefined' && uxCurView !== 'map') { if (tries < 60) setTimeout(() => show(tries + 1), 1500); return; } } catch (e) {}
+    try { if (sessionStorage.getItem('trace_count_pill_shown')) return; sessionStorage.setItem('trace_count_pill_shown', '1'); } catch (e) {}
+    const ob = document.getElementById('onboarding-modal');
+    if (ob && ob.style.display !== 'none' && getComputedStyle(ob).display !== 'none') { try { sessionStorage.removeItem('trace_count_pill_shown'); } catch (e) {} setTimeout(() => show(tries), 1500); return; }
+    const el = document.createElement('div');
+    el.id = 'count-pill';
+    el.textContent = '📍 出典つき ' + n + 'スポット収録中';
+    el.style.cssText = 'position:fixed;left:50%;top:calc(var(--content-top, 120px) + 104px);transform:translateX(-50%);z-index:120;background:rgba(255,255,255,.95);color:var(--purple-deep);font-size:12px;font-weight:800;padding:7px 14px;border-radius:999px;box-shadow:0 2px 10px rgba(0,0,0,.15);pointer-events:none;transition:opacity .6s ease;white-space:nowrap;';
+    document.body.appendChild(el);
+    const watch = setInterval(() => { try { if (typeof uxCurView !== 'undefined' && uxCurView !== 'map') el.style.opacity = '0'; } catch (e) {} }, 300);
+    setTimeout(() => { el.style.opacity = '0'; }, 3800);
+    setTimeout(() => clearInterval(watch), 4700);
+    setTimeout(() => { el.remove(); }, 4600);
+  }
+  window.addEventListener('load', () => setTimeout(show, 1200));
+})();
+
 // ── My Page：制覇状況とバッジ ──
 // 2026-11-17 巡礼スタンプ帳 Phase 1（Museの魅せ方提案 v4・本人承認）
 //  ・判定は今までどおり：巡礼済み＝profiles.visited_spots（GPS 300m以内のときだけ記録）、制覇＝completions（visited_spots から計算）
@@ -13368,6 +13410,10 @@ function stampMotif(kind, c) {
   if (kind === 'star-heart') {
     return `<path d="M44 22 L49.5 34 L62 35.5 L52.5 44 L55.5 57 L44 50 L32.5 57 L35.5 44 L26 35.5 L38.5 34Z" fill="none" stroke="${c}" stroke-width="3" stroke-linejoin="round"/>
       <g transform="translate(60 60) scale(.55) rotate(180)"><path d="${heart}" fill="none" stroke="${c}" stroke-width="5"/></g>`;
+  }
+  if (kind === 'heart') {
+    // 大きなハートひとつ（ILLIT・2026-11-17）
+    return `<g transform="translate(50 59) scale(1.5)"><path d="${heart}" fill="${c}"/></g>`;
   }
   if (kind === 'magnet-heart') {
     return `<path d="M33 24 V44 A17 17 0 0 0 67 44 V24" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="butt"/>
@@ -14012,7 +14058,7 @@ function tpRestoreFromURL() {
     if (p.o) TP.optCache = { key: list.map(s => String(s.db_id)).sort().join(','), order: list };
     tpShow(list, !!p.o);
     const body = tp$('tp-result-body');
-    if (body) body.insertAdjacentHTML('afterbegin', '<div class="tp-restored">🔗 共有されたコースです。「このコースを保存する」から、自分のルートとして保存できます。</div>');
+    if (body) body.insertAdjacentHTML('afterbegin', '<div class="tp-restored">🔗 共有されたコースです。下の「📒 しおりに保存」で、自分の巡礼のしおりにできます。</div>');
     try { if (typeof gtag === 'function') gtag('event', 'route_share_open', { app_name: GROUP_CONFIG.slug, spots: list.length }); } catch (e) {}
     try { uxLog('route_share_open', list.length + 'か所'); } catch (e) {}
   })();
@@ -14501,11 +14547,11 @@ function tpRefreshResult() {
         <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-top:6px;letter-spacing:1px;">K-POP 聖地巡礼MAP</div>
       </div>
 
-      <div style="background:rgba(255,255,255,0.08);border-radius:16px;padding:20px;margin-bottom:24px;">
-        <div style="font-size:14px;color:rgba(255,255,255,0.9);line-height:1.8;">
-          IVEの軌跡を、地図に刻もう。
-          コミュニティで聖地を育て、ポイントを貯めてランクアップしよう。
-        </div>
+      <!-- 最初の3秒の一文（2026-11-17 Museの魅せ方提案 優先5・本人決定：候補1を軸に候補2の温度感） -->
+      <div class="ob-lead" style="background:rgba(255,255,255,0.10);border-radius:16px;padding:20px 18px;margin-bottom:24px;text-align:center;">
+        <div style="font-size:21px;font-weight:800;color:#fff;line-height:1.5;letter-spacing:.02em;">推しが立った場所が、<br>地図になる。</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.85);line-height:1.8;margin-top:10px;">「ここ、<span id="ob-lead-member">推し</span>が行ったとこ！」を、<br>出典つきで集めにいこう。</div>
+        <div id="ob-lead-count" style="display:none;margin-top:12px;font-size:12px;font-weight:700;color:#fff;background:rgba(255,255,255,0.16);border-radius:999px;padding:5px 12px;"></div>
       </div>
 
       <div style="display:flex;flex-direction:column;gap:12px;">
