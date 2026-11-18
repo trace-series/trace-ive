@@ -13,6 +13,16 @@
   gtag('config', 'G-JPPW9G8WCV');
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- ホーム画面アイコン（Museが作った画像 icon-d-*.png をHTMLと同じ場所に置く）2026-11-19 -->
+<link rel="apple-touch-icon" href="icon-d-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-d-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="Trace IVE">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="application-name" content="Trace IVE">
+<meta name="theme-color" content="#3d1a5e">
 <title>Trace IVE — 聖地巡礼MAP</title>
 <meta name="description" content="IVEメンバーゆかりの聖地を地図で探そう。巡礼報告・評価・ポイントが貯まるK-POP聖地巡礼アプリ。">
 
@@ -2488,6 +2498,22 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
   .pv-row span { font-size: 12px; color: var(--text-mid); line-height: 1.6; }
   .pv-row input { width: 24px; height: 24px; accent-color: var(--purple-mid); flex-shrink: 0; }
   .pv-note { font-size: 12px; color: var(--text-light); line-height: 1.6; margin: 4px 2px 10px; }
+  #a2hs-sheet { position: fixed; inset: 0; z-index: 3050; background: rgba(0,0,0,.45); align-items: flex-end; justify-content: center; }
+  .a2hs-box { background: #fff; width: 100%; max-width: 640px; border-radius: 20px 20px 0 0; padding: 18px 18px calc(22px + env(safe-area-inset-bottom)); max-height: 88vh; overflow-y: auto; }
+  .a2hs-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .a2hs-head img { width: 56px; height: 56px; border-radius: 13px; box-shadow: 0 2px 8px rgba(0,0,0,.15); background: var(--purple-pale); }
+  .a2hs-title { font-size: 16px; font-weight: 800; color: var(--purple-deep); }
+  .a2hs-sub { font-size: 12px; color: var(--text-mid); margin-top: 2px; }
+  .a2hs-steps { background: var(--purple-pale); border-radius: 14px; padding: 12px 14px; font-size: 13px; color: var(--text-mid); line-height: 1.9; margin-top: 10px; }
+  .a2hs-steps b { color: var(--purple-deep); }
+  .a2hs-note { font-size: 11px; color: var(--text-light); line-height: 1.6; margin-top: 10px; }
+  .a2hs-btn { display: block; width: 100%; margin-top: 14px; border: none; border-radius: 14px; padding: 13px; font-size: 14px; font-weight: 800; cursor: pointer; background: var(--purple-deep); color: #fff; }
+  #a2hs-banner { position: fixed; left: 10px; right: 10px; top: calc(var(--content-top, 120px) + 8px); z-index: 900; display: none; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; box-shadow: 0 6px 20px rgba(0,0,0,.15); max-width: 620px; margin: 0 auto; }
+  #a2hs-banner img { width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0; background: var(--purple-pale); }
+  #a2hs-banner .t { flex: 1; font-size: 12px; color: var(--text-mid); line-height: 1.5; }
+  #a2hs-banner .t b { color: var(--purple-deep); }
+  #a2hs-banner .go { border: none; background: var(--purple-deep); color: #fff; border-radius: 10px; padding: 8px 10px; font-size: 12px; font-weight: 800; cursor: pointer; flex-shrink: 0; }
+  #a2hs-banner .x { border: none; background: none; color: var(--text-light); font-size: 16px; cursor: pointer; padding: 4px; flex-shrink: 0; }
   #pv-prompt { position: fixed; inset: 0; z-index: 3100; background: rgba(0,0,0,.5); align-items: flex-end; justify-content: center; }
   .pvp-box { background: #fff; width: 100%; max-width: 640px; border-radius: 20px 20px 0 0; padding: 20px 18px calc(22px + env(safe-area-inset-bottom)); max-height: 90vh; overflow-y: auto; }
   .pvp-title { font-size: 17px; font-weight: 800; color: var(--purple-deep); margin-bottom: 10px; }
@@ -3120,6 +3146,11 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
       </div>
     <div class="profile-section-title">⚙️ 設定</div>
     <div class="settings-list">
+      <div class="settings-item" onclick="openA2hs()">
+        <div class="settings-item-icon">📲</div>
+        <div class="settings-item-text">アイコンからアプリとして使う（ホーム画面に追加）</div>
+        <div class="settings-item-arrow">›</div>
+      </div>
       <div class="settings-item" onclick="showView('terms')">
         <div class="settings-item-icon">📄</div>
         <div class="settings-item-text">利用規約</div>
@@ -4206,6 +4237,7 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
 
         <section class="faq-cat" id="faq-cat-usage">
           <div class="faq-cat-title">使い方</div>
+          <details class="faq-a2hs"><summary>アプリのようにアイコンから開けますか？</summary><div>はい。ストアからのダウンロードは不要で、ホーム画面にアイコンを置けます。<br><b>iPhone（Safari）</b>：画面下の共有ボタン（□に↑）→「ホーム画面に追加」→「追加」<br><b>Android（Chrome）</b>：右上の︙→「ホーム画面に追加」→「追加」<br>XやInstagramのアプリの中で開いている場合は、先に「ブラウザで開く」を選んでください。アイコンから開くと全画面で開きます。最初の1回だけ、XかGoogleでログインし直してください（ログインしていれば、ポイントや巡礼の記録はそのまま戻ります）。<br><button type="button" onclick="openA2hs()" style="margin-top:8px;border:none;background:var(--purple-deep);color:#fff;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;">📲 手順を見る</button></div></details>
           <details><summary>地図のピンの色や絵文字にはどんな意味がありますか？</summary><div>絵文字はメンバーを表しています。ピンの色はスポットの種類（カフェ・飲食店・撮影スポット・ライブ・イベント会場・観光・名所・ショップ）を示しています。</div></details>
           <details><summary>メンバータブはどう使いますか？</summary><div>見たいメンバーのアイコンをタップすると、そのメンバーに関連するスポットだけが地図に表示されます。「全員」タブですべてのスポットを表示できます。</div></details>
           <details><summary>巡礼報告（巡礼した！）ができません</summary><div>巡礼報告は現地でのみできます。位置情報の利用を許可し、スポットの近くで「📸 巡礼した！」を押してください。スポットから離れていると報告できません。</div></details>
@@ -4269,6 +4301,27 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
     </div>
     <div class="faq-scroll" id="fb-admin-body"></div>
   </div>
+</div>
+
+<!-- ホーム画面に追加の案内（2026-11-19） -->
+<div id="a2hs-sheet" style="display:none;" onclick="if(event.target===this)closeA2hs()">
+  <div class="a2hs-box" role="dialog" aria-modal="true">
+    <div class="a2hs-head">
+      <img src="icon-d-180.png" alt="" onerror="this.style.display='none'">
+      <div><div class="a2hs-title">📲 アイコンからアプリとして楽しもう</div><div class="a2hs-sub">ホーム画面に置くと、次から1タップで全画面で開けます。2〜3タップで終わります</div></div>
+    </div>
+    <div id="a2hs-inapp" class="a2hs-steps" style="display:none;background:#fff4f6;">今はXやInstagramなどのアプリの中で開いています。右上・右下のメニューから<b>「ブラウザで開く」</b>（iPhoneはSafari）を選んでから、下の手順で追加してください。</div>
+    <div id="a2hs-ios" class="a2hs-steps"><b>iPhone（Safari）</b><br>① 画面下の <b>共有ボタン <svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 11v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8"/></svg></b> をタップ（見えないときは、画面を少し下にスクロールするとボタンが出ます）<br>② メニューを下にスクロールして <b>「ホーム画面に追加」</b> をタップ<br>③ 右上の <b>「追加」</b> をタップ<br>④ ホーム画面の <b>Trace IVE</b> のアイコンから開きます</div>
+    <div id="a2hs-android" class="a2hs-steps"><b>Android（Chrome）</b><br>① 右上の <b>︙（メニュー）</b> をタップ<br>② <b>「ホーム画面に追加」</b> をタップ<br>③ <b>「追加」</b> をタップ</div>
+    <div class="a2hs-note">ホーム画面のアイコンから開くと、アプリのように全画面で開きます。<b>最初の1回だけ、XかGoogleでログインし直してください</b>（ログインしていれば、ポイントや巡礼の記録はそのまま戻ります）。</div>
+    <button type="button" class="a2hs-btn" onclick="closeA2hs()">閉じる</button>
+  </div>
+</div>
+<div id="a2hs-banner" role="note">
+  <img src="icon-d-180.png" alt="" onerror="this.style.display='none'">
+  <div class="t"><b>アイコンからアプリとして</b>使えます。共有ボタンから「ホーム画面に追加」</div>
+  <button type="button" class="go" onclick="a2hsBannerDone();openA2hs()">やり方</button>
+  <button type="button" class="x" aria-label="閉じる" onclick="a2hsBannerDone()">✕</button>
 </div>
 
 <!-- 名前の表示の確認（ログイン後に1回、必ずどちらかを選んでもらう）2026-11-19 メリットを先に見せる形に変更 -->
@@ -14160,6 +14213,60 @@ async function fbFillUnread() {
     document.querySelectorAll('.adm-fb-count').forEach(el => { el.textContent = count || ''; el.style.display = count ? 'inline-block' : 'none'; });
   } catch (e) {}
 }
+
+// ── ホーム画面に追加の案内（2026-11-19） ──
+//  ・マイページの「📲 ホーム画面に追加」からいつでも開ける
+//  ・小さな帯は、スマホで2日目以降に開いたときに1回だけ出す（✕か「やり方」を押したら二度と出さない）
+//  ・ホーム画面のアイコンから開いたとき（?utm_source=homescreen）は帯を出さない
+const A2HS_KEY = 'traceive_a2hs_v1';
+function a2hsState() { try { return JSON.parse(localStorage.getItem(A2HS_KEY) || '{}'); } catch (e) { return {}; } }
+function a2hsSave(st) { try { localStorage.setItem(A2HS_KEY, JSON.stringify(st)); } catch (e) {} }
+function a2hsIsInApp() { return /Instagram|FBAN|FBAV|Line\/|Twitter|TikTok|BytedanceWebview|musical_ly/i.test(navigator.userAgent || ''); }
+function a2hsIsIOS() { return /iPhone|iPad|iPod/i.test(navigator.userAgent || '') || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+function a2hsIsAndroid() { return /Android/i.test(navigator.userAgent || ''); }
+function openA2hs() {
+  const ios = a2hsIsIOS(), and = a2hsIsAndroid();
+  document.getElementById('a2hs-inapp').style.display = a2hsIsInApp() ? '' : 'none';
+  document.getElementById('a2hs-ios').style.display = (ios || !and) ? '' : 'none';
+  document.getElementById('a2hs-android').style.display = (and || !ios) ? '' : 'none';
+  document.getElementById('a2hs-sheet').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  try { uxLog('a2hs_open', null, true); } catch (e) {}
+}
+function closeA2hs() { document.getElementById('a2hs-sheet').style.display = 'none'; document.body.style.overflow = ''; }
+function a2hsBannerDone() { const st = a2hsState(); st.bannerDone = 1; a2hsSave(st); document.getElementById('a2hs-banner').style.display = 'none'; }
+function a2hsMaybeBanner() {
+  try {
+    const st = a2hsState();
+    const today = new Date().toISOString().slice(0, 10);
+    const standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+    if (standalone || /utm_source=homescreen/.test(location.search)) {
+      st.fromHome = 1; st.bannerDone = 1; a2hsSave(st);
+      try { uxLog('open_from_homescreen', null, true); } catch (e) {}
+      if (standalone && !st.loginTipDone) a2hsLoginTip();
+      return;
+    }
+    if (!st.firstDay) { st.firstDay = today; a2hsSave(st); return; }
+    if (st.bannerDone || st.firstDay === today) return;
+    if (!(a2hsIsIOS() || a2hsIsAndroid())) return;
+    // ほかの案内が開いている間は出さない
+    const busy = ['birthday-overlay', 'boost-overlay', 'event-overlay', 'tt-welcome'].some(id => document.getElementById(id));
+    const ob = document.getElementById('onboarding-modal'), pv = document.getElementById('pv-prompt');
+    if (busy || (ob && ob.style.display !== 'none') || (pv && pv.style.display === 'flex')) { setTimeout(a2hsMaybeBanner, 5000); return; }
+    document.getElementById('a2hs-banner').style.display = 'flex';
+  } catch (e) {}
+}
+// 全画面（ホーム画面のアプリ）で初めて開いたとき、ログインしていなければ一度だけ知らせる
+async function a2hsLoginTip() {
+  try {
+    const { data } = await getSupabaseClient().auth.getSession();
+    const ses = data && data.session;
+    const st = a2hsState(); st.loginTipDone = 1; a2hsSave(st);
+    if (ses && !(ses.user && ses.user.is_anonymous)) return;
+    showEvalToast('📲 ホーム画面版はSafariとは別に保存されます。My PageからXかGoogleでログインすると、ポイントや記録が戻ります');
+  } catch (e) {}
+}
+window.addEventListener('load', () => { setTimeout(a2hsMaybeBanner, 6000); });
 
 // ── 名前の表示の確認（2026-11-19） ──
 //  ・X/Googleでログインしている人に、1回だけ必ず「設定を開く」か「このままでOK」を選んでもらう
