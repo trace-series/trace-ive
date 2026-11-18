@@ -4170,10 +4170,11 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
       <div class="fb-box">
         <div id="fb-form">
           <div class="fb-h">📝 ひとこと送る</div>
-          <div class="fb-sub">分かりにくい所・困った所・ほしい機能を、気軽に教えてください。種類を押すだけでも送れます。<br><span class="fb-from-line">今見ていた画面：<b id="fb-from">マップ</b></span></div>
+          <div class="fb-sub">分かりにくい所・困った所・情報の間違い・ほしい機能を、気軽に教えてください。種類を押すだけでも送れます。<br><span class="fb-from-line">今見ていた画面：<b id="fb-from">マップ</b></span></div>
           <div class="fb-kinds" id="fb-kinds">
             <button type="button" data-kind="使い方がわからない" aria-pressed="false" onclick="faqPickKind(this)">😵 使い方がわからない</button>
             <button type="button" data-kind="うまく動かない" aria-pressed="false" onclick="faqPickKind(this)">🐛 うまく動かない</button>
+            <button type="button" data-kind="情報の間違い" aria-pressed="false" onclick="faqPickKind(this)">📍 情報の間違い</button>
             <button type="button" data-kind="こんな機能がほしい" aria-pressed="false" onclick="faqPickKind(this)">💡 こんな機能がほしい</button>
             <button type="button" data-kind="その他" aria-pressed="false" onclick="faqPickKind(this)">💬 その他</button>
           </div>
@@ -4216,14 +4217,14 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
 
         <section class="faq-cat" id="faq-cat-report">
           <div class="faq-cat-title">間違い・情報提供</div>
-          <details><summary>間違った情報を見つけたらどうすればいい？</summary><div>各スポットカード下部の報告ボタンから、その場で報告できます。「場所が違う」「正しい位置を報告（現在地をもとに位置を報告）」「誤情報を報告（詳細を入力）」「特定できない」「立入不可」「情報が古い」の中から、状況に近いものをタップしてください。うまく報告できない場合や、より詳しく伝えたい場合は、下部の問い合わせ窓口（X）もご利用いただけます。</div></details>
+          <details><summary>間違った情報を見つけたらどうすればいい？</summary><div>各スポットカード下部の報告ボタンから、その場で報告できます。「場所が違う」「正しい位置を報告（現在地をもとに位置を報告）」「誤情報を報告（詳細を入力）」「特定できない」「立入不可」「情報が古い」の中から、状況に近いものをタップしてください。このよくある質問のいちばん上にある<b>「📝 ひとこと送る」</b>で「📍 情報の間違い」を選んで送ることもできます（どのスポットの話か分かるよう、スポット名も書いてください）。返事が必要な場合や、より詳しく伝えたい場合は、下部の問い合わせ窓口（X）をご利用ください。</div></details>
           <details><summary>新しい聖地情報を教えたい場合は？</summary><div>画面上の「＋投稿する」から、スポット名・住所を入力して投稿できます。運営の承認後、地図に反映されます。X連携でご投稿いただくと、あなたのお名前が発見者としてスポットに記録され、運営Xでもご紹介することがあります。正確な位置がわからない場合（海外の場所や情報不足など）はチェックを入れておくと、運営側で確認のうえ承認します。</div></details>
           <details><summary>メンバーの紐付けが違う気がします</summary><div>根拠となる投稿や動画があれば、あわせて問い合わせ窓口までお知らせください。確認して修正いたします。</div></details>
         </section>
 
         <section class="faq-cat" id="faq-cat-accuracy">
           <div class="faq-cat-title">情報の正確性</div>
-          <details><summary>聖地情報はどうやって集めているの？</summary><div>メンバーのSNS投稿、YouTubeコンテンツ、MV・写真集の撮影地情報など、公開されている情報をもとに運営が一つずつ確認しながら登録しています。運営が独自に特定した場所には「Trace独自特定」の印が付いています。</div></details>
+          <details><summary>聖地情報はどうやって集めているの？</summary><div>メンバーのSNS投稿、YouTubeコンテンツ、MV・写真集の撮影地情報など、公開されている情報をもとに運営が一つずつ確認しながら登録しています。また、ファンのみなさんからのスポット投稿（「＋投稿する」）や情報提供も受け付けています。いただいた情報も運営が出典を確認してから掲載し、投稿してくれた方は「最初の発見者」として表示されます。運営が独自に特定した場所には「Trace独自特定」の印が付いています。</div></details>
           <details><summary>「メンバー：全員」となっている場所は、本当に全員が訪れた場所ですか？</summary><div>一部のスポットは情報整理中のため、暫定的に「全員」と表示しています。訪問メンバーを特定できる手がかりが見つかり次第、正しい表示に随時修正しています。</div></details>
           <details><summary>情報の出典はどこで確認できますか？</summary><div>スポットカードの「出典」から、元になった投稿・動画を開けます。巡礼プランナーのコースでも「出典を見る」から確認できます。</div></details>
           <details><summary>閉業・移転した場所はどう扱われますか？</summary><div>確認でき次第、地図上に注記を追加し、訪問できない旨がわかるようにしています。現地に行く前に念のため営業状況をご確認ください。</div></details>
@@ -13950,14 +13951,21 @@ function closeFaq() {
   document.body.style.overflow = '';
   qTabSync();
 }
+const FB_PLACEHOLDER_DEFAULT = '（任意）例：しおりの保存ボタンが見つからなかった';
 function faqPickKind(btn) {
   faqKind = btn.getAttribute('data-kind');
   document.querySelectorAll('#fb-kinds button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+  const ta = document.getElementById('fb-text');
+  if (ta) {
+    ta.placeholder = faqKind === '情報の間違い' ? '例：○○（スポット名）の場所が少し違う／閉店していた／メンバーが違う' : FB_PLACEHOLDER_DEFAULT;
+    if (faqKind === '情報の間違い') ta.focus();
+  }
 }
 async function sendFeedback() {
   const ta = document.getElementById('fb-text');
   const msg = (ta.value || '').trim();
   if (!msg && !faqKind) { alert('種類を選ぶか、ひとこと書いてください'); return; }
+  if (faqKind === '情報の間違い' && !msg) { alert('どのスポットの、どこが違うかを書いてください'); return; }
   const btn = document.getElementById('fb-send');
   btn.disabled = true; btn.textContent = '送信中…';
   try {
@@ -13966,7 +13974,7 @@ async function sendFeedback() {
       kind: faqKind || null, message: msg ? msg.slice(0, 1000) : null, ua: navigator.userAgent.slice(0, 200),
     });
     if (error) throw error;
-    ta.value = ''; faqKind = '';
+    ta.value = ''; faqKind = ''; ta.placeholder = FB_PLACEHOLDER_DEFAULT;
     document.querySelectorAll('#fb-kinds button').forEach(b => b.setAttribute('aria-pressed', 'false'));
     document.getElementById('fb-form').style.display = 'none';
     document.getElementById('fb-done').style.display = '';
