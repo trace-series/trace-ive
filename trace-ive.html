@@ -2488,6 +2488,16 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
   .pv-row span { font-size: 12px; color: var(--text-mid); line-height: 1.6; }
   .pv-row input { width: 24px; height: 24px; accent-color: var(--purple-mid); flex-shrink: 0; }
   .pv-note { font-size: 12px; color: var(--text-light); line-height: 1.6; margin: 4px 2px 10px; }
+  #pv-prompt { position: fixed; inset: 0; z-index: 3100; background: rgba(0,0,0,.5); align-items: flex-end; justify-content: center; }
+  .pvp-box { background: #fff; width: 100%; max-width: 640px; border-radius: 20px 20px 0 0; padding: 20px 18px calc(22px + env(safe-area-inset-bottom)); max-height: 90vh; overflow-y: auto; }
+  .pvp-title { font-size: 17px; font-weight: 800; color: var(--purple-deep); margin-bottom: 10px; }
+  .pvp-text { font-size: 13px; color: var(--text-mid); line-height: 1.8; }
+  .pvp-text ul { margin: 6px 0 8px; padding-left: 1.2em; }
+  .pvp-warn { margin-top: 10px; background: #fff4f6; border: 1.5px solid #e0245e; border-radius: 12px; padding: 10px 12px; font-size: 13px; font-weight: 700; color: #b0174a; line-height: 1.7; }
+  .pvp-link { display: inline-block; margin-top: 8px; font-size: 12px; color: var(--purple-deep); text-decoration: underline; cursor: pointer; }
+  .pvp-btn { display: block; width: 100%; margin-top: 12px; border: none; border-radius: 14px; padding: 14px; font-size: 15px; font-weight: 800; cursor: pointer; }
+  .pvp-btn.main { background: var(--purple-deep); color: #fff; }
+  .pvp-btn.sub { background: var(--purple-pale); color: var(--purple-deep); }
   .pv-saved { font-size: 12px; color: #0b6b4a; font-weight: 700; min-height: 18px; text-align: center; }
   .pv-warn { display: block; font-style: normal; font-size: 11.5px; color: #9a5b00; background: #fff7e0; border-radius: 8px; padding: 6px 8px; margin-top: 6px; line-height: 1.6; }
   .pv-good { display: block; font-style: normal; font-size: 11.5px; color: #0b6b4a; background: #e8f6ef; border-radius: 8px; padding: 6px 8px; margin-top: 6px; line-height: 1.6; }
@@ -3332,7 +3342,8 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
         ・ランキング（達成率ランキング・推しファンランキング・月間トップ貢献者）<br>
         ・承認されたスポットの「最初の発見者」<br><br>
         また、運営は本サービスの紹介として、エリア・旅のコンプリートを運営の公式SNS（X等）で「〇〇さんが『△△』を制覇しました」の形で発信する場合があります。発信するのは表示名・コンプリートしたエリアや旅の名前のみで、巡礼した日時や位置情報は含みません。<br><br>
-        My Page の「🔒 プライバシー設定」で「タイムラインに名前を出さない」を選んだ方は、タイムラインと公式SNSのどちらでも、名前の代わりに「巡礼者」と表示します。ランキング・発見者の表示も、同じ設定画面から個別に隠すことができます。</div>
+        My Page の「🔒 プライバシー設定」で「タイムラインに名前を出さない」を選んだ方は、タイムラインと公式SNSのどちらでも、名前の代わりに「巡礼者」と表示します。ランキング・発見者の表示も、同じ設定画面から個別に隠すことができます。<br><br>
+        プライバシー設定を変更せずにご利用を続けた場合は、上記の表示・発信に同意いただいたものとみなします。</div>
       </div>
 
       <div style="background:white;border-radius:14px;padding:16px;border:1px solid var(--border);">
@@ -4249,6 +4260,27 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
       </div>
     </div>
     <div class="faq-scroll" id="fb-admin-body"></div>
+  </div>
+</div>
+
+<!-- 名前の表示の確認（ログイン後に1回、必ずどちらかを選んでもらう）2026-11-19 -->
+<div id="pv-prompt" style="display:none;">
+  <div class="pvp-box" role="dialog" aria-modal="true" aria-labelledby="pvp-title">
+    <div class="pvp-title" id="pvp-title">🔒 名前の表示についての確認</div>
+    <div class="pvp-text">
+      このアプリでは、あなたの表示名が次の場所に表示されます。
+      <ul>
+        <li>タイムライン（巡礼報告・エリアや旅のコンプリートのお祝い）</li>
+        <li>ランキング</li>
+        <li>承認されたスポットの「最初の発見者」</li>
+        <li>運営の公式SNS（X等）でのエリア・旅のコンプリートの紹介</li>
+      </ul>
+      名前を出したくない場合は、「プライバシー設定」で隠すことができます（いつでも変更できます）。
+    </div>
+    <div class="pvp-warn">プライバシー設定を変更しない場合は、上記の表示・紹介に同意いただいたものとさせていただきます。</div>
+    <span class="pvp-link" onclick="pvPromptPolicy()">プライバシーポリシーを読む</span>
+    <button type="button" class="pvp-btn main" onclick="pvPromptOpenSettings()">🔒 プライバシー設定を開く</button>
+    <button type="button" class="pvp-btn sub" onclick="pvPromptAccept()">このままでOK（表示名で表示する）</button>
   </div>
 </div>
 
@@ -14100,6 +14132,67 @@ async function fbFillUnread() {
     document.querySelectorAll('.adm-fb-count').forEach(el => { el.textContent = count || ''; el.style.display = count ? 'inline-block' : 'none'; });
   } catch (e) {}
 }
+
+// ── 名前の表示の確認（2026-11-19） ──
+//  ・X/Googleでログインしている人に、1回だけ必ず「設定を開く」か「このままでOK」を選んでもらう
+//  ・選んだことはこの端末に覚える（ユーザーIDごと）。すでにプライバシー設定を1つでもオンにしている人には出さない
+//  ・閉じるボタンや外側タップでは閉じない
+const PV_PROMPT_KEY = 'traceive_pv_prompt_done_v1';
+let pvPromptUid = null;
+let pvPromptWaiting = false;
+function pvPromptDoneSet() {
+  try { return new Set(JSON.parse(localStorage.getItem(PV_PROMPT_KEY) || '[]').map(String)); } catch (e) { return new Set(); }
+}
+function pvPromptMarkDone() {
+  if (!pvPromptUid) return;
+  try { const d = pvPromptDoneSet(); d.add(String(pvPromptUid)); localStorage.setItem(PV_PROMPT_KEY, JSON.stringify([...d])); } catch (e) {}
+}
+function pvPromptHide() { document.getElementById('pv-prompt').style.display = 'none'; document.body.style.overflow = ''; }
+async function pvPromptCheck() {
+  try {
+    const box = document.getElementById('pv-prompt');
+    if (!box || box.style.display === 'flex') return;
+    const client = getSupabaseClient();
+    const { data } = await client.auth.getSession();
+    const ses = data && data.session;
+    if (!ses || (ses.user && ses.user.is_anonymous)) return;
+    const uid = String(ses.user.id);
+    if (pvPromptDoneSet().has(uid)) return;
+    // ほかの画面（最初の案内・誕生日などのお知らせ・プライバシー設定）が開いている間は待つ
+    const ob = document.getElementById('onboarding-modal');
+    const ps = document.getElementById('privacy-sheet');
+    const busy = ['birthday-overlay', 'boost-overlay', 'event-overlay', 'tt-welcome'].some(id => document.getElementById(id));
+    if (busy || (ob && ob.style.display !== 'none') || (ps && ps.style.display === 'flex')) {
+      if (!pvPromptWaiting) { pvPromptWaiting = true; setTimeout(() => { pvPromptWaiting = false; pvPromptCheck(); }, 3000); }
+      return;
+    }
+    const { data: p } = await client.from('profiles').select('hide_name_in_feed, hide_from_ranking, hide_discoverer').eq('id', uid).single();
+    pvPromptUid = uid;
+    if (p && (p.hide_name_in_feed || p.hide_from_ranking || p.hide_discoverer)) { pvPromptMarkDone(); return; }
+    box.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  } catch (e) {}
+}
+function pvPromptOpenSettings() { pvPromptMarkDone(); pvPromptHide(); openPrivacy(); }
+function pvPromptAccept() { pvPromptMarkDone(); pvPromptHide(); try { showEvalToast('表示名で表示します。設定はMy Pageからいつでも変えられます'); } catch (e) {} }
+function pvPromptPolicy() {
+  // ポリシーを読んでいる間は隠し、読み終わって別の画面に移ったらもう一度出す（まだ選んでいないため）
+  pvPromptHide();
+  showView('privacy');
+  window.scrollTo(0, 0);
+}
+(function () {
+  const orig = window.showView;
+  if (typeof orig === 'function') {
+    window.showView = function (v) {
+      const r = orig.apply(this, arguments);
+      if (v !== 'privacy') setTimeout(pvPromptCheck, 300);
+      return r;
+    };
+  }
+})();
+window.addEventListener('load', () => { setTimeout(pvPromptCheck, 2500); });
+try { getSupabaseClient().auth.onAuthStateChange(() => setTimeout(pvPromptCheck, 1200)); } catch (e) {}
 
 // ── プライバシー設定（タイムラインに名前を出さない・ランキングに出さない） ──
 async function openPrivacy() {
