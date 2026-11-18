@@ -3174,7 +3174,7 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
       </div>
       <div class="settings-item" id="fb-admin-entry" style="display:none;" onclick="openFbAdmin('fb')">
         <div class="settings-item-icon">🔧</div>
-        <div class="settings-item-text">意見・つまずき（管理者）</div>
+        <div class="settings-item-text">意見・つまずき（管理者）<span class="adm-fb-count" style="display:none;margin-left:6px;background:#e0245e;color:#fff;border-radius:9px;padding:0 7px;font-size:11px;font-weight:800;"></span></div>
         <div class="settings-item-arrow">›</div>
       </div>
       <div class="settings-item" onclick="window.open('https://x.com/traceIVE4179','_blank')">
@@ -5914,7 +5914,8 @@ async function initMap() {
   adminListCtl.id = 'admin-list-ctl';
   adminListCtl.title = '管理一覧';
   adminListCtl.style.cssText = 'width:40px;height:48px;margin:0 0 8px 10px;background:#fff4f4;border:1.5px dashed #e08a8a;border-radius:8px;box-shadow:rgba(0,0,0,0.3) 0 1px 4px -1px;cursor:pointer;display:none;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:0;';
-  adminListCtl.innerHTML = '<span style="font-size:17px;line-height:1;">🔧</span><span style="font-size:9px;font-weight:700;color:#c0392b;line-height:1;">管理</span>';
+  adminListCtl.innerHTML = '<span style="font-size:17px;line-height:1;">🔧</span><span style="font-size:9px;font-weight:700;color:#c0392b;line-height:1;">管理</span><span class="adm-fb-count" style="display:none;position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;line-height:18px;background:#e0245e;color:#fff;border-radius:9px;padding:0 5px;font-size:11px;font-weight:800;box-shadow:0 1px 3px rgba(0,0,0,.3);"></span>';
+  adminListCtl.style.position = 'relative';
   adminListCtl.addEventListener('click', function() { openAdminListPanel(); });
   adminListCtl.index = 1;
   window.adminListCtlEl = adminListCtl;
@@ -13998,8 +13999,12 @@ document.addEventListener('toggle', e => {
 function refreshFbAdminEntry() {
   const row = document.getElementById('fb-admin-entry');
   if (!row) return;
-  try { checkAdminEditor().then(ok => { row.style.display = ok ? '' : 'none'; }); } catch (e) {}
+  try { checkAdminEditor().then(ok => { row.style.display = ok ? '' : 'none'; fbIsAdmin = !!ok; if (ok) fbFillUnread(); }); } catch (e) {}
 }
+// 意見の未処理件数を定期的に読み直す（管理者だけ）2026-11-19
+let fbIsAdmin = false;
+setInterval(() => { if (fbIsAdmin && document.visibilityState === 'visible') fbFillUnread(); }, 5 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (fbIsAdmin && document.visibilityState === 'visible') fbFillUnread(); });
 window.addEventListener('load', () => {
   setTimeout(refreshFbAdminEntry, 1500);
   setTimeout(() => uxLog('view', null), 2000);
@@ -14092,6 +14097,14 @@ async function fbCompCopy(id, btn) {
   if (btn) { btn.textContent = '✅ コピーしました'; const item = btn.closest('.fba-item'); if (item) item.classList.add('done'); }
   try { showEvalToast('📋 コピーしました'); } catch (e) {}
 }
+(function () {
+  // fbSetStatus のあとで件数を読み直す（下で定義される関数を、読み込み後に包む）
+  window.addEventListener('load', () => {
+    if (typeof fbSetStatus !== 'function') return;
+    const orig = fbSetStatus;
+    fbSetStatus = async function () { const r = await orig.apply(this, arguments); try { fbFillUnread(); } catch (e) {} return r; };
+  });
+})();
 async function fbSetStatus(id, st) {
   const { error } = await getSupabaseClient().from('feedback').update({ status: st }).eq('id', id);
   if (error) { alert('更新できませんでした：' + error.message); return; }
