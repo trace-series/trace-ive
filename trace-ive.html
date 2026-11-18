@@ -2493,7 +2493,14 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
   .pvp-title { font-size: 17px; font-weight: 800; color: var(--purple-deep); margin-bottom: 10px; }
   .pvp-text { font-size: 13px; color: var(--text-mid); line-height: 1.8; }
   .pvp-text ul { margin: 6px 0 8px; padding-left: 1.2em; }
-  .pvp-warn { margin-top: 10px; background: #fff4f6; border: 1.5px solid #e0245e; border-radius: 12px; padding: 10px 12px; font-size: 13px; font-weight: 700; color: #b0174a; line-height: 1.7; }
+  .pvp-warn { margin-top: 12px; background: #f5f7fa; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; font-size: 12px; font-weight: 700; color: var(--text-mid); line-height: 1.7; }
+  .pvp-red { margin: 4px 0 10px; font-size: 14px; font-weight: 800; color: #d0103a; line-height: 1.7; }
+  .pvp-safe { margin: 0 0 10px; background: #effaf3; border: 1px solid #9fd8b4; border-radius: 12px; padding: 10px 12px; font-size: 12px; color: #2d5b3f; line-height: 1.7; }
+  .pvp-safe b { display: block; font-size: 14px; color: #1f7a45; margin-bottom: 2px; }
+  .pvp-merits { margin: 12px 0; display: flex; flex-direction: column; gap: 8px; }
+  .pvp-merit { display: flex; gap: 10px; align-items: flex-start; background: var(--purple-pale); border-radius: 12px; padding: 10px 12px; font-size: 12px; color: var(--text-mid); line-height: 1.6; }
+  .pvp-merit span { font-size: 22px; line-height: 1.2; }
+  .pvp-merit b { display: block; font-size: 14px; color: var(--purple-deep); margin-bottom: 2px; }
   .pvp-link { display: inline-block; margin-top: 8px; font-size: 12px; color: var(--purple-deep); text-decoration: underline; cursor: pointer; }
   .pvp-btn { display: block; width: 100%; margin-top: 12px; border: none; border-radius: 14px; padding: 14px; font-size: 15px; font-weight: 800; cursor: pointer; }
   .pvp-btn.main { background: var(--purple-deep); color: #fff; }
@@ -4263,24 +4270,24 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
   </div>
 </div>
 
-<!-- 名前の表示の確認（ログイン後に1回、必ずどちらかを選んでもらう）2026-11-19 -->
+<!-- 名前の表示の確認（ログイン後に1回、必ずどちらかを選んでもらう）2026-11-19 メリットを先に見せる形に変更 -->
 <div id="pv-prompt" style="display:none;">
   <div class="pvp-box" role="dialog" aria-modal="true" aria-labelledby="pvp-title">
-    <div class="pvp-title" id="pvp-title">🔒 名前の表示についての確認</div>
-    <div class="pvp-text">
-      このアプリでは、あなたの表示名が次の場所に表示されます。
-      <ul>
-        <li>タイムライン（巡礼報告・エリアや旅のコンプリートのお祝い）</li>
-        <li>ランキング</li>
-        <li>承認されたスポットの「最初の発見者」</li>
-        <li>運営の公式SNS（X等）でのエリア・旅のコンプリートの紹介</li>
-      </ul>
-      名前を出したくない場合は、「プライバシー設定」で隠すことができます（いつでも変更できます）。
+    <div class="pvp-title" id="pvp-title">🎉 名前を出して、巡礼をもっと楽しもう</div>
+    <div class="pvp-text">表示名を出しておくと、こんな楽しみ方ができます。</div>
+    <div class="pvp-merits">
+      <div class="pvp-merit"><span>🏆</span><div><b>ランキングに名前が載る</b>巡礼の数や達成率を、ファンのみんなと競えます</div></div>
+      <div class="pvp-merit"><span>🎊</span><div><b>制覇をみんなにお祝いしてもらえる</b>エリアや旅を制覇すると、タイムラインにあなたの名前でお祝いが出ます</div></div>
+      <div class="pvp-merit"><span>🔍</span><div><b>「最初の発見者」として名前が残る</b>あなたが見つけて承認されたスポットに、発見者として名前が表示されます</div></div>
+      <div class="pvp-merit"><span>📣</span><div><b>公式Xで紹介されることも</b>エリアや旅を制覇すると、運営の公式Xで「〇〇さんが制覇しました！」と紹介することがあります</div></div>
     </div>
+    <div class="pvp-red">表示されるのは、ログインに使ったX・Googleの表示名だけです。メールアドレスなどが表示されることはありません。</div>
+    <div class="pvp-safe"><b>🔐 安心してください</b>当アプリは、あなたの個人情報を吸い出したりしていません。パスワードがアプリに渡ることはなく、メールアドレス・連絡先・写真フォルダの中身などを読み取ったり、売ったり、ほかの人に渡したりすることはありません。位置情報を記録するのも、「巡礼を記録」を押したときだけです。</div>
+    <div class="pvp-text">名前を出したくない場合は「プライバシー設定」で隠せます。隠しても、巡礼の記録・ポイント・制覇はそのまま使えます（表示が「巡礼者」になるだけです）。設定はいつでも変えられます。</div>
     <div class="pvp-warn">プライバシー設定を変更しない場合は、上記の表示・紹介に同意いただいたものとさせていただきます。</div>
     <span class="pvp-link" onclick="pvPromptPolicy()">プライバシーポリシーを読む</span>
-    <button type="button" class="pvp-btn main" onclick="pvPromptOpenSettings()">🔒 プライバシー設定を開く</button>
-    <button type="button" class="pvp-btn sub" onclick="pvPromptAccept()">このままでOK（表示名で表示する）</button>
+    <button type="button" class="pvp-btn main" onclick="pvPromptAccept()">🎉 名前を出して楽しむ</button>
+    <button type="button" class="pvp-btn sub" onclick="pvPromptOpenSettings()">🔒 プライバシー設定を開く</button>
   </div>
 </div>
 
@@ -9637,7 +9644,7 @@ async function submitNewSpot() {
         var meta = user.user_metadata || {};
         var provider = (user.app_metadata && user.app_metadata.provider) || 'unknown';
         var isGoogle = provider === 'google';
-        var xName = isGoogle ? (meta.full_name || meta.name || meta.email || 'Googleユーザー') : (meta.full_name || meta.name || meta.user_name || 'ユーザー');
+        var xName = isGoogle ? (meta.full_name || meta.name || 'Googleユーザー') : (meta.full_name || meta.name || meta.user_name || 'ユーザー');
         var xHandle = isGoogle ? null : (meta.user_name ? '@' + meta.user_name : meta.email);
         var xAvatar = meta.avatar_url || '';
         var xProviderId = (meta.provider_id || meta.sub || (user.identities && user.identities[0] && user.identities[0].id)) || null;
@@ -14174,7 +14181,7 @@ async function pvPromptCheck() {
   } catch (e) {}
 }
 function pvPromptOpenSettings() { pvPromptMarkDone(); pvPromptHide(); openPrivacy(); }
-function pvPromptAccept() { pvPromptMarkDone(); pvPromptHide(); try { showEvalToast('表示名で表示します。設定はMy Pageからいつでも変えられます'); } catch (e) {} }
+function pvPromptAccept() { pvPromptMarkDone(); pvPromptHide(); try { showEvalToast('🎉 巡礼を楽しんでください！設定はMy Pageからいつでも変えられます'); } catch (e) {} }
 function pvPromptPolicy() {
   // ポリシーを読んでいる間は隠し、読み終わって別の画面に移ったらもう一度出す（まだ選んでいないため）
   pvPromptHide();
