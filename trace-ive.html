@@ -2491,6 +2491,19 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
   .fba-empty { font-size: 12px; color: var(--text-light); padding: 8px 0; }
 
   /* プライバシー設定 */
+  /* お知らせの表示設定（2026-11-22） */
+  #notice-sheet { position: fixed; inset: 0; z-index: 3000; background: rgba(0,0,0,.45); align-items: flex-end; justify-content: center; }
+  .nt-row { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 12px; margin-bottom: 10px; }
+  .nt-head { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .nt-emoji { font-size: 26px; flex-shrink: 0; }
+  .nt-txt { flex: 1; min-width: 0; }
+  .nt-txt b { display: block; font-size: 14px; color: var(--purple-deep); line-height: 1.4; }
+  .nt-txt span { display: block; font-size: 12px; color: var(--text-mid); margin-top: 2px; }
+  .nt-more { font-size: 12px; color: var(--purple-mid); flex-shrink: 0; font-weight: 700; }
+  .nt-opts { display: flex; gap: 6px; margin-top: 10px; }
+  .nt-opt { flex: 1; border: 1px solid var(--border); background: #fff; color: var(--text-mid); border-radius: 10px; padding: 9px 4px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; touch-action: manipulation; }
+  .nt-opt.on { background: var(--purple-deep); border-color: var(--purple-deep); color: #fff; }
+  .nt-empty { font-size: 13px; color: var(--text-light); text-align: center; padding: 18px 0; }
   #privacy-sheet { position: fixed; inset: 0; z-index: 3000; background: rgba(0,0,0,.45); align-items: flex-end; justify-content: center; }
   .pv-row { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 10px; cursor: pointer; }
   .pv-row div { flex: 1; }
@@ -3188,6 +3201,11 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
         <div class="settings-item-arrow">›</div>
       </div>
       <!-- 通知設定は中身ができるまで外す（2026-11-14） -->
+      <div class="settings-item" onclick="openNoticeSettings()">
+        <div class="settings-item-icon">🔔</div>
+        <div class="settings-item-text">お知らせの表示設定</div>
+        <div class="settings-item-arrow">›</div>
+      </div>
       <div class="settings-item" onclick="openPrivacy()">
         <div class="settings-item-icon">🔒</div>
         <div class="settings-item-text">プライバシー設定</div>
@@ -4345,6 +4363,22 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
   </div>
 </div>
 
+<!-- お知らせの表示設定（2026-11-22） -->
+<div id="notice-sheet" style="display:none;" onclick="if(event.target===this)closeNoticeSettings()">
+  <div class="faq-panel" style="height:auto;max-height:86vh;">
+    <div class="faq-head">
+      <div><div class="faq-eyebrow">⚙️ 設定</div><div class="faq-title">お知らせの表示設定</div></div>
+      <button type="button" class="faq-close" onclick="closeNoticeSettings()" aria-label="閉じる">✕</button>
+    </div>
+    <div class="faq-scroll" style="padding-bottom:28px;">
+      <div class="pv-note">アプリを開いたときに出るお知らせを、1件ずつ「毎回」「1日1回」「表示しない」から選べます。お知らせが2件以上あるときは、1つにまとめて表示します。</div>
+      <div id="notice-list"></div>
+      <div class="pv-note">「表示しない」にしたお知らせも、ここからいつでも中身を見られます（「詳しく」をタップ）。新しいお知らせは、最初は「1日1回」です。</div>
+      <div id="notice-login" class="pv-note" style="display:none;">X または Google でログインすると、ほかの端末でも同じ設定になります。</div>
+      <div class="pv-saved" id="notice-saved"></div>
+    </div>
+  </div>
+</div>
 <!-- プライバシー設定（2026-11-14） -->
 <div id="privacy-sheet" style="display:none;" onclick="if(event.target===this)closePrivacy()">
   <div class="faq-panel" style="height:auto;max-height:86vh;">
@@ -4648,34 +4682,59 @@ function getBirthdayEvents() {
   return events;
 }
 
-// ── ポップアップの「今日は表示しない」管理 ──
-function hasDismissedPopupToday(key) {
-  const today = new Date().toISOString().slice(0, 10);
-  return localStorage.getItem('traceive_popup_dismissed_' + key) === today;
-}
-function dismissPopupToday(key) {
-  const today = new Date().toISOString().slice(0, 10);
-  localStorage.setItem('traceive_popup_dismissed_' + key, today);
-}
+// ── お知らせ（誕生日・イベント・ポイントアップ）の表示設定とまとめ表示（2026-11-22） ──
+//  ・アプリを開いたときのポップアップは1回だけ。2件以上ならリストにまとめ、1件なら詳しいカードを出す
+//  ・お知らせごとに「毎回」「1日1回」「表示しない」を選べる（最初は1日1回）。My Page の設定から変えられる
+//  ・設定は端末に保存。X/Googleでログイン中はアカウントにも保存（profiles.notice_prefs ／ set_my_notice_prefs）
+const NOTICE_PREFS_KEY = 'traceive_notice_prefs';
+const NOTICE_SHOWN_KEY = 'traceive_notice_shown';
+function _noticeLoad(k) { try { return JSON.parse(localStorage.getItem(k) || '{}') || {}; } catch (e) { return {}; } }
+function _noticeSave(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function getNoticePref(key) { const p = _noticeLoad(NOTICE_PREFS_KEY)[key]; return (p === 'always' || p === 'off') ? p : 'daily'; }
+function noticeEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+// 古い「今日は表示しない」の名残（呼ばれても何もしない）
+function hasDismissedPopupToday(key) { return false; }
+function dismissPopupToday(key) {}
 
-// ── ポップアップの順番表示キュー（誕生日複数人・イベントを1つずつ順番に出す）──
-let _popupQueue = [];
-function buildPopupQueue() {
-  const queue = [];
+// いま出ているお知らせを全部（表示しない設定のものも含む）
+function getNoticeItems() {
+  const items = [];
   for (const ev of getBirthdayEvents()) {
-    const key = 'birthday_' + ev.member.nameEn;
-    if (!hasDismissedPopupToday(key)) queue.push({ kind: 'birthday', data: ev, key });
+    const m = ev.member, isDay = ev.type === 'day';
+    const d = new Date(); d.setDate(d.getDate() + ev.daysLeft);
+    items.push({ key: 'birthday_' + m.nameEn + '_' + d.getFullYear(), kind: 'birthday', data: ev, emoji: isDay ? '🎂' : '🌸',
+      title: isDay ? m.name + 'の誕生日' : m.name + 'の誕生日まであと' + ev.daysLeft + '日',
+      sub: m.birthday.month + '/' + m.birthday.day + '・' + ev.multiplier + '倍' });
   }
   const activeEv = getActiveEvent();
-  if (activeEv) {
-    const key = 'event_' + activeEv.id;
-    if (!hasDismissedPopupToday(key)) queue.push({ kind: 'event', data: activeEv, key });
-  }
+  if (activeEv) items.push({ key: 'event_' + (activeEv.id || activeEv.name), kind: 'event', data: activeEv, emoji: '🏟️',
+    title: activeEv.name, sub: (activeEv.multiplier || 1) + '倍・' + _fmtMD(activeEv.end) + 'まで' });
   for (const item of getSpotBoostPopups()) {
-    const key = 'boost_' + item.boost.id + '_' + item.phase;
-    if (!hasDismissedPopupToday(key)) queue.push({ kind: 'boost', data: item, key });
+    const b = item.boost, r = _boostRange(b), isPre = item.phase === 'pre';
+    const sub = isPre
+      ? '予告・' + (r.start === r.end ? _fmtMD(r.start) + ' 1日限定' : _fmtMD(r.start) + 'から') + '・' + b.multiplier + '倍'
+      : b.multiplier + '倍・' + (r.start === r.end ? '本日限定' : _fmtMD(r.end) + 'まで');
+    items.push({ key: 'boost_' + b.id + '_' + item.phase, kind: 'boost', data: item, emoji: b.emoji || '✨', title: b.name, sub });
   }
-  return queue;
+  return items;
+}
+
+// ── アプリを開いたときに出すもの（まとめて1回）──
+let _popupQueue = [];
+let _noticeSummaryList = [];
+function buildPopupQueue() {
+  const shown = _noticeLoad(NOTICE_SHOWN_KEY), t = _todayStr();
+  const list = getNoticeItems().filter(it => {
+    const p = getNoticePref(it.key);
+    if (p === 'off') return false;
+    if (p === 'daily' && shown[it.key] === t) return false;
+    return true;
+  });
+  if (!list.length) return [];
+  list.forEach(it => { shown[it.key] = t; });
+  _noticeSave(NOTICE_SHOWN_KEY, shown);
+  if (list.length === 1) return [{ kind: list[0].kind, data: list[0].data, key: list[0].key }];
+  return [{ kind: 'summary', data: list }];
 }
 function showNextPopupInQueue() {
   if (!_popupQueue.length) return;
@@ -4688,9 +4747,130 @@ function showNextPopupInQueue() {
     return;
   }
   const next = _popupQueue.shift();
-  if (next.kind === 'birthday') showBirthdayPopup(next.data, next.key);
-  else if (next.kind === 'boost') showBoostPopup(next.data, next.key);
-  else showEventPopup(next.data, next.key);
+  if (next.kind === 'summary') showNoticeSummary(next.data);
+  else _showNoticeDetail(next);
+}
+function _showNoticeDetail(it) {
+  if (it.kind === 'birthday') showBirthdayPopup(it.data, it.key);
+  else if (it.kind === 'boost') showBoostPopup(it.data, it.key);
+  else showEventPopup(it.data, it.key);
+}
+
+// まとめポップアップ（1件1行。タップで詳しいカード → 閉じるとまとめに戻る）
+function showNoticeSummary(list) {
+  _noticeSummaryList = list;
+  const old = document.getElementById('notice-overlay'); if (old) old.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'notice-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(61,26,94,0.85);display:flex;align-items:center;justify-content:center;animation:fadeInBd 0.4s ease;';
+  const rows = list.map((it, i) => `
+      <button type="button" onclick="openNoticeFromSummary(${i})" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:rgba(255,255,255,0.14);border:none;border-radius:12px;padding:10px 12px;margin-bottom:8px;color:#fff;cursor:pointer;font-family:inherit;touch-action:manipulation;">
+        <span style="font-size:24px;flex-shrink:0;">${it.emoji}</span>
+        <span style="flex:1;min-width:0;"><span style="display:block;font-size:14px;font-weight:700;line-height:1.4;">${noticeEsc(it.title)}</span><span style="display:block;font-size:12px;color:#ffd700;margin-top:2px;">${noticeEsc(it.sub)}</span></span>
+        <span style="font-size:18px;opacity:0.7;flex-shrink:0;">›</span>
+      </button>`).join('');
+  overlay.innerHTML = `
+    <div style="background:linear-gradient(135deg,#0f1b3d,#7b1a3e);border-radius:24px;padding:28px 18px 20px;max-width:340px;width:92%;max-height:84vh;overflow-y:auto;color:#fff;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+      <button type="button" aria-label="閉じる" onclick="closeNoticeSummary()" style="position:absolute;top:6px;right:6px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.12);border:none;border-radius:50%;color:rgba(255,255,255,0.85);font-size:24px;line-height:1;padding:0;cursor:pointer;z-index:2;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">×</button>
+      <div style="text-align:center;font-size:13px;font-weight:700;color:#ffd700;margin-bottom:4px;">🔔 お知らせ</div>
+      <div style="text-align:center;font-size:18px;font-weight:700;margin-bottom:4px;">開催中・もうすぐのイベント</div>
+      <div style="text-align:center;font-size:12px;opacity:0.8;margin-bottom:14px;">タップすると詳しく見られます</div>
+      ${rows}
+      <div onclick="noticeGoSettings('notice-overlay')" style="margin-top:10px;text-align:center;font-size:12px;color:rgba(255,255,255,0.85);cursor:pointer;text-decoration:underline;">⚙️ お知らせの表示設定</div>
+    </div>
+    <style>
+      @keyframes fadeInBd { from{opacity:0;transform:scale(0.92)} to{opacity:1;transform:scale(1)} }
+    </style>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeNoticeSummary(); });
+}
+function closeNoticeSummary() {
+  const el = document.getElementById('notice-overlay'); if (el) el.remove();
+  _popupQueue = [];
+}
+function openNoticeFromSummary(i) {
+  const it = _noticeSummaryList[i]; if (!it) return;
+  const el = document.getElementById('notice-overlay'); if (el) el.remove();
+  _popupQueue = [{ kind: 'summary', data: _noticeSummaryList }];
+  _showNoticeDetail(it);
+}
+// ポップアップから設定画面へ
+function noticeGoSettings(overlayId) {
+  _popupQueue = [];
+  const el = document.getElementById(overlayId); if (el) el.remove();
+  openNoticeSettings();
+}
+
+// ── お知らせの表示設定（My Page） ──
+let _noticeSettingItems = [];
+async function _noticeSession() {
+  try {
+    const { data } = await getSupabaseClient().auth.getSession();
+    const ses = data && data.session;
+    if (!ses || (ses.user && ses.user.is_anonymous)) return null;
+    return ses;
+  } catch (e) { return null; }
+}
+// アカウントに保存した設定を端末に反映（アカウントの方を優先）
+async function noticeSyncFromAccount() {
+  const ses = await _noticeSession();
+  if (!ses) return false;
+  try {
+    const { data, error } = await getSupabaseClient().from('profiles').select('notice_prefs').eq('id', ses.user.id).single();
+    if (!error && data && data.notice_prefs && typeof data.notice_prefs === 'object') {
+      _noticeSave(NOTICE_PREFS_KEY, Object.assign(_noticeLoad(NOTICE_PREFS_KEY), data.notice_prefs));
+    }
+  } catch (e) {}
+  return true;
+}
+async function noticeSaveToAccount(prefs) {
+  const ses = await _noticeSession();
+  if (!ses) return 'local';
+  try {
+    const { error } = await getSupabaseClient().rpc('set_my_notice_prefs', { p_prefs: prefs });
+    return error ? 'error' : 'account';
+  } catch (e) { return 'error'; }
+}
+async function openNoticeSettings() {
+  const sheet = document.getElementById('notice-sheet');
+  sheet.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  document.getElementById('notice-saved').textContent = '';
+  renderNoticeSettings();
+  const loggedIn = await noticeSyncFromAccount();
+  document.getElementById('notice-login').style.display = loggedIn ? 'none' : '';
+  renderNoticeSettings();
+}
+function closeNoticeSettings() { document.getElementById('notice-sheet').style.display = 'none'; document.body.style.overflow = ''; }
+function renderNoticeSettings() {
+  const box = document.getElementById('notice-list');
+  const items = getNoticeItems();
+  _noticeSettingItems = items;
+  if (!items.length) { box.innerHTML = '<div class="nt-empty">いま開催中・予告中のお知らせはありません。</div>'; return; }
+  box.innerHTML = items.map((it, i) => {
+    const p = getNoticePref(it.key);
+    const btn = (v, label) => `<button type="button" class="nt-opt${p === v ? ' on' : ''}" onclick="setNoticePref(${i},'${v}')">${label}</button>`;
+    return `<div class="nt-row">
+      <div class="nt-head" onclick="openNoticeFromSettings(${i})"><span class="nt-emoji">${it.emoji}</span><span class="nt-txt"><b>${noticeEsc(it.title)}</b><span>${noticeEsc(it.sub)}</span></span><span class="nt-more">詳しく ›</span></div>
+      <div class="nt-opts">${btn('always', '毎回')}${btn('daily', '1日1回')}${btn('off', '表示しない')}</div>
+    </div>`;
+  }).join('');
+}
+async function setNoticePref(i, v) {
+  const it = _noticeSettingItems[i]; if (!it) return;
+  const prefs = _noticeLoad(NOTICE_PREFS_KEY);
+  if (v === 'daily') delete prefs[it.key]; else prefs[it.key] = v;
+  _noticeSave(NOTICE_PREFS_KEY, prefs);
+  renderNoticeSettings();
+  const msg = document.getElementById('notice-saved');
+  msg.textContent = '保存中…';
+  const r = await noticeSaveToAccount(prefs);
+  msg.textContent = r === 'account' ? '✓ 保存しました' : (r === 'local' ? '✓ この端末に保存しました' : '✓ この端末に保存しました（アカウントへの保存はできませんでした）');
+}
+function openNoticeFromSettings(i) {
+  const it = _noticeSettingItems[i]; if (!it) return;
+  _popupQueue = [];
+  _showNoticeDetail(it);
 }
 
 // ── シーズンイベント判定（東京ドーム公演など）──
@@ -4763,11 +4943,11 @@ function showBoostPopup(item, dismissKey) {
   let periodHtml;
   if (b.spots && b.spots.length) {
     periodHtml = b.spots.slice().sort((x, y) => x.start < y.start ? -1 : 1).map(x => {
-      const st = (t >= x.start && t <= x.end) ? '<span style="color:#ffd700;font-weight:700;">点灯中</span>' : (t > x.end ? '<span style="opacity:.5;">終了</span>' : '');
+      const st = (t >= x.start && t <= x.end) ? '<span style="color:#ffd700;font-weight:700;">' + (/イルミ/.test(b.name || '') ? '点灯中' : '開催中') + '</span>' : (t > x.end ? '<span style="opacity:.5;">終了</span>' : '');
       return `<div style="display:flex;justify-content:space-between;gap:8px;padding:2px 0;"><span style="text-align:left;">${x.name}</span><span style="white-space:nowrap;">${_fmtMD(x.start)}〜${_fmtMD(x.end)} ${st}</span></div>`;
     }).join('');
   } else {
-    periodHtml = (isPre ? 'スタート：' : '') + (r.start === r.end ? _fmtMD(r.start) + ' 限定' : _fmtMD(r.start) + ' 〜 ' + _fmtMD(r.end));
+    periodHtml = r.start === r.end ? _fmtMD(r.start) + (isPre ? ' 1日限定' : ' 本日限定') : (isPre ? _fmtMD(r.start) + 'から（〜' + _fmtMD(r.end) + '）' : _fmtMD(r.start) + ' 〜 ' + _fmtMD(r.end));
   }
   const overlay = document.createElement('div');
   overlay.id = 'boost-overlay';
@@ -4783,7 +4963,7 @@ function showBoostPopup(item, dismissKey) {
         <span style="font-size:20px;font-weight:700;color:#ffd700;">${b.multiplier}倍</span> ポイント！
       </div>
       <div style="background:rgba(255,255,255,0.1);border-radius:10px;padding:8px 12px;font-size:12px;color:#ececec;line-height:1.6;">${periodHtml}</div>
-      <div onclick="closeBoostPopup(true,'${dismissKey}')" style="margin-top:14px;font-size:12px;color:rgba(255,255,255,0.5);cursor:pointer;text-decoration:underline;">今日は表示しない</div>
+      <div onclick="noticeGoSettings('boost-overlay')" style="margin-top:14px;font-size:12px;color:rgba(255,255,255,0.5);cursor:pointer;text-decoration:underline;">⚙️ お知らせの表示設定</div>
     </div>`;
   document.body.appendChild(overlay);
   overlay.addEventListener('click', e => { if (e.target === overlay) closeBoostPopup(false, dismissKey); });
@@ -4834,10 +5014,10 @@ function showEventPopup(ev, dismissKey) {
         background:rgba(255,255,255,0.1);border-radius:10px;
         padding:8px 12px;font-size:12px;color:#ececec;
       ">${ev.start} 〜 ${ev.end}</div>
-      <div onclick="closeEventPopup(true,'${dismissKey}')" style="
+      <div onclick="noticeGoSettings('event-overlay')" style="
         margin-top:14px;font-size:12px;color:rgba(255,255,255,0.5);
         cursor:pointer;text-decoration:underline;
-      ">今日は表示しない</div>
+      ">⚙️ お知らせの表示設定</div>
     </div>
     <style>
       @keyframes fadeInBd { from{opacity:0;transform:scale(0.92)} to{opacity:1;transform:scale(1)} }
@@ -4904,10 +5084,10 @@ function showBirthdayPopup(event, dismissKey) {
         border:none;border-radius:14px;padding:10px 20px;
         color:#fff;font-size:13px;font-weight:700;cursor:pointer;width:100%;
       ">𝕏 お祝いポストを送る</button>
-      <div onclick="closeBirthdayPopup(true,'${dismissKey}')" style="
+      <div onclick="noticeGoSettings('birthday-overlay')" style="
         margin-top:14px;font-size:12px;color:rgba(255,255,255,0.5);
         cursor:pointer;text-decoration:underline;
-      ">今日は表示しない</div>
+      ">⚙️ お知らせの表示設定</div>
     </div>
     <style>
       @keyframes fadeInBd { from{opacity:0;transform:scale(0.92)} to{opacity:1;transform:scale(1)} }
@@ -11539,6 +11719,7 @@ function filterRouteRegion(el, region) {
     // 誕生日（複数人可）・イベントのポップアップを順番に表示（500ms遅延でページ表示後に出す）
     setTimeout(async () => {
       try { await Promise.race([loadAppEvents(), new Promise(r => setTimeout(r, 2500))]); } catch(e) {}
+      try { await Promise.race([noticeSyncFromAccount(), new Promise(r => setTimeout(r, 1500))]); } catch(e) {}
       _popupQueue = buildPopupQueue();
       showNextPopupInQueue();
       admHandleInboxParam();
@@ -14250,7 +14431,7 @@ function a2hsMaybeBanner() {
     if (st.bannerDone || st.firstDay === today) return;
     if (!(a2hsIsIOS() || a2hsIsAndroid())) return;
     // ほかの案内が開いている間は出さない
-    const busy = ['birthday-overlay', 'boost-overlay', 'event-overlay', 'tt-welcome'].some(id => document.getElementById(id));
+    const busy = ['birthday-overlay', 'boost-overlay', 'event-overlay', 'notice-overlay', 'tt-welcome'].some(id => document.getElementById(id));
     const ob = document.getElementById('onboarding-modal'), pv = document.getElementById('pv-prompt');
     if (busy || (ob && ob.style.display !== 'none') || (pv && pv.style.display === 'flex')) { setTimeout(a2hsMaybeBanner, 5000); return; }
     document.getElementById('a2hs-banner').style.display = 'flex';
@@ -14296,7 +14477,7 @@ async function pvPromptCheck() {
     // ほかの画面（最初の案内・誕生日などのお知らせ・プライバシー設定）が開いている間は待つ
     const ob = document.getElementById('onboarding-modal');
     const ps = document.getElementById('privacy-sheet');
-    const busy = ['birthday-overlay', 'boost-overlay', 'event-overlay', 'tt-welcome'].some(id => document.getElementById(id));
+    const busy = ['birthday-overlay', 'boost-overlay', 'event-overlay', 'notice-overlay', 'tt-welcome'].some(id => document.getElementById(id));
     if (busy || (ob && ob.style.display !== 'none') || (ps && ps.style.display === 'flex')) {
       if (!pvPromptWaiting) { pvPromptWaiting = true; setTimeout(() => { pvPromptWaiting = false; pvPromptCheck(); }, 3000); }
       return;
