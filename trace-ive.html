@@ -2548,7 +2548,10 @@ border-radius: 10px; padding: 9px 16px; min-height: 44px; display: inline-flex; 
   .pv-warn { display: block; font-style: normal; font-size: 11.5px; color: #9a5b00; background: #fff7e0; border-radius: 8px; padding: 6px 8px; margin-top: 6px; line-height: 1.6; }
   .pv-good { display: block; font-style: normal; font-size: 11.5px; color: #0b6b4a; background: #e8f6ef; border-radius: 8px; padding: 6px 8px; margin-top: 6px; line-height: 1.6; }
   .faq-go { display: block; width: 100%; margin-top: 10px; border: 1.5px solid var(--purple-mid); background: #fff; color: var(--purple-deep); border-radius: 12px; padding: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
-  .spot-list-want { margin-top: 6px; }
+  .spot-list-want { margin-top: 6px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .orig-chip { display: inline-flex; align-items: center; gap: 3px; background: linear-gradient(135deg,#ffb347,#f57c00); color: #fff; border-radius: 16px; padding: 3px 10px; font-size: 11px; font-weight: 700; white-space: nowrap; line-height: 1.5; box-shadow: 0 1px 3px rgba(245,124,0,.35); }
+  #list-sort-bar button.ls-orig { border-color: #f57c00; color: #c25e00; }
+  #list-sort-bar button.ls-orig.active { background: linear-gradient(135deg,#ffb347,#f57c00); border-color: #f57c00; color: #fff; }
   #list-sort-bar button.ls-want { border-color: #f2b705; color: #9a6b00; }
   #list-sort-bar button.ls-want.active { background: #fff4c2; border-color: #f2b705; color: #8a5a00; }
   /* 巡礼プランナーの共有リンク・画像 */
@@ -10265,6 +10268,7 @@ function renderSpotList() {
     if (activeSeries && s.series !== activeSeries) return false;
     if (!spotInActiveArea(s)) return false;
     if (listWantOnly && !isWanted(s.db_id)) return false;
+    if (listOrigOnly && !s.is_trace_original) return false;
     if (originSpot) {
       if (s.db_id === originSpot.db_id) return false;
       if (activeRadius > 0) {
@@ -10309,7 +10313,7 @@ function renderSpotList() {
   if (filtered.length === 0) {
     var msg = document.createElement('div');
     msg.style = 'text-align:center;padding:40px;color:#aaa;';
-    msg.textContent = listWantOnly ? '行きたいスポットはまだありません（☆ 行きたい を押すと、ここに集まります）' : 'スポットが見つかりません';
+    msg.textContent = listWantOnly ? '行きたいスポットはまだありません（☆ 行きたい を押すと、ここに集まります）' : listOrigOnly ? 'この条件のTrace独自特定スポットはありません' : 'スポットが見つかりません';
     container.appendChild(msg);
     return;
   }
@@ -10331,7 +10335,7 @@ function renderSpotList() {
       + '<div class="spot-list-name">' + (s.no != null ? '<span class="spot-list-no">No.' + s.no + '</span>' : '') + (spotStatusLabel(s) ? '<span style="font-size:11px;color:' + (s.is_draft ? '#d9822b' : '#777') + ';">［' + (s.is_draft ? '仮登録' : s.is_closed ? '閉業' : '終了') + '］</span>' : '') + escHtml(s.name) + '</div>'
       + '<div class="spot-list-addr">' + escHtml(s.address || '') + '</div>'
       + (!originSpot && spotListSort === 'activity' && seriesActivityMap ? '<div class="spot-list-date">📅 ' + seriesActivityLabel(seriesActivityMap[s.db_id] || null) + '</div>' : '')
-      + '<div class="spot-list-want">' + wantChipHtml(s.db_id) + '</div>'
+      + '<div class="spot-list-want">' + wantChipHtml(s.db_id) + (s.is_trace_original ? '<span class="orig-chip" title="Traceが元の投稿・動画から独自に場所を割り出したスポット">🔍 Trace独自特定</span>' : '') + '</div>'
       + '</div>' + distHtml;
     div.onclick = (function(spot) { return function() { selectSpotFromList(spot.db_id); }; })(s);
     frag.appendChild(div);
@@ -10340,6 +10344,7 @@ function renderSpotList() {
 }
 var spotListSort = 'activity'; // 'activity'（活動日順） | 'no'（No.順） | 'new'（登録が新しい順）
 var listWantOnly = false;      // true：行きたいを付けたスポットだけ（2026-11-14）
+var listOrigOnly = false;      // true：Trace独自特定のスポットだけ（2026-11-26）
 var spotListNoDesc = false;    // No.順のとき true=大きい番号から
 function setSpotListSort(k) {
   if (k === 'no' && spotListSort === 'no') spotListNoDesc = !spotListNoDesc; // No.順をもう一度押すと逆順
@@ -10362,7 +10367,8 @@ function renderListSortBar() {
     note = '・いまは <b>No.' + (spotListNoDesc ? hi + ' → No.' + lo + '（大きい番号から）' : lo + ' → No.' + hi + '（小さい番号から）') + '</b>。もう一度押すと逆順になります。探したい番号が No.' + Math.round((lo + hi) / 2) + ' より大きければ「大きい番号から」が早く見つかります。';
   }
   var wn = SPOTS.filter(function(x) { return !x.is_draft && isWanted(x.db_id); }).length;
-  bar.innerHTML = '<div class="ls-row">' + btn('activity', '📅 活動日順') + btn('no', spotListSort === 'no' ? (spotListNoDesc ? '🔢 No.順 ↓' : '🔢 No.順 ↑') : '🔢 No.順') + btn('new', '🆕 登録が新しい順') + '<button type="button" class="ls-want' + (listWantOnly ? ' active' : '') + '" onclick="listWantOnly=!listWantOnly;renderSpotList()">⭐ 行きたいだけ' + (wn ? '（' + wn + '）' : '') + '</button></div><div class="ls-note">' + note + '</div>';
+  var on = SPOTS.filter(function(x) { return !x.is_draft && x.is_trace_original; }).length;
+  bar.innerHTML = '<div class="ls-row">' + btn('activity', '📅 活動日順') + btn('no', spotListSort === 'no' ? (spotListNoDesc ? '🔢 No.順 ↓' : '🔢 No.順 ↑') : '🔢 No.順') + btn('new', '🆕 登録が新しい順') + '<button type="button" class="ls-want' + (listWantOnly ? ' active' : '') + '" onclick="listWantOnly=!listWantOnly;renderSpotList()">⭐ 行きたいだけ' + (wn ? '（' + wn + '）' : '') + '</button>' + '<button type="button" class="ls-orig' + (listOrigOnly ? ' active' : '') + '" onclick="listOrigOnly=!listOrigOnly;renderSpotList()">🔍 Trace独自特定だけ' + (on ? '（' + on + '）' : '') + '</button></div><div class="ls-note">' + (listOrigOnly ? '・<b style="color:#c25e00;">🔍 Trace独自特定</b>＝Traceが元の投稿・動画から独自に場所を割り出したスポットだけを表示中。<br>' : '') + note + '</div>';
   return bar;
 }
 function selectSpotFromList(dbId) {
