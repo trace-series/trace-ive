@@ -7567,6 +7567,7 @@ async function openAdminListPanel(tab) {
       <button onclick="closeAdminSheet('admin-list-modal');openFbAdmin('fb')" style="flex:1;border:1.5px solid var(--border);background:#fff;color:var(--purple-deep);border-radius:12px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">💬 意見<span class="adm-fb-count" style="display:none;margin-left:4px;background:#e0245e;color:#fff;border-radius:9px;padding:0 7px;font-size:11px;"></span></button>
       <button onclick="closeAdminSheet('admin-list-modal');openFbAdmin('ux')" style="flex:1;border:1.5px solid var(--border);background:#fff;color:var(--purple-deep);border-radius:12px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">📉 つまずき</button>
     </div>
+    <button onclick="closeAdminSheet('admin-list-modal');openAdminFounders()" style="width:100%;border:1.5px solid #d4a017;background:#fffbe6;color:#8a6d00;border-radius:12px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;">🏅 創設メンバーの認定（Xログインした人の一覧）</button>
     <button onclick="closeAdminSheet('admin-list-modal');openAdminThumbs()" style="width:100%;border:1.5px solid var(--border);background:#fff;color:var(--purple-deep);border-radius:12px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;">🖼️ 一覧用の小さい写真を作る（通信量の節約）</button>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">${tabs}${cur.key === 'reports' ? `<button onclick="adminReportsCache=null;openAdminListPanel('reports');refreshAdminListCtl()" style="border:none;background:none;font-size:12px;color:var(--purple-mid);cursor:pointer;">↻ 更新</button>` : ''}</div>
     <div>${body}</div>`);
@@ -8242,6 +8243,64 @@ async function restoreAdminHistory(k) {
 }
 
 // ── v5 管理者：アクセス元 ──
+// ── 管理者：創設メンバーの認定（Xログインした人の一覧・20人まで） ──
+let adminFounderRows = [];
+async function openAdminFounders(msgText) {
+  const H = (t) => adminSheetHeader(t, 'admin-founder-modal');
+  adminSheet('admin-founder-modal', `${H('🏅 創設メンバーの認定')}<div style="text-align:center;padding:30px;color:var(--text-light);">読み込み中...</div>`);
+  const { data, error } = await getSupabaseClient().rpc('admin_list_founder_candidates');
+  if (error || !Array.isArray(data)) {
+    adminSheet('admin-founder-modal', `${H('🏅 創設メンバーの認定')}<div style="padding:20px;font-size:13px;color:#c0392b;">読み込めませんでした（創設メンバー用のSQLを実行済みか確認してください）${error ? '<br>' + escHtml(String(error.message || '')) : ''}</div>`);
+    return;
+  }
+  adminFounderRows = data;
+  const total = data.length;
+  const founders = data.filter(r => r.is_founder).length;
+  const fmt = v => v ? new Date(v).toLocaleString('ja-JP', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+  const pct = Math.min(100, Math.round(total / 20 * 100));
+  const rows = data.map((r, k) => {
+    const handle = r.x_handle ? '@' + r.x_handle : '';
+    const btn = r.is_founder
+      ? `<span style="font-size:12px;color:#1a7f3c;font-weight:700;">🏅 認定済み</span><button onclick="setAdminFounder(${k},false)" style="margin-left:8px;border:1.5px solid var(--border);background:#fff;color:var(--text-light);border-radius:8px;padding:4px 8px;font-size:11px;cursor:pointer;">取り消す</button>`
+      : `<button onclick="setAdminFounder(${k},true)" style="border:none;background:#d4a017;color:#fff;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">🏅 認定する</button>`;
+    return `<div style="padding:10px 4px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div style="width:28px;flex-shrink:0;font-size:12px;font-weight:700;color:var(--purple-mid);">${k + 1}</div>
+        <div style="min-width:0;flex:1;">
+          <div style="font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(String(r.display_name || '（名前なし）'))}</div>
+          ${handle ? `<a href="https://x.com/${encodeURIComponent(r.x_handle)}" target="_blank" rel="noopener" style="font-size:12px;color:var(--purple-mid);text-decoration:none;">${escHtml(handle)}</a>` : ''}
+          <div style="font-size:11px;color:var(--text-light);margin-top:2px;">初ログイン ${fmt(r.first_login)}・最終 ${fmt(r.last_login)}・${Number(r.points || 0)}pt</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;align-items:center;margin-top:6px;">${btn}</div>
+    </div>`;
+  }).join('') || '<div style="padding:24px;text-align:center;color:var(--text-light);font-size:13px;">まだXでログインした人はいません</div>';
+  adminSheet('admin-founder-modal', `${H('🏅 創設メンバーの認定')}
+    <div style="background:#fffbe6;border:1px solid #f0d98a;border-radius:12px;padding:10px 12px;margin-bottom:10px;">
+      <div style="font-size:14px;font-weight:700;color:#8a6d00;">Xログイン ${total} / 20人　（認定済み ${founders}人）</div>
+      <div style="height:8px;background:#f3e6b0;border-radius:4px;margin-top:6px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:#d4a017;"></div></div>
+      <div style="font-size:11px;color:var(--text-light);line-height:1.6;margin-top:6px;">Xでログインした人をログインした順に並べています（運営のアカウントは除外）。「認定する」を押すと、その人に創設メンバーのバッジが付きます（次にアプリを開いたときに表示）。認定は20人までです。</div>
+    </div>
+    ${msgText ? `<div style="font-size:12px;color:#1a7f3c;font-weight:700;margin:0 2px 8px;">${escHtml(String(msgText))}</div>` : ''}
+    <div>${rows}</div>
+    <button onclick="openAdminFounders()" style="margin-top:10px;border:none;background:none;font-size:12px;color:var(--purple-mid);cursor:pointer;">↻ 更新</button>`);
+}
+async function setAdminFounder(k, on) {
+  const r = adminFounderRows[k];
+  if (!r) return;
+  const who = (r.display_name || '') + (r.x_handle ? '（@' + r.x_handle + '）' : '');
+  if (!confirm(on ? `${who} を創設メンバーに認定しますか？` : `${who} の創設メンバー認定を取り消しますか？`)) return;
+  const { data, error } = await getSupabaseClient().rpc('admin_set_founder', { p_user_id: r.user_id, p_on: !!on });
+  if (error) {
+    const m = String(error.message || '');
+    alert(m.indexOf('founder_full') >= 0 ? '創設メンバーはすでに20人います。これ以上は認定できません。' : '変更できませんでした：' + m);
+    return;
+  }
+  if (data !== 1) { alert('変更できませんでした（この人のプロフィールがまだ作られていません）'); return; }
+  try { loadFounderCount(); } catch(e) {}
+  openAdminFounders(on ? `✅ ${who} を創設メンバーに認定しました` : `${who} の認定を取り消しました`);
+}
+
 async function openAdminVisits(days) {
   const d = days || 7;
   try { if (!localStorage.getItem('trace_dont_count_set')) { localStorage.setItem('trace_dont_count', '1'); localStorage.setItem('trace_dont_count_set', '1'); } } catch(e) {}
